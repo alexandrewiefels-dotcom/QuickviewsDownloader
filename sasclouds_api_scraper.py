@@ -1,154 +1,165 @@
 """
-SASClouds API Scraper – uses the official API, no browser needed.
-Features: AOI upload (shapefile), scene search, georeferenced image download.
+Resilient SASClouds API client with version detection, schema validation, and logging.
 """
 
 import json
+import re
+import logging
+import sys
 import tempfile
 import shutil
 from pathlib import Path
 from datetime import datetime
+from typing import Optional, Dict, List, Any
+
 import requests
 from PIL import Image
-import shapefile  # pyshp
+import shapefile
 
 # ----------------------------------------------------------------------
-# API endpoints
+# Logging setup
 # ----------------------------------------------------------------------
-BASE_URL = "https://www.sasclouds.com"
-UPLOAD_URL = f"{BASE_URL}/api/normal/v5/normalmeta/upload/shp"
-SEARCH_URL = f"{BASE_URL}/api/normal/v5/normalmeta"
+LOG_DIR = Path("./logs")
+LOG_DIR.mkdir(exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_DIR / "api_errors.log"),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------
-# Helper functions
+# API version detection
 # ----------------------------------------------------------------------
-def date_to_ms(year: int, month: int, day: int) -> int:
-    """Convert date to milliseconds since epoch (UTC)."""
-    dt = datetime(year, month, day)
-    return int(dt.timestamp() * 1000)
-
-def create_shapefile_from_geojson(geojson: dict, tmp_dir: Path) -> Path:
+def detect_api_version(base_url: str = "https://www.sasclouds.com") -> str:
     """
-    Convert a GeoJSON polygon to a shapefile (shp, shx, dbf) in a temporary folder.
-    Returns the path to the .shp file.
-    """
-    from shapely.geometry import shape
-    geom = shape(geojson)
-    if geom.geom_type != "Polygon":
-        raise ValueError("Only Polygon geometry is supported for AOI")
-    # Create shapefile writer
-    w = shapefile.Writer(tmp_dir / "aoi", shapefile.POLYGON)
-    w.field("ID", "N", 10)
-    w.poly([list(geom.exterior.coords)])
-    w.record(1)
-    w.close()
-    return tmp_dir / "aoi.shp"
-
-def upload_aoi(polygon_geojson: dict) -> str:
-    """
-    Upload a polygon (GeoJSON) to SASClouds and return the upload ID.
-    """
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp_path = Path(tmp)
-        shp_path = create_shapefile_from_geojson(polygon_geojson, tmp_path)
-        # Also need .shx and .dbf files – they are created by shapefile.Writer
-        files = {
-            "file": ("aoi.shp", open(shp_path, "rb"), "application/octet-stream")
-        }
-        # Add .shx and .dbf if they exist
-        for ext in [".shx", ".dbf"]:
-            fpath = shp_path.with_suffix(ext)
-            if fpath.exists():
-                files[f"file"] = (f"aoi{ext}", open(fpath, "rb"), "application/octet-stream")
-        resp = requests.post(UPLOAD_URL, files=files)
-        resp.raise_for_status()
-        data = resp.json()
-        if data["code"] != 0:
-            raise Exception(f"Upload failed: {data}")
-        return data["data"]["uploadId"]
-
-def search_scenes(upload_id: str, start_ms: int, end_ms: int, cloud_max: int,
-                  satellites: list, page: int = 1, page_size: int = 50) -> dict:
-    """Call the search API and return the JSON response."""
-    payload = {
-        "acquisitionTime": [{"Start": start_ms, "End": end_ms}],
-        "tarInputTimeStart": None,
-        "tarInputTimeEnd": None,
-        "inputTimeStart": None,
-        "inputTimeEnd": None,
-        "cloudPercentMin": 0,
-        "cloudPercentMax": cloud_max,
-        "satellites": satellites,
-        "shpUploadId": upload_id,
-        "pageNum": page,
-        "pageSize": page_size
-    }
-    headers = {"Content-Type": "application/json"}
-    resp = requests.post(SEARCH_URL, json=payload, headers=headers)
-    resp.raise_for_status()
-    return resp.json()
-
-def download_and_georeference(image_url: str, footprint_geojson: dict, output_path: Path) -> bool:
-    """
-    Download the full‑size quickview and create a world file (.jgw) using the footprint polygon.
-    The world file is computed using the top‑left, top‑right and bottom‑left corner of the image.
-    Assumes the image is oriented north‑up (no rotation). If rotation is present, you would need
-    the three‑point affine method. The API provides only four corners, which is sufficient for a
-    north‑up world file.
+    Detect the current API version from the main page's JavaScript.
+    Returns version string like 'v5'.
     """
     try:
-        resp = requests.get(image_url, timeout=20)
-        if resp.status_code != 200:
-            return False
-        output_path.write_bytes(resp.content)
-
-        # Read image size
-        img = Image.open(output_path)
-        width, height = img.size
-        img.close()
-
-        # Extract polygon corners from GeoJSON
-        coords = footprint_geojson["coordinates"][0]
-        # corners: 0=top-left, 1=top-right, 2=bottom-right, 3=bottom-left (assuming clockwise)
-        # But GeoJSON order may vary; we use min/max lat/lon to find corners.
-        lons = [c[0] for c in coords]
-        lats = [c[1] for c in coords]
-        left = min(lons)
-        right = max(lons)
-        top = max(lats)
-        bottom = min(lats)
-
-        # Pixel size
-        x_res = (right - left) / width
-        y_res = (bottom - top) / height   # negative
-
-        world_lines = [
-            f"{x_res:.10f}",
-            "0.0",
-            "0.0",
-            f"{y_res:.10f}",
-            f"{left:.10f}",
-            f"{top:.10f}"
-        ]
-        world_path = output_path.with_suffix(".jgw")
-        world_path.write_text("\n".join(world_lines))
-
-        # PRJ file (EPSG:4326)
-        prj_path = output_path.with_suffix(".prj")
-        prj_content = (
-            'GEOGCS["WGS 84",'
-            'DATUM["WGS_1984",'
-            'SPHEROID["WGS 84",6378137,298.257223563,'
-            'AUTHORITY["EPSG","7030"]],'
-            'AUTHORITY["EPSG","6326"]],'
-            'PRIMEM["Greenwich",0,'
-            'AUTHORITY["EPSG","8901"]],'
-            'UNIT["degree",0.0174532925199433,'
-            'AUTHORITY["EPSG","9122"]],'
-            'AUTHORITY["EPSG","4326"]]'
-        )
-        prj_path.write_text(prj_content)
-        return True
+        resp = requests.get(f"{base_url}/english/normal/", timeout=10)
+        resp.raise_for_status()
+        # Look for pattern like "/api/normal/v5/normalmeta"
+        match = re.search(r'/api/normal/(v\d+)/', resp.text)
+        if match:
+            version = match.group(1)
+            logger.info(f"Detected API version: {version}")
+            return version
+        else:
+            logger.warning("Could not detect API version, using fallback 'v5'")
+            return "v5"
     except Exception as e:
-        print(f"Error downloading/georeferencing {image_url}: {e}")
-        return False
+        logger.error(f"Version detection failed: {e}")
+        return "v5"
+
+# ----------------------------------------------------------------------
+# Configuration loader
+# ----------------------------------------------------------------------
+def load_config(config_path: Path = Path("config.json")) -> Dict:
+    if config_path.exists():
+        with open(config_path) as f:
+            return json.load(f)
+    return {}
+
+# ----------------------------------------------------------------------
+# API client class
+# ----------------------------------------------------------------------
+class SASCloudsAPIClient:
+    def __init__(self, base_url: str = "https://www.sasclouds.com"):
+        self.base_url = base_url
+        config = load_config()
+        version = config.get("api_version")
+        if not version:
+            version = detect_api_version(base_url)
+        self.api_base = f"{base_url}/api/normal/{version}"
+        self.upload_url = f"{self.api_base}/normalmeta/upload/shp"
+        self.search_url = f"{self.api_base}/normalmeta"
+        logger.info(f"Using API base: {self.api_base}")
+
+    def upload_aoi(self, polygon_geojson: Dict) -> str:
+        """Upload a GeoJSON polygon and return upload ID."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            shp_path = self._create_shapefile(polygon_geojson, tmp_path)
+            files = {"file": ("aoi.shp", open(shp_path, "rb"), "application/octet-stream")}
+            for ext in [".shx", ".dbf"]:
+                fpath = shp_path.with_suffix(ext)
+                if fpath.exists():
+                    files[f"file"] = (f"aoi{ext}", open(fpath, "rb"), "application/octet-stream")
+            resp = requests.post(self.upload_url, files=files)
+            resp.raise_for_status()
+            data = resp.json()
+            if data["code"] != 0:
+                raise Exception(f"Upload failed: {data}")
+            return data["data"]["uploadId"]
+
+    def search_scenes(self, upload_id: str, start_ms: int, end_ms: int,
+                      cloud_max: int, satellites: List[Dict],
+                      page: int = 1, page_size: int = 50) -> Dict:
+        """Search scenes via API."""
+        payload = {
+            "acquisitionTime": [{"Start": start_ms, "End": end_ms}],
+            "cloudPercentMin": 0,
+            "cloudPercentMax": cloud_max,
+            "satellites": satellites,
+            "shpUploadId": upload_id,
+            "pageNum": page,
+            "pageSize": page_size
+        }
+        headers = {"Content-Type": "application/json"}
+        resp = requests.post(self.search_url, json=payload, headers=headers)
+        resp.raise_for_status()
+        return resp.json()
+
+    def _create_shapefile(self, geojson: Dict, tmp_dir: Path) -> Path:
+        from shapely.geometry import shape
+        geom = shape(geojson)
+        if geom.geom_type != "Polygon":
+            raise ValueError("Only Polygon geometry is supported")
+        w = shapefile.Writer(tmp_dir / "aoi", shapefile.POLYGON)
+        w.field("ID", "N", 10)
+        w.poly([list(geom.exterior.coords)])
+        w.record(1)
+        w.close()
+        return tmp_dir / "aoi.shp"
+
+    def validate_scene(self, scene: Dict) -> bool:
+        """Check if scene contains all required fields."""
+        required = ["satelliteId", "sensorId", "acquisitionTime",
+                    "cloudPercent", "quickViewUri", "boundary"]
+        missing = [k for k in required if k not in scene]
+        if missing:
+            logger.error(f"API schema changed! Missing fields: {missing}")
+            logger.error(f"Scene sample: {json.dumps(scene, indent=2)[:500]}")
+            return False
+        return True
+
+    def download_and_georeference(self, image_url: str, footprint_geojson: Dict, output_path: Path) -> bool:
+        """Download image and create world file (north‑up)."""
+        try:
+            resp = requests.get(image_url, timeout=20)
+            if resp.status_code != 200:
+                return False
+            output_path.write_bytes(resp.content)
+            img = Image.open(output_path)
+            width, height = img.size
+            img.close()
+            coords = footprint_geojson["coordinates"][0]
+            lons = [c[0] for c in coords]
+            lats = [c[1] for c in coords]
+            left, right = min(lons), max(lons)
+            top, bottom = max(lats), min(lats)
+            x_res = (right - left) / width
+            y_res = (bottom - top) / height
+            world_lines = [f"{x_res:.10f}", "0.0", "0.0", f"{y_res:.10f}", f"{left:.10f}", f"{top:.10f}"]
+            output_path.with_suffix(".jgw").write_text("\n".join(world_lines))
+            # Write PRJ (EPSG:4326)
+            prj_content = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
+            output_path.with_suffix(".prj").write_text(prj_content)
+            return True
+        except Exception as e:
+            logger.error(f"Georeferencing failed: {e}")
+            return False
