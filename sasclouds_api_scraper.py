@@ -22,6 +22,78 @@ from shapely.geometry import shape as shapely_shape
 from shapely.validation import explain_validity
 from pykml import parser
 
+# ======================================================================
+# Satellite and sensor definitions (full list)
+# ======================================================================
+SATELLITE_GROUPS = {
+    "Optical": {
+        "2-meter": [
+            {"satelliteId": "ZY3-1", "sensorIds": ["MUX"]},
+            {"satelliteId": "ZY3-2", "sensorIds": ["MUX"]},
+            {"satelliteId": "ZY3-3", "sensorIds": ["MUX"]},
+            {"satelliteId": "ZY02C", "sensorIds": ["HRC"]},
+            {"satelliteId": "ZY1-02D", "sensorIds": ["VNIC"]},
+            {"satelliteId": "ZY1-02E", "sensorIds": ["VNIC"]},
+            {"satelliteId": "2m8m", "sensorIds": ["PMS"]},
+            {"satelliteId": "GF1", "sensorIds": ["PMS"]},
+            {"satelliteId": "GF6", "sensorIds": ["PMS"]},
+            {"satelliteId": "CBERS-04A", "sensorIds": ["WPM"]},
+            {"satelliteId": "CM1", "sensorIds": ["DMC"]},
+            {"satelliteId": "TH01", "sensorIds": ["GFB", "DGP"]},
+            {"satelliteId": "SPOT6/7", "sensorIds": ["PMS"]},
+        ],
+        "Sub-meter": [
+            {"satelliteId": "GF2", "sensorIds": ["PMS"]},
+            {"satelliteId": "GF7", "sensorIds": ["MUX", "BWD", "FWD"]},
+            {"satelliteId": "GFDM01", "sensorIds": ["PMS"]},
+            {"satelliteId": "JL1", "sensorIds": ["PMS"]},
+            {"satelliteId": "BJ2", "sensorIds": ["PMS"]},
+            {"satelliteId": "BJ3", "sensorIds": ["PMS"]},
+            {"satelliteId": "SV1", "sensorIds": ["PMS"]},
+            {"satelliteId": "SV2", "sensorIds": ["PMS"]},
+            {"satelliteId": "LJ3-2", "sensorIds": ["PMS"]},
+            {"satelliteId": "GeoEye-1", "sensorIds": ["PMS"]},
+            {"satelliteId": "WorldView-2", "sensorIds": ["PMS"]},
+            {"satelliteId": "WorldView-3", "sensorIds": ["PMS"]},
+            {"satelliteId": "WorldView-4", "sensorIds": ["PMS"]},
+            {"satelliteId": "Pleiades", "sensorIds": ["PMS"]},
+            {"satelliteId": "DEIMOS", "sensorIds": ["PMS"]},
+            {"satelliteId": "KOMPSAT-2", "sensorIds": ["PMS"]},
+            {"satelliteId": "KOMPSAT-3", "sensorIds": ["PMS"]},
+            {"satelliteId": "KOMPSAT-3A", "sensorIds": ["PMS"]},
+        ],
+        "Other (wide‑angle)": [
+            {"satelliteId": "GF1", "sensorIds": ["WFV"]},
+            {"satelliteId": "GF6", "sensorIds": ["WFV"]},
+            {"satelliteId": "GF4", "sensorIds": ["PMI", "IRS"]},
+        ]
+    },
+    "Hyperspectral": {
+        "Hyperspectral": [
+            {"satelliteId": "ZY1-02D", "sensorIds": ["AHSI"]},
+            {"satelliteId": "ZY1-02E", "sensorIds": ["AHSI"]},
+            {"satelliteId": "GF5", "sensorIds": ["AHSI"]},
+            {"satelliteId": "GF5A", "sensorIds": ["AHSI"]},
+            {"satelliteId": "GF5B", "sensorIds": ["AHSI"]},
+            {"satelliteId": "GF5", "sensorIds": ["VIMS"]},
+            {"satelliteId": "LJ3-2", "sensorIds": ["HSI"]},
+            {"satelliteId": "OHS-2/3", "sensorIds": ["MSS"]},
+        ]
+    },
+    "SAR": {
+        "SAR": [
+            {"satelliteId": "GF3", "sensorIds": []},
+            {"satelliteId": "CSAR", "sensorIds": []},
+            {"satelliteId": "LSAR", "sensorIds": []},
+        ]
+    },
+    "Other": {
+        "Other sensors": [
+            {"satelliteId": "JL-1GP", "sensorIds": ["PMS"]},
+        ]
+    }
+}
+
 # ----------------------------------------------------------------------
 # Logging setup
 # ----------------------------------------------------------------------
@@ -42,10 +114,7 @@ logger = logging.getLogger(__name__)
 # File conversion utilities (without geopandas/fiona)
 # ----------------------------------------------------------------------
 def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
-    """
-    Convert uploaded file (GeoJSON, Shapefile ZIP, KML, KMZ) to GeoJSON dict.
-    Returns a GeoJSON Polygon or MultiPolygon geometry.
-    """
+    """Convert uploaded file (GeoJSON, Shapefile ZIP, KML, KMZ) to GeoJSON dict."""
     filename = uploaded_file.name
     content = uploaded_file.read()
     
@@ -201,7 +270,6 @@ class SASCloudsAPIClient:
         else:
             geom = shapely_shape(geojson)
         
-        # Handle MultiPolygon
         if geom.geom_type == "MultiPolygon":
             geom = max(geom.geoms, key=lambda p: p.area)
             logger.warning("MultiPolygon converted to largest Polygon")
@@ -215,11 +283,8 @@ class SASCloudsAPIClient:
             if not geom.is_valid:
                 raise ValueError("Polygon is invalid and could not be fixed. Please simplify the AOI.")
         
-        # Log bounds
-        bounds = geom.bounds
-        logger.info(f"Polygon bounds: minx={bounds[0]}, miny={bounds[1]}, maxx={bounds[2]}, maxy={bounds[3]}")
+        logger.info(f"Polygon bounds: minx={geom.bounds[0]}, miny={geom.bounds[1]}, maxx={geom.bounds[2]}, maxy={geom.bounds[3]}")
         
-        # Create shapefile
         w = shapefile.Writer(tmp_dir / "aoi", shapefile.POLYGON)
         w.field("ID", "N", 10)
         w.poly([list(geom.exterior.coords)])
