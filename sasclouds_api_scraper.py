@@ -19,6 +19,7 @@ import requests
 from PIL import Image
 import shapefile
 from shapely.geometry import shape as shapely_shape
+from shapely.validation import explain_validity
 from pykml import parser
 
 # ----------------------------------------------------------------------
@@ -48,11 +49,9 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
     filename = uploaded_file.name
     content = uploaded_file.read()
     
-    # GeoJSON
     if filename.endswith('.geojson'):
         return json.loads(content)
     
-    # Shapefile (as ZIP)
     if filename.endswith('.zip'):
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = Path(tmpdir) / "upload.zip"
@@ -62,35 +61,21 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
             shp_files = list(Path(tmpdir).glob("*.shp"))
             if not shp_files:
                 raise ValueError("No .shp file found in ZIP")
-            # Read shapefile using pyshp
             sf = shapefile.Reader(shp_files[0])
             shapes = sf.shapes()
             if not shapes:
                 raise ValueError("No shapes found in shapefile")
-            # Take first shape (assuming polygon)
-            # Convert to GeoJSON Polygon
-            # pyshp shape.points are list of points; shape.parts indicate polygon rings
             parts = list(shapes[0].parts) + [len(shapes[0].points)]
             rings = []
             for i in range(len(parts)-1):
                 ring_points = shapes[0].points[parts[i]:parts[i+1]]
                 rings.append([[p[0], p[1]] for p in ring_points])
-            # Assume first ring is exterior, subsequent are holes
             if not rings:
                 raise ValueError("No polygon coordinates")
-            # Return as Polygon geometry (GeoJSON)
-            return {
-                "type": "Polygon",
-                "coordinates": rings
-            }
+            return {"type": "Polygon", "coordinates": rings}
     
-    # KML
     if filename.endswith('.kml'):
-        # Parse KML using pykml
         root = parser.parse(BytesIO(content)).getroot()
-        # Find all Polygon coordinates
-        # Very simplistic: extract first Polygon coordinates from the KML
-        # We'll search for <coordinates> tag
         ns = {"kml": "http://www.opengis.net/kml/2.2"}
         coords_elem = root.find(".//kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns)
         if coords_elem is None:
@@ -98,16 +83,12 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
         coords_text = coords_elem.text.strip()
         points = []
         for coord in coords_text.split():
-            lon, lat, alt = coord.split(',')[:2]  # ignore altitude
+            lon, lat, alt = coord.split(',')[:2]
             points.append([float(lon), float(lat)])
         if not points:
             raise ValueError("No coordinates")
-        return {
-            "type": "Polygon",
-            "coordinates": [points]
-        }
+        return {"type": "Polygon", "coordinates": [points]}
     
-    # KMZ (zip with KML inside)
     if filename.endswith('.kmz'):
         with tempfile.TemporaryDirectory() as tmpdir:
             kmz_path = Path(tmpdir) / "upload.kmz"
@@ -117,7 +98,6 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
             kml_files = list(Path(tmpdir).glob("*.kml"))
             if not kml_files:
                 raise ValueError("No KML file found in KMZ")
-            # Parse the first KML
             root = parser.parse(kml_files[0]).getroot()
             ns = {"kml": "http://www.opengis.net/kml/2.2"}
             coords_elem = root.find(".//kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns)
@@ -130,10 +110,7 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
                 points.append([float(lon), float(lat)])
             if not points:
                 raise ValueError("No coordinates")
-            return {
-                "type": "Polygon",
-                "coordinates": [points]
-            }
+            return {"type": "Polygon", "coordinates": [points]}
     
     raise ValueError(f"Unsupported file type: {filename}")
 
@@ -205,9 +182,10 @@ class SASCloudsAPIClient:
         logger.info(f"Using API base: {self.api_base}")
 
     def _create_shapefile(self, geojson: Dict, tmp_dir: Path) -> Path:
-        """Convert any supported GeoJSON (Polygon, Feature, FeatureCollection) to shapefile."""
+        """Convert any supported GeoJSON to shapefile after validating polygon."""
         logger.debug(f"Creating shapefile from GeoJSON: {geojson}")
-        # Normalize input: extract geometry from FeatureCollection or Feature
+        
+        # Extract geometry
         if geojson.get("type") == "FeatureCollection":
             if not geojson.get("features"):
                 raise ValueError("FeatureCollection has no features")
@@ -223,13 +201,25 @@ class SASCloudsAPIClient:
         else:
             geom = shapely_shape(geojson)
         
+        # Handle MultiPolygon
         if geom.geom_type == "MultiPolygon":
-            # Take the largest polygon (by area) as the AOI
             geom = max(geom.geoms, key=lambda p: p.area)
             logger.warning("MultiPolygon converted to largest Polygon")
         elif geom.geom_type != "Polygon":
             raise ValueError(f"Unsupported geometry type: {geom.geom_type}. Only Polygon is supported.")
         
+        # Validate polygon
+        if not geom.is_valid:
+            logger.warning(f"Invalid polygon: {explain_validity(geom)}. Attempting to fix with buffer(0).")
+            geom = geom.buffer(0)
+            if not geom.is_valid:
+                raise ValueError("Polygon is invalid and could not be fixed. Please simplify the AOI.")
+        
+        # Log bounds
+        bounds = geom.bounds
+        logger.info(f"Polygon bounds: minx={bounds[0]}, miny={bounds[1]}, maxx={bounds[2]}, maxy={bounds[3]}")
+        
+        # Create shapefile
         w = shapefile.Writer(tmp_dir / "aoi", shapefile.POLYGON)
         w.field("ID", "N", 10)
         w.poly([list(geom.exterior.coords)])
@@ -241,29 +231,32 @@ class SASCloudsAPIClient:
 
     def upload_aoi(self, polygon_geojson: Dict) -> str:
         logger.info("Uploading AOI...")
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            shp_path = self._create_shapefile(polygon_geojson, tmp_path)
-            files = {
-                "file": ("aoi.shp", open(shp_path, "rb"), "application/octet-stream"),
-                "file_shx": ("aoi.shx", open(shp_path.with_suffix(".shx"), "rb"), "application/octet-stream"),
-                "file_dbf": ("aoi.dbf", open(shp_path.with_suffix(".dbf"), "rb"), "application/octet-stream"),
-            }
-            logger.debug(f"Uploading files: {list(files.keys())}")
-            try:
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp_path = Path(tmp)
+                shp_path = self._create_shapefile(polygon_geojson, tmp_path)
+                files = {
+                    "file": ("aoi.shp", open(shp_path, "rb"), "application/octet-stream"),
+                    "file_shx": ("aoi.shx", open(shp_path.with_suffix(".shx"), "rb"), "application/octet-stream"),
+                    "file_dbf": ("aoi.dbf", open(shp_path.with_suffix(".dbf"), "rb"), "application/octet-stream"),
+                }
+                logger.debug(f"Uploading files: {list(files.keys())}")
                 resp = requests.post(self.upload_url, files=files, timeout=30)
                 logger.debug(f"Upload response status: {resp.status_code}")
                 resp.raise_for_status()
                 data = resp.json()
                 logger.debug(f"Upload response JSON: {data}")
                 if data["code"] != 0:
-                    raise Exception(f"Upload failed with code {data['code']}: {data.get('message')}")
+                    error_msg = data.get("message", "Unknown error")
+                    if "out-of-range" in error_msg.lower():
+                        raise Exception(f"AOI out of range: The polygon may be outside the satellite coverage area. Try a smaller AOI or a region known to have data (e.g., within ±80° latitude). Details: {error_msg}")
+                    raise Exception(f"Upload failed: {error_msg} (code {data['code']})")
                 upload_id = data["data"]["uploadId"]
                 logger.info(f"AOI uploaded successfully, ID: {upload_id}")
                 return upload_id
-            except Exception as e:
-                logger.error(f"AOI upload failed: {e}", exc_info=True)
-                raise
+        except Exception as e:
+            logger.error(f"AOI upload failed: {e}", exc_info=True)
+            raise
 
     def search_scenes(self, upload_id: str, start_ms: int, end_ms: int,
                       cloud_max: int, satellites: List[Dict],
