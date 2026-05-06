@@ -1,22 +1,19 @@
 """
-SASClouds Scraper - Final Version (Optimized for Cloud)
-- Extracts footprints, full images, metadata
-- Creates georeferenced images (world file with rotation)
-- Saves output in specified temporary folder
+SASClouds Scraper – Cloud‑compatible with verbose logging
 """
 import re
 import json
 import time
 import sys
+import traceback
 from pathlib import Path
 from datetime import datetime
 import requests
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
-# ----------------------------------------------------------------------
-# Helper functions remain the same as before, but we'll make sure they work
-# correctly when the script is called with a --output argument.
+print("🚀 Scraper script started", flush=True)
+
 # ----------------------------------------------------------------------
 def extract_image_name_from_thumb(url: str) -> str:
     filename = url.split('/')[-1]
@@ -111,7 +108,16 @@ def parse_metadata(text: str) -> dict:
             metadata["product_id"] = lines[i+1].strip()
     return metadata
 
-# This function now writes directly to the provided output_dir
+def close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE):
+    try:
+        close_btn = page.query_selector(MODAL_CLOSE)
+        if close_btn and close_btn.is_visible():
+            close_btn.click()
+            page.wait_for_timeout(500)
+            page.wait_for_selector(MODAL_CONTAINER, state="hidden", timeout=2000)
+    except Exception:
+        pass
+
 def scrape_page(page, page_num, all_features, output_dir):
     ROW_SELECTOR = "tr.ant-table-row-level-0"
     THUMBNAIL_SELECTOR = ".query-standard-result__quick"
@@ -121,16 +127,16 @@ def scrape_page(page, page_num, all_features, output_dir):
     NEXT_PAGE_BUTTON = ".ant-pagination-next:not(.ant-pagination-disabled)"
 
     rows = page.query_selector_all(ROW_SELECTOR)
-    print(f"\n📄 Page {page_num}: {len(rows)} rows")
+    print(f"\n📄 Page {page_num}: {len(rows)} rows", flush=True)
     for idx, row in enumerate(rows):
-        print(f"   Processing row {idx+1}/{len(rows)}")
+        print(f"   Processing row {idx+1}/{len(rows)}", flush=True)
         row.scroll_into_view_if_needed()
         time.sleep(0.3)
         close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE)
         time.sleep(0.3)
         thumb = row.query_selector(THUMBNAIL_SELECTOR)
         if not thumb:
-            print("      ❌ No thumbnail, skipping")
+            print("      ❌ No thumbnail, skipping", flush=True)
             continue
         thumb_url = thumb.get_attribute("src")
         try:
@@ -141,7 +147,7 @@ def scrape_page(page, page_num, all_features, output_dir):
             page.wait_for_selector(MODAL_CONTAINER, timeout=8000)
             page.wait_for_selector(MODAL_IMG, timeout=8000)
         except Exception as e:
-            print(f"      ❌ Modal did not open: {e}")
+            print(f"      ❌ Modal did not open: {e}", flush=True)
             continue
         modal = page.query_selector(MODAL_CONTAINER)
         if not modal:
@@ -152,16 +158,16 @@ def scrape_page(page, page_num, all_features, output_dir):
         coords = extract_coords_from_text(modal_text)
         polygon = polygon_from_coords(coords)
         if not polygon:
-            print("      ❌ No polygon coordinates, skipping")
+            print("      ❌ No polygon coordinates, skipping", flush=True)
             close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE)
             continue
         metadata = parse_metadata(modal_text)
         base_name = extract_image_name_from_thumb(thumb_url) if thumb_url else f"scene_{len(all_features)+1:04d}"
         img_path = output_dir / f"{base_name}.jpg"
         if full_img_url and download_image(full_img_url, img_path):
-            print(f"      ✅ Downloaded: {img_path.name}")
+            print(f"      ✅ Downloaded: {img_path.name}", flush=True)
             create_rotated_world_file(img_path, coords)
-            print(f"      ✅ World file created")
+            print(f"      ✅ World file created", flush=True)
         properties = {
             "index": len(all_features) + 1,
             "satellite": metadata.get("satellite"),
@@ -176,85 +182,91 @@ def scrape_page(page, page_num, all_features, output_dir):
         properties = {k: v for k, v in properties.items() if v is not None}
         feature = {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [polygon]}, "properties": properties}
         all_features.append(feature)
-        print(f"      ✅ Extracted {metadata.get('satellite', 'unknown')} - {metadata.get('date', 'unknown')}")
+        print(f"      ✅ Extracted {metadata.get('satellite', 'unknown')} - {metadata.get('date', 'unknown')}", flush=True)
         close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE)
         time.sleep(0.5)
     return len(rows)
 
-def close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE):
-    try:
-        close_btn = page.query_selector(MODAL_CLOSE)
-        if close_btn and close_btn.is_visible():
-            close_btn.click()
-            page.wait_for_timeout(500)
-            page.wait_for_selector(MODAL_CONTAINER, state="hidden", timeout=2000)
-    except Exception:
-        pass
-
+# ----------------------------------------------------------------------
 def main():
-    # --- Configuration for Cloud Deployment ---
+    print("📁 Starting scraper main()", flush=True)
+    # Parse --output argument
+    output_dir = None
+    if len(sys.argv) > 2 and sys.argv[1] == "--output":
+        output_dir = Path(sys.argv[2])
+        print(f"📁 Output directory from argument: {output_dir}", flush=True)
+    else:
+        # fallback (should not happen)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir = Path("./sasclouds_scrapes") / timestamp
+        output_dir.mkdir(parents=True, exist_ok=True)
+        print(f"📁 Output directory fallback: {output_dir}", flush=True)
+
     CATALOG_URL = "https://www.sasclouds.com/english/normal/"
     ROW_SELECTOR = "tr.ant-table-row-level-0"
     NEXT_PAGE_BUTTON = ".ant-pagination-next:not(.ant-pagination-disabled)"
 
-    # Parse the --output argument passed from the main app
-    if len(sys.argv) > 2 and sys.argv[1] == "--output":
-        output_dir = Path(sys.argv[2])
-    else:
-        # Fallback for local testing
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = Path("./sasclouds_scrapes") / timestamp
-        output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"🌐 Navigating to {CATALOG_URL}", flush=True)
 
-    print(f"📁 Output folder: {output_dir}")
+    try:
+        with sync_playwright() as p:
+            print("✅ Playwright context created", flush=True)
+            # Launch Chromium in headless mode with required arguments for cloud
+            browser = p.chromium.launch(
+                headless=True,
+                args=['--no-sandbox', '--disable-dev-shm-usage']
+            )
+            print("✅ Browser launched", flush=True)
+            context = browser.new_context(viewport={"width": 1280, "height": 800})
+            page = context.new_page()
+            print("✅ Page created", flush=True)
 
-    with sync_playwright() as p:
-        # Optimized launch for headless cloud environments[reference:4]
-        browser = p.chromium.launch(
-            headless=True,
-            args=['--no-sandbox', '--disable-dev-shm-usage']
-        )
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
-        page = context.new_page()
-        print(f"\n🌐 Loading catalog page: {CATALOG_URL}")
-        page.goto(CATALOG_URL, wait_until="networkidle")
-        print("✅ Page loaded. Please log in, apply filters, and click Search. Waiting for manual input...")
-        # The user will now click the "Manual Input Completed" button in main.py
-        # So we just wait for an indefinite period until a file is created? No, we'll rely on the user's action.
-        # Simply wait a reasonable time for the user to act. But we can't wait forever. Let's just wait for the page to be used.
-        # Wait for either the search to happen or for the user to press Enter, but we're in cloud, so we'll just give time.
-        # A more robust approach would be to wait for a manual trigger, but for now, we'll wait 5 minutes for the user to act.
-        print("Waiting 30 seconds for you to perform the manual search...")
-        time.sleep(30) # This is a compromise. A better solution is to break this script into two.
-        # We'll adopt the simpler approach: just wait for the results page to load after a search.
-        # But we need to wait for the user to click search.
-        # We'll assume the user will click search within the next 5 minutes.
-        # A more advanced way: wait for the presence of the result rows.
-        print("Waiting for results to load...")
-        page.wait_for_selector(ROW_SELECTOR, timeout=300000) # Wait up to 5 minutes
+            print(f"🌐 Loading catalog page...", flush=True)
+            page.goto(CATALOG_URL, wait_until="networkidle")
+            print("✅ Catalog page loaded", flush=True)
 
-        all_features = []
-        page_num = 1
-        while True:
-            rows = scrape_page(page, page_num, all_features, output_dir)
-            if rows == 0:
-                break
-            next_btn = page.query_selector(NEXT_PAGE_BUTTON)
-            if not next_btn:
-                break
-            next_btn.click()
-            page.wait_for_timeout(3000)
+            # Give the user time to manually log in and search.
+            # Since we are headless, the user cannot interact. This is a fundamental problem.
+            # We'll wait for the presence of the result table (which appears only after search).
+            print("⏳ Waiting for results to appear (you must have performed the search manually)...", flush=True)
             try:
-                page.wait_for_selector(ROW_SELECTOR, timeout=10000)
-            except:
-                break
-            page_num += 1
-        geojson_path = output_dir / "footprints.geojson"
-        with open(geojson_path, "w", encoding="utf-8") as f:
-            json.dump({"type": "FeatureCollection", "features": all_features}, f, indent=2)
-        print(f"\n✅ Scraping finished. Total features: {len(all_features)}")
-        browser.close()
+                page.wait_for_selector(ROW_SELECTOR, timeout=300000)  # 5 minutes timeout
+                print("✅ Results found! Proceeding to scrape...", flush=True)
+            except Exception as e:
+                print(f"❌ Timeout waiting for results: {e}", flush=True)
+                print("⚠️ No results found. Did you perform the search manually?", flush=True)
+                browser.close()
+                return
+
+            all_features = []
+            page_num = 1
+            while True:
+                rows = scrape_page(page, page_num, all_features, output_dir)
+                if rows == 0:
+                    print("No rows found on this page, stopping.", flush=True)
+                    break
+                next_btn = page.query_selector(NEXT_PAGE_BUTTON)
+                if not next_btn:
+                    print("No 'Next' button found, finished scraping.", flush=True)
+                    break
+                next_btn.click()
+                page.wait_for_timeout(3000)
+                try:
+                    page.wait_for_selector(ROW_SELECTOR, timeout=10000)
+                except:
+                    print("No rows after clicking 'Next', stopping.", flush=True)
+                    break
+                page_num += 1
+
+            geojson_path = output_dir / "footprints.geojson"
+            with open(geojson_path, "w", encoding="utf-8") as f:
+                json.dump({"type": "FeatureCollection", "features": all_features}, f, indent=2)
+            print(f"\n✅ Scraping finished. Total features: {len(all_features)}", flush=True)
+            browser.close()
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR: {e}", flush=True)
+        traceback.print_exc()
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

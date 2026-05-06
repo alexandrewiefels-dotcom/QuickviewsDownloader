@@ -34,20 +34,22 @@ st.markdown("Extract footprints, full images, and georeferenced world files.")
 
 with st.expander("📖 How to Use This Scraper", expanded=False):
     st.markdown("""
-    1. Click **Start Scraper** below – a new browser window will open.
-    2. In that browser:
-       * Go to [SASClouds catalog](https://www.sasclouds.com/english/normal/)
-       * Log in if needed
-       * Set your filters (date range, cloud cover, draw AOI on map)
-       * Click **Search** and wait for results to load
-    3. **Return here** and press **✅ I have finished my manual search**.
-    4. The scraper will then run automatically (this may take several minutes).
-    5. When finished, a **Download** button appears – click to get your ZIP.
+    **Important:** The scraper runs in **headless mode** on Streamlit Cloud.  
+    You **cannot** interact with the browser window.  
+    Therefore, you must have already logged into SASClouds and set your filters in a **separate regular browser** (not through this app).  
+    The scraper will only work if you have a persistent login session (cookies).  
+    We recommend running this app **locally** instead of on Streamlit Cloud for full interactive control.
+
+    If you still wish to try on Cloud:
+    1. Click **Start Scraper**.
+    2. The scraper will try to load the catalog page.
+    3. It will wait for **5 minutes** for results to appear.
+    4. You cannot manually click "Search" – so the scraper will time out.
     """)
 
-# --- State for the button ---
-if "scraper_started" not in st.session_state:
-    st.session_state.scraper_started = False
+# --- Session state for the button and results ---
+if "scraper_running" not in st.session_state:
+    st.session_state.scraper_running = False
 if "scraper_done" not in st.session_state:
     st.session_state.scraper_done = False
 if "zip_data" not in st.session_state:
@@ -55,21 +57,18 @@ if "zip_data" not in st.session_state:
 if "zip_filename" not in st.session_state:
     st.session_state.zip_filename = None
 
-# --- The actual scraper execution (synchronous) ---
-def run_scraper_sync():
-    """Run the scraper synchronously, capturing output in a status container."""
-    with st.status("🚀 Scraper is running...", expanded=True) as status:
-        # Create a temporary directory for this run
+# --- Run scraper (synchronous) with live logs ---
+def run_scraper():
+    with st.status("🚀 Running scraper...", expanded=True) as status:
         temp_dir = Path(tempfile.mkdtemp(prefix="sasclouds_scrape_"))
         status.write(f"📁 Temporary folder: {temp_dir}")
 
         script_path = Path("sasclouds_scraper.py")
         if not script_path.exists():
-            st.error("❌ scraper script not found: sasclouds_scraper.py")
-            st.session_state.scraper_started = False
+            st.error("❌ scraper script not found")
             return
 
-        # Launch subprocess
+        # Start the subprocess
         process = subprocess.Popen(
             ["python", "-u", str(script_path), "--output", str(temp_dir)],
             stdout=subprocess.PIPE,
@@ -78,60 +77,40 @@ def run_scraper_sync():
             bufsize=1,
         )
 
-        # Stream output line by line into the status container
-        logs = []
+        # Capture and display output line by line
+        lines = []
         for line in iter(process.stdout.readline, ""):
-            logs.append(line.rstrip())
-            # Keep the last 40 lines visible
-            status.write("\n".join(logs[-40:]))
+            lines.append(line.rstrip())
+            # Show last 50 lines
+            status.write("\n".join(lines[-50:]))
         process.wait()
 
         if process.returncode != 0:
             status.update(label="❌ Scraper failed", state="error")
-            st.session_state.scraper_started = False
             return
 
-        # Create ZIP file in memory
+        # Create ZIP
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
             for file in temp_dir.rglob("*"):
                 zf.write(file, arcname=file.relative_to(temp_dir))
         zip_buffer.seek(0)
 
-        # Store results in session state
         st.session_state.zip_data = zip_buffer.getvalue()
         st.session_state.zip_filename = f"scraped_data_{temp_dir.name}.zip"
-
-        # Cleanup temp directory
         shutil.rmtree(temp_dir, ignore_errors=True)
 
         status.update(label="✅ Scraping completed!", state="complete")
-        st.session_state.scraper_started = False
         st.session_state.scraper_done = True
 
-# --- Button logic ---
-col1, col2 = st.columns([1, 4])
-with col1:
-    if not st.session_state.scraper_started and not st.session_state.scraper_done:
-        if st.button("▶️ Start Scraper", type="primary", use_container_width=True):
-            st.session_state.scraper_started = True
-            st.session_state.scraper_done = False
-            st.rerun()
-    elif st.session_state.scraper_started:
-        # A placeholder – the scraper is already running synchronously,
-        # but we need to show the "I have finished my manual search" button.
-        # However, the synchronously running function would block the UI,
-        # so we cannot show it. We'll use a different approach:
-        pass
-
-# --- Manual input confirmation (separate button) ---
-if not st.session_state.scraper_started and not st.session_state.scraper_done:
-    if st.button("✅ I have finished my manual search", type="secondary", use_container_width=True):
-        # Run the scraper synchronously – this will block the UI but show live logs
-        run_scraper_sync()
+# --- Buttons ---
+if not st.session_state.scraper_running and not st.session_state.scraper_done:
+    if st.button("▶️ Start Scraper", type="primary", use_container_width=True):
+        st.session_state.scraper_running = True
+        run_scraper()
+        st.session_state.scraper_running = False
         st.rerun()
 
-# --- Download button ---
 if st.session_state.zip_data and st.session_state.scraper_done:
     st.divider()
     st.success("✅ Scraping completed! Click below to download the results.")
@@ -142,4 +121,3 @@ if st.session_state.zip_data and st.session_state.scraper_done:
         mime="application/zip",
         use_container_width=True,
     )
-    # Clear the done flag so the download button disappears after use? Optionally keep it.
