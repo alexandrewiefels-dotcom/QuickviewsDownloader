@@ -6,10 +6,11 @@ import io
 import shutil
 import tempfile
 from pathlib import Path
+import threading
 
 st.set_page_config(page_title="SASClouds Scraper", layout="wide")
 
-# ----- Secrets and authentication -----
+# ----- Authentication -----
 PASSWORD = st.secrets.get("PASSWORD", "default_fallback")
 if PASSWORD == "default_fallback":
     st.error("No PASSWORD found in secrets. Please set .streamlit/secrets.toml")
@@ -29,7 +30,7 @@ if not st.session_state.authenticated:
             st.error("Incorrect password")
     st.stop()
 
-# ----- Session state initialisation (must be before any thread) -----
+# ----- Session state initialisation -----
 if "scraping" not in st.session_state:
     st.session_state.scraping = False
 if "proc" not in st.session_state:
@@ -38,8 +39,8 @@ if "zip_data" not in st.session_state:
     st.session_state.zip_data = None
 if "zip_filename" not in st.session_state:
     st.session_state.zip_filename = None
-if "status_placeholder" not in st.session_state:
-    st.session_state.status_placeholder = None
+if "logs" not in st.session_state:
+    st.session_state.logs = []
 
 # ----- Main UI -----
 st.title("🛰️ SASClouds Satellite Image Scraper")
@@ -47,67 +48,22 @@ st.markdown("Extract footprints, images, and georeferenced world files.")
 
 with st.expander("📖 How to Use This Scraper", expanded=False):
     st.markdown("""
-    1. Click **Start Scraper** below – a new browser window will open.
-    2. In that browser:
+    1. Click **Start Scraper** below.
+    2. A browser window will open.
+    3. In that browser:
        * Go to [SASClouds catalog](https://www.sasclouds.com/english/normal/)
        * Log in if needed
        * Set your filters (date, cloud cover, draw AOI on map)
        * Click **Search** and wait for results
-    3. Return here and click **✅ Manual Input Completed**.
-    4. The scraper will run automatically.
-    5. When finished, a **Download** button appears – click to get your ZIP.
+    4. Return here and click **✅ Manual Input Completed**.
+    5. The scraper will run. Wait for completion (watch logs).
+    6. When finished, a **Download** button appears.
     """)
 
-# ----- Thread function (scraper runner) -----
-def run_scraper():
-    # Create a temporary directory for this run
-    temp_dir = Path(tempfile.mkdtemp(prefix="sasclouds_scrape_"))
-    script_path = Path("sasclouds_scraper.py")
-    if not script_path.exists():
-        st.error("❌ scraper script not found: sasclouds_scraper.py")
-        st.session_state.scraping = False
-        return
+# Log placeholder (created once)
+log_placeholder = st.empty()
 
-    # Start the subprocess
-    process = subprocess.Popen(
-        ["python", "-u", str(script_path), "--output", str(temp_dir)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
-    st.session_state.proc = process
-
-    # Use a queue to pass logs to the main thread
-    lines = []
-    while True:
-        line = process.stdout.readline()
-        if not line and process.poll() is not None:
-            break
-        if line:
-            lines.append(line.rstrip())
-            # Update the status placeholder (if it exists)
-            if st.session_state.status_placeholder:
-                st.session_state.status_placeholder.code("\n".join(lines[-40:]), language="bash")
-    process.wait()
-
-    # Create ZIP in memory
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        for file in temp_dir.rglob("*"):
-            zf.write(file, arcname=file.relative_to(temp_dir))
-    zip_buffer.seek(0)
-    st.session_state.zip_data = zip_buffer.getvalue()
-    st.session_state.zip_filename = f"scraped_data_{temp_dir.name}.zip"
-
-    # Cleanup
-    shutil.rmtree(temp_dir, ignore_errors=True)
-    st.session_state.scraping = False
-    st.session_state.proc = None
-    if st.session_state.status_placeholder:
-        st.session_state.status_placeholder.update(label="✅ Scraping finished!", state="complete")
-
-# ----- Buttons and status display -----
+# Button and status
 col1, col2 = st.columns([1, 4])
 with col1:
     if not st.session_state.scraping:
@@ -115,11 +71,41 @@ with col1:
             st.session_state.scraping = True
             st.session_state.zip_data = None
             st.session_state.zip_filename = None
-            # Create a status container
-            status = st.status("Starting scraper...", expanded=True)
-            st.session_state.status_placeholder = status
-            import threading
-            threading.Thread(target=run_scraper, daemon=True).start()
+            st.session_state.logs = []   # clear logs
+            # Create temp dir
+            temp_dir = Path(tempfile.mkdtemp(prefix="sasclouds_scrape_"))
+            st.session_state.temp_dir = temp_dir  # store for later
+            # Start thread
+            def run():
+                script_path = Path("sasclouds_scraper.py")
+                if not script_path.exists():
+                    st.session_state.logs.append("❌ scraper script not found: sasclouds_scraper.py")
+                    st.session_state.scraping = False
+                    return
+                process = subprocess.Popen(
+                    ["python", "-u", str(script_path), "--output", str(temp_dir)],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                )
+                st.session_state.proc = process
+                for line in iter(process.stdout.readline, ""):
+                    st.session_state.logs.append(line.rstrip())
+                process.wait()
+                # Create ZIP in memory
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for file in temp_dir.rglob("*"):
+                        zf.write(file, arcname=file.relative_to(temp_dir))
+                zip_buffer.seek(0)
+                st.session_state.zip_data = zip_buffer.getvalue()
+                st.session_state.zip_filename = f"scraped_data_{temp_dir.name}.zip"
+                # Cleanup
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                st.session_state.scraping = False
+                st.session_state.proc = None
+            threading.Thread(target=run, daemon=True).start()
             st.rerun()
     else:
         if st.button("⏹️ Stop Scraper", use_container_width=True):
@@ -128,10 +114,14 @@ with col1:
             st.session_state.scraping = False
             st.rerun()
 
-# If scraping is active, show the status placeholder (already displayed)
-if st.session_state.scraping and st.session_state.status_placeholder:
-    # The status object is already shown, nothing extra needed
-    st.info("Scraper is running. Watch the logs above. When it finishes, a download button will appear.")
+# Display logs (if any)
+if st.session_state.logs:
+    log_placeholder.code("\n".join(st.session_state.logs[-60:]), language="bash")
+else:
+    log_placeholder.info("Logs will appear here after starting the scraper.")
+
+# If scraping is active, auto-refresh to show logs
+if st.session_state.scraping:
     time.sleep(1)
     st.rerun()
 
