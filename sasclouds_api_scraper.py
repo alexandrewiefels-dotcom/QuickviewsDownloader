@@ -114,7 +114,10 @@ logger = logging.getLogger(__name__)
 # File conversion utilities (without geopandas/fiona)
 # ----------------------------------------------------------------------
 def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
-    """Convert uploaded file (GeoJSON, Shapefile ZIP, KML, KMZ) to GeoJSON dict."""
+    """
+    Convert uploaded file (GeoJSON, Shapefile ZIP, KML, KMZ) to GeoJSON dict.
+    Returns a GeoJSON Polygon or MultiPolygon geometry.
+    """
     filename = uploaded_file.name
     content = uploaded_file.read()
     
@@ -130,10 +133,12 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
             shp_files = list(Path(tmpdir).glob("*.shp"))
             if not shp_files:
                 raise ValueError("No .shp file found in ZIP")
+            # Read shapefile using pyshp
             sf = shapefile.Reader(shp_files[0])
             shapes = sf.shapes()
             if not shapes:
                 raise ValueError("No shapes found in shapefile")
+            # Take first shape (assuming polygon)
             parts = list(shapes[0].parts) + [len(shapes[0].points)]
             rings = []
             for i in range(len(parts)-1):
@@ -141,7 +146,52 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
                 rings.append([[p[0], p[1]] for p in ring_points])
             if not rings:
                 raise ValueError("No polygon coordinates")
+            # Explicitly close the shapefile reader
+            sf.close()
+            # Return as Polygon geometry (GeoJSON)
             return {"type": "Polygon", "coordinates": rings}
+    
+    if filename.endswith('.kml'):
+        # Parse KML using pykml
+        root = parser.parse(BytesIO(content)).getroot()
+        ns = {"kml": "http://www.opengis.net/kml/2.2"}
+        coords_elem = root.find(".//kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns)
+        if coords_elem is None:
+            raise ValueError("No polygon found in KML")
+        coords_text = coords_elem.text.strip()
+        points = []
+        for coord in coords_text.split():
+            lon, lat, alt = coord.split(',')[:2]
+            points.append([float(lon), float(lat)])
+        if not points:
+            raise ValueError("No coordinates")
+        return {"type": "Polygon", "coordinates": [points]}
+    
+    if filename.endswith('.kmz'):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            kmz_path = Path(tmpdir) / "upload.kmz"
+            kmz_path.write_bytes(content)
+            with zipfile.ZipFile(kmz_path, 'r') as zf:
+                zf.extractall(tmpdir)
+            kml_files = list(Path(tmpdir).glob("*.kml"))
+            if not kml_files:
+                raise ValueError("No KML file found in KMZ")
+            # Parse the first KML
+            root = parser.parse(kml_files[0]).getroot()
+            ns = {"kml": "http://www.opengis.net/kml/2.2"}
+            coords_elem = root.find(".//kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns)
+            if coords_elem is None:
+                raise ValueError("No polygon found in KMZ")
+            coords_text = coords_elem.text.strip()
+            points = []
+            for coord in coords_text.split():
+                lon, lat, alt = coord.split(',')[:2]
+                points.append([float(lon), float(lat)])
+            if not points:
+                raise ValueError("No coordinates")
+            return {"type": "Polygon", "coordinates": [points]}
+    
+    raise ValueError(f"Unsupported file type: {filename}")
     
     if filename.endswith('.kml'):
         root = parser.parse(BytesIO(content)).getroot()
