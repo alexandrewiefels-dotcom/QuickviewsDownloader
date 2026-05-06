@@ -15,18 +15,6 @@ import geopandas as gpd
 import shutil
 import zipfile
 import tempfile
-import requests
-
-# ---------- Fallback for missing navigation_tracker ----------
-def get_active_sessions_fallback(minutes_active=15):
-    """Return empty active sessions if navigation_tracker missing."""
-    return {"count": 0, "sessions": []}
-
-try:
-    from navigation_tracker import get_active_sessions, SEARCH_HISTORY_DIR
-except ImportError:
-    get_active_sessions = get_active_sessions_fallback
-    SEARCH_HISTORY_DIR = Path("navigation_history")  # fallback
 
 # ---------- ADMIN AUTHENTICATION ----------
 ADMIN_PASSWORD = st.secrets.get("ADMIN_PASSWORD", None)
@@ -51,8 +39,16 @@ if not st.session_state.admin_authenticated:
 st.set_page_config(page_title="Admin Dashboard", layout="wide")
 st.title("📊 Admin Dashboard – SASClouds Scraper")
 
+# ---------- Fallback for missing navigation_tracker ----------
+def get_active_sessions_fallback(minutes_active=15):
+    return {"count": 0, "sessions": []}
+
+# We'll just use the fallback directly (no import)
+get_active_sessions = get_active_sessions_fallback
+SEARCH_HISTORY_DIR = Path("navigation_history")  # fallback – can be changed later
+
 # ----------------------------------------------------------------------
-# Helper functions (unchanged from original)
+# Helper functions (unchanged)
 # ----------------------------------------------------------------------
 @st.cache_data
 def load_country_geojson():
@@ -318,7 +314,7 @@ def truncate_jsonl_file(filepath, keep_last=10000, create_backup=True):
         return f"❌ Error truncating {path.name}: {e}"
 
 # ----------------------------------------------------------------------
-# Tabs (all implemented, but with fallbacks for missing modules)
+# Tabs rendering (all without navigation_tracker)
 # ----------------------------------------------------------------------
 def render_dashboard_tab(messages, aoi_history):
     st.subheader("Dashboard Overview")
@@ -363,7 +359,7 @@ def render_dashboard_tab(messages, aoi_history):
 def render_messages_tab(messages):
     st.subheader("📨 User Messages")
     if not messages:
-        st.info("No messages yet. (Feature not implemented yet)")
+        st.info("No messages yet. (Feature not implemented in this version)")
     else:
         for msg in messages[-20:]:
             with st.expander(f"{msg.get('subject', 'No Subject')} – {msg.get('timestamp', 'unknown date')}"):
@@ -373,7 +369,6 @@ def render_messages_tab(messages):
 
 def render_analytics_tab():
     st.subheader("📈 User Analytics")
-    # Populate from your log files if desired – placeholder
     st.info("Detailed analytics can be added by parsing navigation_logs.json")
 
 def render_activity_history_tab():
@@ -452,7 +447,7 @@ def render_active_users_tab():
         df["last_seen"] = pd.to_datetime(df["last_seen"]).dt.strftime("%Y-%m-%d %H:%M:%S")
         st.dataframe(df, use_container_width=True)
     else:
-        st.info("No active sessions. (Install navigation_tracker for real-time tracking)")
+        st.info("No active sessions. (session tracking not implemented)")
 
 def render_system_health_tab():
     st.subheader("🖥️ System Health")
@@ -485,7 +480,7 @@ def render_cache_management_tab():
 
 def render_session_management_tab():
     st.subheader("Session Management")
-    st.info("This tab allows killing user sessions by clearing their logs – implement with navigation_tracker if needed.")
+    st.info("This tab would allow killing user sessions – requires navigation_tracker module.")
 
 def render_backup_restore_tab():
     st.subheader("Backup & Restore")
@@ -522,7 +517,7 @@ def render_tle_stats_tab():
     st.info("Integrate with your TLE fetcher module to display supplier success rates, last update, etc.")
 
 # ----------------------------------------------------------------------
-# Tabs layout
+# Main tabs layout
 # ----------------------------------------------------------------------
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11, tab12, tab13 = st.tabs([
     "Dashboard", "Messages", "Analytics", "Activity History", "Logs Management",
@@ -531,7 +526,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11, tab12, tab13
 ])
 
 # Load data
-all_messages = []  # you can implement message loading later
+all_messages = []
 aoi_uploads = load_aoi_uploads_cached()
 
 with tab1:
