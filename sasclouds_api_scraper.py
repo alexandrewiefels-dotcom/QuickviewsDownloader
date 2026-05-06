@@ -19,8 +19,6 @@ import requests
 from PIL import Image
 import shapefile
 from shapely.geometry import shape as shapely_shape
-import fiona
-import geopandas as gpd
 from pykml import parser
 
 # ----------------------------------------------------------------------
@@ -40,7 +38,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------
-# File conversion utilities
+# File conversion utilities (without geopandas/fiona)
 # ----------------------------------------------------------------------
 def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
     """
@@ -50,9 +48,11 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
     filename = uploaded_file.name
     content = uploaded_file.read()
     
+    # GeoJSON
     if filename.endswith('.geojson'):
         return json.loads(content)
     
+    # Shapefile (as ZIP)
     if filename.endswith('.zip'):
         with tempfile.TemporaryDirectory() as tmpdir:
             zip_path = Path(tmpdir) / "upload.zip"
@@ -62,26 +62,52 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
             shp_files = list(Path(tmpdir).glob("*.shp"))
             if not shp_files:
                 raise ValueError("No .shp file found in ZIP")
-            gdf = gpd.read_file(shp_files[0])
-            if not gdf.geometry.iloc[0].geom_type in ['Polygon', 'MultiPolygon']:
-                raise ValueError("Shapefile must contain Polygon geometries")
-            geojson = json.loads(gdf.to_json())
-            if geojson["type"] == "FeatureCollection":
-                return geojson["features"][0]["geometry"]
-            return geojson
+            # Read shapefile using pyshp
+            sf = shapefile.Reader(shp_files[0])
+            shapes = sf.shapes()
+            if not shapes:
+                raise ValueError("No shapes found in shapefile")
+            # Take first shape (assuming polygon)
+            # Convert to GeoJSON Polygon
+            # pyshp shape.points are list of points; shape.parts indicate polygon rings
+            parts = list(shapes[0].parts) + [len(shapes[0].points)]
+            rings = []
+            for i in range(len(parts)-1):
+                ring_points = shapes[0].points[parts[i]:parts[i+1]]
+                rings.append([[p[0], p[1]] for p in ring_points])
+            # Assume first ring is exterior, subsequent are holes
+            if not rings:
+                raise ValueError("No polygon coordinates")
+            # Return as Polygon geometry (GeoJSON)
+            return {
+                "type": "Polygon",
+                "coordinates": rings
+            }
     
+    # KML
     if filename.endswith('.kml'):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            kml_path = Path(tmpdir) / "upload.kml"
-            kml_path.write_bytes(content)
-            gdf = gpd.read_file(kml_path, driver='KML')
-            if gdf.empty:
-                raise ValueError("No polygon found in KML")
-            geojson = json.loads(gdf.to_json())
-            if geojson["type"] == "FeatureCollection":
-                return geojson["features"][0]["geometry"]
-            return geojson
+        # Parse KML using pykml
+        root = parser.parse(BytesIO(content)).getroot()
+        # Find all Polygon coordinates
+        # Very simplistic: extract first Polygon coordinates from the KML
+        # We'll search for <coordinates> tag
+        ns = {"kml": "http://www.opengis.net/kml/2.2"}
+        coords_elem = root.find(".//kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns)
+        if coords_elem is None:
+            raise ValueError("No polygon found in KML")
+        coords_text = coords_elem.text.strip()
+        points = []
+        for coord in coords_text.split():
+            lon, lat, alt = coord.split(',')[:2]  # ignore altitude
+            points.append([float(lon), float(lat)])
+        if not points:
+            raise ValueError("No coordinates")
+        return {
+            "type": "Polygon",
+            "coordinates": [points]
+        }
     
+    # KMZ (zip with KML inside)
     if filename.endswith('.kmz'):
         with tempfile.TemporaryDirectory() as tmpdir:
             kmz_path = Path(tmpdir) / "upload.kmz"
@@ -91,13 +117,23 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
             kml_files = list(Path(tmpdir).glob("*.kml"))
             if not kml_files:
                 raise ValueError("No KML file found in KMZ")
-            gdf = gpd.read_file(kml_files[0], driver='KML')
-            if gdf.empty:
+            # Parse the first KML
+            root = parser.parse(kml_files[0]).getroot()
+            ns = {"kml": "http://www.opengis.net/kml/2.2"}
+            coords_elem = root.find(".//kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns)
+            if coords_elem is None:
                 raise ValueError("No polygon found in KMZ")
-            geojson = json.loads(gdf.to_json())
-            if geojson["type"] == "FeatureCollection":
-                return geojson["features"][0]["geometry"]
-            return geojson
+            coords_text = coords_elem.text.strip()
+            points = []
+            for coord in coords_text.split():
+                lon, lat, alt = coord.split(',')[:2]
+                points.append([float(lon), float(lat)])
+            if not points:
+                raise ValueError("No coordinates")
+            return {
+                "type": "Polygon",
+                "coordinates": [points]
+            }
     
     raise ValueError(f"Unsupported file type: {filename}")
 

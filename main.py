@@ -10,6 +10,11 @@ import traceback
 from pathlib import Path
 from datetime import datetime
 
+import folium
+from streamlit_folium import st_folium
+from folium.plugins import MarkerCluster
+import pandas as pd
+
 from sasclouds_api_scraper import (
     SASCloudsAPIClient,
     log_search,
@@ -135,8 +140,8 @@ with st.expander("How to use", expanded=False):
     st.markdown("""
     1. Draw your AOI (bounding box or upload a GeoJSON, Shapefile ZIP, KML, KMZ).
     2. Select date range, cloud cover, and satellites/sensors.
-    3. Click **Search and Download** – the API will return all scenes.
-    4. Results are zipped and downloaded (images + world files + GeoJSON).
+    3. Click **Search** – results will appear on a map and in a table.
+    4. Then click **Download ZIP** to save all images + world files + GeoJSON.
     """)
 
 # ----------------------------------------------------------------------
@@ -169,7 +174,6 @@ else:
             polygon_geojson = convert_uploaded_file_to_geojson(uploaded_file)
             aoi_filename = uploaded_file.name
             st.success(f"File loaded: {aoi_filename}")
-            # Preview geometry type
             geom_type = polygon_geojson.get("type")
             st.info(f"Geometry type: {geom_type}")
         except Exception as e:
@@ -222,9 +226,9 @@ for group_name, categories in SATELLITE_GROUPS.items():
                         break
 
 # ----------------------------------------------------------------------
-# Search and download with detailed logging
+# Search button and results handling
 # ----------------------------------------------------------------------
-if st.button("🔍 Search and Download", type="primary"):
+if st.button("🔍 Search", type="primary"):
     if not polygon_geojson:
         st.error("Please provide an AOI (bounding box or valid file).")
         st.stop()
@@ -233,6 +237,7 @@ if st.button("🔍 Search and Download", type="primary"):
         st.warning("No satellites selected. Please choose at least one.")
         st.stop()
 
+    # Placeholders for logs and results
     log_container = st.empty()
     log_lines = []
 
@@ -240,7 +245,7 @@ if st.button("🔍 Search and Download", type="primary"):
         log_lines.append(msg)
         log_container.code("\n".join(log_lines[-30:]), language="bash")
 
-    with st.status("Processing...", expanded=True) as status:
+    with st.status("Searching...", expanded=True) as status:
         try:
             client = SASCloudsAPIClient()
             status.write("Uploading AOI...")
@@ -300,75 +305,165 @@ if st.button("🔍 Search and Download", type="primary"):
                 len(all_scenes)
             )
 
-            temp_dir = Path(tempfile.mkdtemp(prefix="sasclouds_"))
-            add_log(f"Created temporary directory: {temp_dir}")
-            features = []
-
+            # ----------------------------------------------------------
+            # Build table and map from all_scenes
+            # ----------------------------------------------------------
+            features_for_map = []
+            table_data = []
             for idx, scene in enumerate(all_scenes):
-                status.write(f"Processing scene {idx+1}/{len(all_scenes)}...")
-                add_log(f"Processing scene {idx+1}/{len(all_scenes)}...")
                 sat = scene["satelliteId"]
                 sensor = scene["sensorId"]
                 date_str = datetime.fromtimestamp(scene["acquisitionTime"]/1000).strftime("%Y-%m-%d")
                 cloud = scene["cloudPercent"]
                 prod_id = scene["productId"]
-                footprint = json.loads(scene["boundary"])
+                footprint = json.loads(scene["boundary"])  # GeoJSON polygon
                 quickview_url = scene["quickViewUri"].replace(
                     "http://quickview.sasclouds.com",
                     "https://quickview.obs.cn-north-10.myhuaweicloud.com"
                 )
-                img_name = f"{sat}_{sensor}_{date_str}_{prod_id}.jpg"
-                img_path = temp_dir / img_name
-
-                add_log(f"  Downloading {img_name} from {quickview_url[:80]}...")
-                if client.download_and_georeference(quickview_url, footprint, img_path):
-                    add_log(f"  ✅ Downloaded {img_name}")
-                else:
-                    add_log(f"  ❌ Failed {img_name}")
-
-                features.append({
-                    "type": "Feature",
+                # For table
+                table_data.append({
+                    "Name": f"{sat} {sensor}",
+                    "Date": date_str,
+                    "Cloud (%)": cloud,
+                    "Product ID": prod_id,
+                    "Quickview": f'<a href="{quickview_url}" target="_blank">🔗</a>'
+                })
+                # For map: store feature
+                features_for_map.append({
                     "geometry": footprint,
                     "properties": {
                         "satellite": sat,
                         "sensor": sensor,
                         "date": date_str,
-                        "cloud_cover": cloud,
+                        "cloud": cloud,
                         "product_id": prod_id,
-                        "image": img_name
+                        "quickview": quickview_url
                     }
                 })
-
-            geojson_path = temp_dir / "footprints.geojson"
-            with open(geojson_path, "w") as f:
-                json.dump({"type": "FeatureCollection", "features": features}, f, indent=2)
-            add_log(f"GeoJSON saved: {geojson_path}")
-
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-                for file in temp_dir.rglob("*"):
-                    zf.write(file, arcname=file.relative_to(temp_dir))
-            zip_buffer.seek(0)
-            add_log(f"ZIP created, size: {len(zip_buffer.getvalue())} bytes")
-
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            add_log("Temporary directory cleaned up")
-
-            status.update(label="✅ Search complete", state="complete")
-            st.success(f"Found {len(all_scenes)} scenes. Click below to download.")
-            st.download_button(
-                label="📥 Download ZIP",
-                data=zip_buffer.getvalue(),
-                file_name=f"sasclouds_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
-                mime="application/zip",
-                use_container_width=True
-            )
-
+            
+            # Display table
+            st.subheader("📋 Search Results")
+            df = pd.DataFrame(table_data)
+            # Convert Quickview column to HTML for clickable links
+            df_html = df.to_html(escape=False, index=False)
+            st.markdown(df_html, unsafe_allow_html=True)
+            
+            # Create Folium map
+            st.subheader("🗺️ Footprint Map")
+            # Determine map center from first polygon centroid
+            if features_for_map:
+                first_geom = features_for_map[0]["geometry"]
+                # Extract centroid quickly
+                if first_geom["type"] == "Polygon":
+                    coords = first_geom["coordinates"][0]
+                    lons = [c[0] for c in coords]
+                    lats = [c[1] for c in coords]
+                    center_lat = sum(lats) / len(lats)
+                    center_lon = sum(lons) / len(lons)
+                else:
+                    center_lat, center_lon = 9.0, -73.0  # fallback
+                m = folium.Map(location=[center_lat, center_lon], zoom_start=8)
+                # Add each footprint as GeoJSON with popup
+                for feat in features_for_map:
+                    popup_html = f"""
+                    <b>{feat['properties']['satellite']} {feat['properties']['sensor']}</b><br>
+                    Date: {feat['properties']['date']}<br>
+                    Cloud: {feat['properties']['cloud']}%<br>
+                    <img src="{feat['properties']['quickview']}" width="200"><br>
+                    <a href="{feat['properties']['quickview']}" target="_blank">Open full image</a>
+                    """
+                    folium.GeoJson(
+                        feat["geometry"],
+                        popup=folium.Popup(popup_html, max_width=300),
+                        style_function=lambda x: {"color": "red", "weight": 2, "fillOpacity": 0.1}
+                    ).add_to(m)
+                # Display map using streamlit-folium
+                st_folium(m, width=800, height=500)
+            else:
+                st.info("No footprints to display.")
+            
+            # Provide download button (after map)
+            st.subheader("💾 Download All Data")
+            # Store scenes and features in session state so download can reuse
+            st.session_state.scenes_for_download = all_scenes
+            st.session_state.features_for_download = features_for_map
+            st.session_state.temp_dir_ready = True
+            
         except Exception as e:
             error_details = traceback.format_exc()
             status.write(f"❌ Error: {e}")
             status.write(f"Details:\n{error_details}")
             add_log(f"❌ EXCEPTION: {e}")
             add_log(error_details)
-            status.update(label="❌ Failed", state="error")
+            status.update(label="❌ Search failed", state="error")
             st.error(f"Search failed: {e}\n\nCheck the log above for details.")
+
+# ----------------------------------------------------------------------
+# Download button (appears after search)
+# ----------------------------------------------------------------------
+if st.session_state.get("temp_dir_ready") and st.session_state.get("scenes_for_download"):
+    if st.button("📥 Download ZIP", type="primary"):
+        all_scenes = st.session_state.scenes_for_download
+        features_for_download = st.session_state.features_for_download
+        
+        with st.status("Creating download package...", expanded=True) as status:
+            try:
+                temp_dir = Path(tempfile.mkdtemp(prefix="sasclouds_"))
+                features = []
+                for idx, (scene, feat) in enumerate(zip(all_scenes, features_for_download)):
+                    status.write(f"Processing scene {idx+1}/{len(all_scenes)}...")
+                    sat = scene["satelliteId"]
+                    sensor = scene["sensorId"]
+                    date_str = datetime.fromtimestamp(scene["acquisitionTime"]/1000).strftime("%Y-%m-%d")
+                    cloud = scene["cloudPercent"]
+                    prod_id = scene["productId"]
+                    footprint = feat["geometry"]
+                    quickview_url = feat["properties"]["quickview"]
+                    img_name = f"{sat}_{sensor}_{date_str}_{prod_id}.jpg"
+                    img_path = temp_dir / img_name
+                    
+                    client = SASCloudsAPIClient()
+                    if client.download_and_georeference(quickview_url, footprint, img_path):
+                        status.write(f"  Downloaded {img_name}")
+                    else:
+                        status.write(f"  Failed {img_name}")
+                    
+                    features.append({
+                        "type": "Feature",
+                        "geometry": footprint,
+                        "properties": {
+                            "satellite": sat,
+                            "sensor": sensor,
+                            "date": date_str,
+                            "cloud_cover": cloud,
+                            "product_id": prod_id,
+                            "image": img_name
+                        }
+                    })
+                
+                geojson_path = temp_dir / "footprints.geojson"
+                with open(geojson_path, "w") as f:
+                    json.dump({"type": "FeatureCollection", "features": features}, f, indent=2)
+                
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for file in temp_dir.rglob("*"):
+                        zf.write(file, arcname=file.relative_to(temp_dir))
+                zip_buffer.seek(0)
+                
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                status.update(label="✅ Package ready", state="complete")
+                st.download_button(
+                    label="📥 Download ZIP",
+                    data=zip_buffer.getvalue(),
+                    file_name=f"sasclouds_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                    mime="application/zip",
+                    use_container_width=True
+                )
+                # Clear session state to avoid re-downloading the same data
+                st.session_state.temp_dir_ready = False
+                st.session_state.scenes_for_download = None
+                st.session_state.features_for_download = None
+            except Exception as e:
+                st.error(f"Failed to create ZIP: {e}")
