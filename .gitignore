@@ -1,0 +1,18 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+env/
+.venv
+
+# Secrets
+.streamlit/secrets.toml
+
+# Temporary output (zipped files are deleted anyway)
+*.zip
+temp_scrape_*/
+
+# Admin stats (optional, but keep)
+admin_stats.json
