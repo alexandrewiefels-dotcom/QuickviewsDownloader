@@ -296,32 +296,40 @@ class SASCloudsAPIClient:
 
     def upload_aoi(self, polygon_geojson: Dict) -> str:
         logger.info("Uploading AOI...")
+        tmp_dir = None
+        files = None
         try:
-            with tempfile.TemporaryDirectory() as tmp:
-                tmp_path = Path(tmp)
-                shp_path = self._create_shapefile(polygon_geojson, tmp_path)
-                files = {
-                    "file": ("aoi.shp", open(shp_path, "rb"), "application/octet-stream"),
-                    "file_shx": ("aoi.shx", open(shp_path.with_suffix(".shx"), "rb"), "application/octet-stream"),
-                    "file_dbf": ("aoi.dbf", open(shp_path.with_suffix(".dbf"), "rb"), "application/octet-stream"),
-                }
-                logger.debug(f"Uploading files: {list(files.keys())}")
-                resp = requests.post(self.upload_url, files=files, timeout=30)
-                logger.debug(f"Upload response status: {resp.status_code}")
-                resp.raise_for_status()
-                data = resp.json()
-                logger.debug(f"Upload response JSON: {data}")
-                if data["code"] != 0:
-                    error_msg = data.get("message", "Unknown error")
-                    if "out-of-range" in error_msg.lower():
-                        raise Exception(f"AOI out of range: The polygon may be outside the satellite coverage area. Try a smaller AOI or a region known to have data (e.g., within ±80° latitude). Details: {error_msg}")
-                    raise Exception(f"Upload failed: {error_msg} (code {data['code']})")
-                upload_id = data["data"]["uploadId"]
-                logger.info(f"AOI uploaded successfully, ID: {upload_id}")
-                return upload_id
-        except Exception as e:
-            logger.error(f"AOI upload failed: {e}", exc_info=True)
-            raise
+            tmp_dir = tempfile.TemporaryDirectory()
+            tmp_path = Path(tmp_dir.name)
+            shp_path = self._create_shapefile(polygon_geojson, tmp_path)
+            # Open files and keep handles for later closing
+            files = {
+                "file": ("aoi.shp", open(shp_path, "rb"), "application/octet-stream"),
+                "file_shx": ("aoi.shx", open(shp_path.with_suffix(".shx"), "rb"), "application/octet-stream"),
+                "file_dbf": ("aoi.dbf", open(shp_path.with_suffix(".dbf"), "rb"), "application/octet-stream"),
+            }
+            logger.debug(f"Uploading files: {list(files.keys())}")
+            resp = requests.post(self.upload_url, files=files, timeout=30)
+            logger.debug(f"Upload response status: {resp.status_code}")
+            resp.raise_for_status()
+            data = resp.json()
+            logger.debug(f"Upload response JSON: {data}")
+            if data["code"] != 0:
+                error_msg = data.get("message", "Unknown error")
+                if "out-of-range" in error_msg.lower():
+                    raise Exception(f"AOI out of range: The polygon may be outside the satellite coverage area. Try a smaller AOI or a region known to have data (e.g., within ±80° latitude). Details: {error_msg}")
+                raise Exception(f"Upload failed: {error_msg} (code {data['code']})")
+            upload_id = data["data"]["uploadId"]
+            logger.info(f"AOI uploaded successfully, ID: {upload_id}")
+            return upload_id
+        finally:
+            # Close all opened file handles
+            if files:
+                for key, (_, fp, _) in files.items():
+                    fp.close()
+            # Clean up temporary directory
+            if tmp_dir:
+                tmp_dir.cleanup()
 
     def search_scenes(self, upload_id: str, start_ms: int, end_ms: int,
                       cloud_max: int, satellites: List[Dict],
