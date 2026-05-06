@@ -1,3 +1,4 @@
+# File: main.py
 import streamlit as st
 import json
 import tempfile
@@ -9,6 +10,7 @@ import traceback
 from pathlib import Path
 from datetime import datetime
 
+# Correct import – sasclouds_api_scraper has no self-import
 from sasclouds_api_scraper import SASCloudsAPIClient, log_search, log_aoi_upload
 
 st.set_page_config(page_title="SASClouds API Scraper", layout="wide")
@@ -42,7 +44,7 @@ if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
 # ----------------------------------------------------------------------
-# Satellite and sensor definitions (same as before – keep it correct)
+# Satellite and sensor definitions (CORRECTED – all dictionaries)
 # ----------------------------------------------------------------------
 SATELLITE_GROUPS = {
     "Optical": {
@@ -204,7 +206,7 @@ for group_name, categories in SATELLITE_GROUPS.items():
                         break
 
 # ----------------------------------------------------------------------
-# Search and download with detailed error reporting
+# Search and download with detailed logging
 # ----------------------------------------------------------------------
 if st.button("🔍 Search and Download", type="primary"):
     if not polygon_geojson:
@@ -215,45 +217,62 @@ if st.button("🔍 Search and Download", type="primary"):
         st.warning("No satellites selected. Please choose at least one.")
         st.stop()
 
+    log_container = st.empty()
+    log_lines = []
+
+    def add_log(msg):
+        log_lines.append(msg)
+        log_container.code("\n".join(log_lines[-30:]), language="bash")
+
     with st.status("Processing...", expanded=True) as status:
         try:
             client = SASCloudsAPIClient()
             status.write("Uploading AOI...")
+            add_log("Starting AOI upload...")
             upload_id = client.upload_aoi(polygon_geojson)
             status.write(f"AOI uploaded, ID: {upload_id}")
+            add_log(f"AOI upload successful, ID: {upload_id}")
 
+            add_log("Logging AOI upload...")
             log_aoi_upload(st.session_state.session_id, aoi_filename, polygon_geojson)
 
             start_ms = date_to_ms(start_date)
             end_ms = date_to_ms(end_date)
+            add_log(f"Date range: {start_date} to {end_date} (ms: {start_ms} - {end_ms})")
+            add_log(f"Cloud cover max: {max_cloud}%")
+            add_log(f"Selected satellites: {json.dumps(selected_satellites, indent=2)}")
 
             all_scenes = []
             page = 1
             page_size = 50
             while True:
                 status.write(f"Fetching page {page}...")
+                add_log(f"Fetching page {page}...")
                 result = client.search_scenes(upload_id, start_ms, end_ms, max_cloud,
                                               selected_satellites, page, page_size)
-                # Check if result has error
                 if result.get("code") != 0:
                     error_msg = result.get("message", "Unknown API error")
-                    status.write(f"API error: {error_msg}")
+                    add_log(f"API error: {error_msg}")
                     raise Exception(f"API returned error: {error_msg}")
                 scenes = result.get("data", [])
+                add_log(f"Page {page} returned {len(scenes)} scenes")
                 if not scenes:
                     break
                 all_scenes.extend(scenes)
                 total = result.get("pageInfo", {}).get("total", 0)
+                add_log(f"Total scenes so far: {len(all_scenes)} / {total}")
                 if len(all_scenes) >= total:
                     break
                 page += 1
 
             status.write(f"Found {len(all_scenes)} scenes.")
+            add_log(f"Total scenes found: {len(all_scenes)}")
 
             if not all_scenes:
                 st.warning("No scenes found. Adjust your filters.")
                 st.stop()
 
+            add_log("Logging search...")
             log_search(
                 st.session_state.session_id,
                 polygon_geojson,
@@ -266,10 +285,12 @@ if st.button("🔍 Search and Download", type="primary"):
             )
 
             temp_dir = Path(tempfile.mkdtemp(prefix="sasclouds_"))
+            add_log(f"Created temporary directory: {temp_dir}")
             features = []
 
             for idx, scene in enumerate(all_scenes):
                 status.write(f"Processing scene {idx+1}/{len(all_scenes)}...")
+                add_log(f"Processing scene {idx+1}/{len(all_scenes)}...")
                 sat = scene["satelliteId"]
                 sensor = scene["sensorId"]
                 date_str = datetime.fromtimestamp(scene["acquisitionTime"]/1000).strftime("%Y-%m-%d")
@@ -283,10 +304,11 @@ if st.button("🔍 Search and Download", type="primary"):
                 img_name = f"{sat}_{sensor}_{date_str}_{prod_id}.jpg"
                 img_path = temp_dir / img_name
 
+                add_log(f"  Downloading {img_name} from {quickview_url[:80]}...")
                 if client.download_and_georeference(quickview_url, footprint, img_path):
-                    status.write(f"  Downloaded {img_name}")
+                    add_log(f"  ✅ Downloaded {img_name}")
                 else:
-                    status.write(f"  Failed {img_name}")
+                    add_log(f"  ❌ Failed {img_name}")
 
                 features.append({
                     "type": "Feature",
@@ -304,14 +326,17 @@ if st.button("🔍 Search and Download", type="primary"):
             geojson_path = temp_dir / "footprints.geojson"
             with open(geojson_path, "w") as f:
                 json.dump({"type": "FeatureCollection", "features": features}, f, indent=2)
+            add_log(f"GeoJSON saved: {geojson_path}")
 
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
                 for file in temp_dir.rglob("*"):
                     zf.write(file, arcname=file.relative_to(temp_dir))
             zip_buffer.seek(0)
+            add_log(f"ZIP created, size: {len(zip_buffer.getvalue())} bytes")
 
             shutil.rmtree(temp_dir, ignore_errors=True)
+            add_log("Temporary directory cleaned up")
 
             status.update(label="✅ Search complete", state="complete")
             st.success(f"Found {len(all_scenes)} scenes. Click below to download.")
@@ -324,9 +349,10 @@ if st.button("🔍 Search and Download", type="primary"):
             )
 
         except Exception as e:
-            # Capture full traceback
             error_details = traceback.format_exc()
             status.write(f"❌ Error: {e}")
             status.write(f"Details:\n{error_details}")
+            add_log(f"❌ EXCEPTION: {e}")
+            add_log(error_details)
             status.update(label="❌ Failed", state="error")
-            st.error(f"Search failed: {e}\n\nCheck the status log for details.")
+            st.error(f"Search failed: {e}\n\nCheck the log above for details.")

@@ -1,0 +1,377 @@
+2026-05-06 16:05:42,968 - INFO - test_sasclouds_scraper - === Test: detect_api_version success ===
+2026-05-06 16:05:42,970 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:42,974 - INFO - sasclouds_api_scraper - Detected API version: v5
+2026-05-06 16:05:42,974 - INFO - test_sasclouds_scraper - Detected version: v5
+2026-05-06 16:05:42,986 - INFO - test_sasclouds_scraper - === Test: detect_api_version fallback ===
+2026-05-06 16:05:42,999 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:43,001 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:05:43,001 - INFO - test_sasclouds_scraper - Fallback version: v5
+2026-05-06 16:05:43,009 - INFO - test_sasclouds_scraper - === Test: detect_api_version exception ===
+2026-05-06 16:05:43,009 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:43,010 - ERROR - sasclouds_api_scraper - Version detection failed: Network error
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 43, in detect_api_version
+    resp = requests.get(f"{base_url}/english/normal/", timeout=10)
+  File "C:\ProgramData\miniforge3\Lib\unittest\mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\unittest\mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\unittest\mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.RequestException: Network error
+2026-05-06 16:05:43,061 - INFO - test_sasclouds_scraper - Exception caught, returning fallback v5
+2026-05-06 16:05:43,099 - INFO - test_sasclouds_scraper - === Test: log_search ===
+2026-05-06 16:05:43,130 - INFO - test_sasclouds_scraper - Log written: {"timestamp": "2026-05-06T16:05:43.104783", "type": "search", "session_id": "test_session", "aoi": {"type": "Polygon"}, "filters": {"cloud": 20}, "num_scenes": 5}
+...
+2026-05-06 16:05:43,143 - INFO - test_sasclouds_scraper - === Test: log_aoi_upload ===
+2026-05-06 16:05:43,172 - INFO - test_sasclouds_scraper - Log written: {"timestamp": "2026-05-06T16:05:43.154897", "type": "aoi_upload", "session_id": "test_session", "filename": "polygon.geojson", "geometry": {"type": "Polygon"}}
+...
+2026-05-06 16:05:43,190 - INFO - test_sasclouds_scraper - === Test: SASCloudsAPIClient init ===
+2026-05-06 16:05:43,195 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v99
+2026-05-06 16:05:43,198 - INFO - test_sasclouds_scraper - API base set to: https://www.sasclouds.com/api/normal/v99
+2026-05-06 16:05:43,319 - INFO - test_sasclouds_scraper - === Test: upload_aoi success ===
+2026-05-06 16:05:43,324 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:43,331 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:05:45,563 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:05:45,564 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:05:45,567 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:05:45,567 - INFO - sasclouds_api_scraper - Uploading AOI...
+2026-05-06 16:05:45,568 - DEBUG - sasclouds_api_scraper - Creating shapefile from GeoJSON: {'type': 'Polygon', 'coordinates': [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]}
+2026-05-06 16:05:45,573 - DEBUG - sasclouds_api_scraper - Shapefile created at \fake\temp\dir\aoi.shp
+2026-05-06 16:05:46,046 - INFO - test_sasclouds_scraper - === Test: upload_aoi API error ===
+2026-05-06 16:05:46,047 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:46,050 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:05:46,742 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:05:46,743 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:05:46,745 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:05:46,746 - INFO - sasclouds_api_scraper - Uploading AOI...
+2026-05-06 16:05:46,747 - DEBUG - sasclouds_api_scraper - Creating shapefile from GeoJSON: {'type': 'Polygon', 'coordinates': [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]}
+2026-05-06 16:05:46,750 - DEBUG - sasclouds_api_scraper - Shapefile created at \fake\temp\dir\aoi.shp
+2026-05-06 16:05:46,784 - INFO - test_sasclouds_scraper - === Test: upload_aoi HTTP error ===
+2026-05-06 16:05:46,784 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:46,787 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:05:48,044 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:05:48,045 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:05:48,047 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:05:48,047 - INFO - sasclouds_api_scraper - Uploading AOI...
+2026-05-06 16:05:48,048 - DEBUG - sasclouds_api_scraper - Creating shapefile from GeoJSON: {'type': 'Polygon', 'coordinates': [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]}
+2026-05-06 16:05:48,051 - DEBUG - sasclouds_api_scraper - Shapefile created at \fake\temp\dir\aoi.shp
+2026-05-06 16:05:48,083 - INFO - test_sasclouds_scraper - === Test: search_scenes success ===
+2026-05-06 16:05:48,084 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:48,086 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:05:49,709 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:05:49,711 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:05:49,713 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:05:49,713 - INFO - sasclouds_api_scraper - Searching scenes: page 1, size 10
+2026-05-06 16:05:49,713 - DEBUG - sasclouds_api_scraper - Search payload: {
+  "acquisitionTime": [
+    {
+      "Start": 1000,
+      "End": 2000
+    }
+  ],
+  "cloudPercentMin": 0,
+  "cloudPercentMax": 20,
+  "satellites": [],
+  "shpUploadId": "upload_id",
+  "pageNum": 1,
+  "pageSize": 10
+}
+2026-05-06 16:05:49,714 - DEBUG - sasclouds_api_scraper - Search response status: 200
+2026-05-06 16:05:49,715 - DEBUG - sasclouds_api_scraper - Search response (truncated): {
+  "code": 0,
+  "data": [
+    {
+      "satelliteId": "GF5",
+      "sensorId": "AHSI"
+    }
+  ],
+  "pageInfo": {
+    "total": 1
+  }
+}...
+2026-05-06 16:05:49,715 - INFO - test_sasclouds_scraper - Search returned expected data
+2026-05-06 16:05:49,718 - INFO - test_sasclouds_scraper - === Test: search_scenes API error ===
+2026-05-06 16:05:49,719 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:49,721 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:05:51,766 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:05:51,769 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:05:51,772 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:05:51,774 - INFO - sasclouds_api_scraper - Searching scenes: page 1, size 10
+2026-05-06 16:05:51,775 - DEBUG - sasclouds_api_scraper - Search payload: {
+  "acquisitionTime": [
+    {
+      "Start": 1000,
+      "End": 2000
+    }
+  ],
+  "cloudPercentMin": 0,
+  "cloudPercentMax": 20,
+  "satellites": [],
+  "shpUploadId": "upload_id",
+  "pageNum": 1,
+  "pageSize": 10
+}
+2026-05-06 16:05:51,776 - DEBUG - sasclouds_api_scraper - Search response status: 200
+2026-05-06 16:05:51,778 - DEBUG - sasclouds_api_scraper - Search response (truncated): {
+  "code": 2,
+  "message": "Invalid parameters"
+}...
+2026-05-06 16:05:51,779 - ERROR - sasclouds_api_scraper - Search API returned error: {'code': 2, 'message': 'Invalid parameters'}
+2026-05-06 16:05:51,779 - ERROR - sasclouds_api_scraper - Search failed: Search API error: Invalid parameters
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 170, in search_scenes
+    raise Exception(f"Search API error: {data.get('message')}")
+Exception: Search API error: Invalid parameters
+2026-05-06 16:05:51,781 - INFO - test_sasclouds_scraper - API error handled
+2026-05-06 16:05:51,785 - INFO - test_sasclouds_scraper - === Test: validate_scene valid ===
+2026-05-06 16:05:51,786 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:51,789 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:05:52,628 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:05:52,629 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:05:52,632 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:05:52,632 - INFO - test_sasclouds_scraper - Valid scene passed
+2026-05-06 16:05:52,635 - INFO - test_sasclouds_scraper - === Test: validate_scene invalid (missing field) ===
+2026-05-06 16:05:52,636 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:52,638 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:05:53,935 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:05:53,939 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:05:53,946 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:05:53,947 - ERROR - sasclouds_api_scraper - API schema changed! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary']
+2026-05-06 16:05:53,948 - ERROR - sasclouds_api_scraper - Scene sample: {
+  "satelliteId": "GF5"
+}
+2026-05-06 16:05:53,949 - INFO - test_sasclouds_scraper - Invalid scene rejected
+2026-05-06 16:05:53,967 - INFO - test_sasclouds_scraper - === Test: download_and_georeference success ===
+2026-05-06 16:05:53,970 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:53,973 - ERROR - sasclouds_api_scraper - Version detection failed: expected string or bytes-like object, got 'MagicMock'
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 45, in detect_api_version
+    match = re.search(r'/api/normal/(v\d+)/', resp.text)
+  File "C:\ProgramData\miniforge3\Lib\re\__init__.py", line 177, in search
+    return _compile(pattern, flags).search(string)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+TypeError: expected string or bytes-like object, got 'MagicMock'
+2026-05-06 16:05:54,024 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:05:54,024 - DEBUG - sasclouds_api_scraper - Downloading image from http://example.com/image.jpg
+2026-05-06 16:05:54,029 - DEBUG - sasclouds_api_scraper - Georeferenced test.jpg
+2026-05-06 16:05:54,030 - INFO - test_sasclouds_scraper - Download and georeferencing succeeded
+2026-05-06 16:05:54,037 - INFO - test_sasclouds_scraper - === Test: download_and_georeference HTTP error ===
+2026-05-06 16:05:54,039 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:05:54,040 - ERROR - sasclouds_api_scraper - Version detection failed: expected string or bytes-like object, got 'MagicMock'
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 45, in detect_api_version
+    match = re.search(r'/api/normal/(v\d+)/', resp.text)
+  File "C:\ProgramData\miniforge3\Lib\re\__init__.py", line 177, in search
+    return _compile(pattern, flags).search(string)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+TypeError: expected string or bytes-like object, got 'MagicMock'
+2026-05-06 16:05:54,042 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:05:54,042 - DEBUG - sasclouds_api_scraper - Downloading image from http://example.com/missing.jpg
+2026-05-06 16:05:54,043 - WARNING - sasclouds_api_scraper - Failed to download http://example.com/missing.jpg, HTTP 404
+2026-05-06 16:05:54,043 - INFO - test_sasclouds_scraper - HTTP error handled, returned False
+2026-05-06 16:07:54,637 - INFO - test_sasclouds_scraper - === Test: detect_api_version success ===
+2026-05-06 16:07:54,639 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:07:54,641 - INFO - sasclouds_api_scraper - Detected API version: v5
+2026-05-06 16:07:54,641 - INFO - test_sasclouds_scraper - Detected version: v5
+2026-05-06 16:07:54,646 - INFO - test_sasclouds_scraper - === Test: detect_api_version fallback ===
+2026-05-06 16:07:54,647 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:07:54,649 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:07:54,650 - INFO - test_sasclouds_scraper - Fallback version: v5
+2026-05-06 16:07:54,657 - INFO - test_sasclouds_scraper - === Test: detect_api_version exception ===
+2026-05-06 16:07:54,657 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:07:54,658 - ERROR - sasclouds_api_scraper - Version detection failed: Network error
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 43, in detect_api_version
+    resp = requests.get(f"{base_url}/english/normal/", timeout=10)
+  File "C:\ProgramData\miniforge3\Lib\unittest\mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\unittest\mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\unittest\mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.RequestException: Network error
+2026-05-06 16:07:54,662 - INFO - test_sasclouds_scraper - Exception caught, returning fallback v5
+2026-05-06 16:07:54,688 - INFO - test_sasclouds_scraper - === Test: log_search ===
+2026-05-06 16:07:54,711 - INFO - test_sasclouds_scraper - Log written: {"timestamp": "2026-05-06T16:07:54.690676", "type": "search", "session_id": "test_session", "aoi": {"type": "Polygon"}, "filters": {"cloud": 20}, "num_scenes": 5}
+...
+2026-05-06 16:07:54,720 - INFO - test_sasclouds_scraper - === Test: log_aoi_upload ===
+2026-05-06 16:07:54,741 - INFO - test_sasclouds_scraper - Log written: {"timestamp": "2026-05-06T16:07:54.721276", "type": "aoi_upload", "session_id": "test_session", "filename": "polygon.geojson", "geometry": {"type": "Polygon"}}
+...
+2026-05-06 16:07:54,744 - INFO - test_sasclouds_scraper - === Test: SASCloudsAPIClient init ===
+2026-05-06 16:07:54,745 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v99
+2026-05-06 16:07:54,746 - INFO - test_sasclouds_scraper - API base set to: https://www.sasclouds.com/api/normal/v99
+2026-05-06 16:07:54,754 - INFO - test_sasclouds_scraper - === Test: upload_aoi success ===
+2026-05-06 16:07:54,758 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:07:54,767 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:07:55,442 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:07:55,444 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:07:55,446 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:07:55,447 - INFO - sasclouds_api_scraper - Uploading AOI...
+2026-05-06 16:07:55,448 - DEBUG - sasclouds_api_scraper - Creating shapefile from GeoJSON: {'type': 'Polygon', 'coordinates': [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]}
+2026-05-06 16:07:55,452 - DEBUG - sasclouds_api_scraper - Shapefile created at C:\Users\Raquel\AppData\Local\Temp\tmpbd9rgauz\aoi.shp
+2026-05-06 16:07:55,453 - DEBUG - sasclouds_api_scraper - Uploading files: ['file', 'file_shx', 'file_dbf']
+2026-05-06 16:07:55,454 - DEBUG - sasclouds_api_scraper - Upload response status: 200
+2026-05-06 16:07:55,455 - DEBUG - sasclouds_api_scraper - Upload response JSON: {'code': 0, 'data': {'uploadId': 'test_upload_123'}}
+2026-05-06 16:07:55,456 - INFO - sasclouds_api_scraper - AOI uploaded successfully, ID: test_upload_123
+2026-05-06 16:07:55,456 - INFO - test_sasclouds_scraper - Upload ID returned: test_upload_123
+2026-05-06 16:07:55,461 - INFO - test_sasclouds_scraper - === Test: upload_aoi API error ===
+2026-05-06 16:07:55,465 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:07:55,468 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:07:56,782 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:07:56,783 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:07:56,785 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:07:56,786 - INFO - sasclouds_api_scraper - Uploading AOI...
+2026-05-06 16:07:56,787 - DEBUG - sasclouds_api_scraper - Creating shapefile from GeoJSON: {'type': 'Polygon', 'coordinates': [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]}
+2026-05-06 16:07:56,789 - DEBUG - sasclouds_api_scraper - Shapefile created at C:\Users\Raquel\AppData\Local\Temp\tmpjb3_nhxv\aoi.shp
+2026-05-06 16:07:56,790 - DEBUG - sasclouds_api_scraper - Uploading files: ['file', 'file_shx', 'file_dbf']
+2026-05-06 16:07:56,790 - DEBUG - sasclouds_api_scraper - Upload response status: 200
+2026-05-06 16:07:56,791 - DEBUG - sasclouds_api_scraper - Upload response JSON: {'code': 1, 'message': 'Invalid polygon'}
+2026-05-06 16:07:56,791 - ERROR - sasclouds_api_scraper - AOI upload failed: Upload failed with code 1: Invalid polygon
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 139, in upload_aoi
+    raise Exception(f"Upload failed with code {data['code']}: {data.get('message')}")
+Exception: Upload failed with code 1: Invalid polygon
+2026-05-06 16:07:56,793 - INFO - test_sasclouds_scraper - API error raised as expected
+2026-05-06 16:07:56,797 - INFO - test_sasclouds_scraper - === Test: upload_aoi HTTP error ===
+2026-05-06 16:07:56,800 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:07:56,802 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:07:58,891 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:07:58,892 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:07:58,894 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:07:58,894 - INFO - sasclouds_api_scraper - Uploading AOI...
+2026-05-06 16:07:58,895 - DEBUG - sasclouds_api_scraper - Creating shapefile from GeoJSON: {'type': 'Polygon', 'coordinates': [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]}
+2026-05-06 16:07:58,897 - DEBUG - sasclouds_api_scraper - Shapefile created at C:\Users\Raquel\AppData\Local\Temp\tmpk5t054h9\aoi.shp
+2026-05-06 16:07:58,897 - DEBUG - sasclouds_api_scraper - Uploading files: ['file', 'file_shx', 'file_dbf']
+2026-05-06 16:07:58,897 - ERROR - sasclouds_api_scraper - AOI upload failed: Connection refused
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 133, in upload_aoi
+    resp = requests.post(self.upload_url, files=files, timeout=30)
+  File "C:\ProgramData\miniforge3\Lib\unittest\mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\unittest\mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\unittest\mock.py", line 1228, in _execute_mock_call
+    raise effect
+requests.exceptions.RequestException: Connection refused
+2026-05-06 16:07:58,899 - INFO - test_sasclouds_scraper - HTTP error caught
+2026-05-06 16:07:58,901 - INFO - test_sasclouds_scraper - === Test: search_scenes success ===
+2026-05-06 16:07:58,903 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:07:58,904 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:07:59,790 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:07:59,791 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:07:59,793 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:07:59,793 - INFO - sasclouds_api_scraper - Searching scenes: page 1, size 10
+2026-05-06 16:07:59,794 - DEBUG - sasclouds_api_scraper - Search payload: {
+  "acquisitionTime": [
+    {
+      "Start": 1000,
+      "End": 2000
+    }
+  ],
+  "cloudPercentMin": 0,
+  "cloudPercentMax": 20,
+  "satellites": [],
+  "shpUploadId": "upload_id",
+  "pageNum": 1,
+  "pageSize": 10
+}
+2026-05-06 16:07:59,794 - DEBUG - sasclouds_api_scraper - Search response status: 200
+2026-05-06 16:07:59,795 - DEBUG - sasclouds_api_scraper - Search response (truncated): {
+  "code": 0,
+  "data": [
+    {
+      "satelliteId": "GF5",
+      "sensorId": "AHSI"
+    }
+  ],
+  "pageInfo": {
+    "total": 1
+  }
+}...
+2026-05-06 16:07:59,795 - INFO - test_sasclouds_scraper - Search returned expected data
+2026-05-06 16:07:59,797 - INFO - test_sasclouds_scraper - === Test: search_scenes API error ===
+2026-05-06 16:07:59,798 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:07:59,800 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:08:00,586 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:08:00,587 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:08:00,589 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:08:00,589 - INFO - sasclouds_api_scraper - Searching scenes: page 1, size 10
+2026-05-06 16:08:00,589 - DEBUG - sasclouds_api_scraper - Search payload: {
+  "acquisitionTime": [
+    {
+      "Start": 1000,
+      "End": 2000
+    }
+  ],
+  "cloudPercentMin": 0,
+  "cloudPercentMax": 20,
+  "satellites": [],
+  "shpUploadId": "upload_id",
+  "pageNum": 1,
+  "pageSize": 10
+}
+2026-05-06 16:08:00,590 - DEBUG - sasclouds_api_scraper - Search response status: 200
+2026-05-06 16:08:00,591 - DEBUG - sasclouds_api_scraper - Search response (truncated): {
+  "code": 2,
+  "message": "Invalid parameters"
+}...
+2026-05-06 16:08:00,591 - ERROR - sasclouds_api_scraper - Search API returned error: {'code': 2, 'message': 'Invalid parameters'}
+2026-05-06 16:08:00,591 - ERROR - sasclouds_api_scraper - Search failed: Search API error: Invalid parameters
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 170, in search_scenes
+    raise Exception(f"Search API error: {data.get('message')}")
+Exception: Search API error: Invalid parameters
+2026-05-06 16:08:00,592 - INFO - test_sasclouds_scraper - API error handled
+2026-05-06 16:08:00,595 - INFO - test_sasclouds_scraper - === Test: validate_scene valid ===
+2026-05-06 16:08:00,595 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:08:00,597 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:08:01,540 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:08:01,541 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:08:01,542 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:08:01,542 - INFO - test_sasclouds_scraper - Valid scene passed
+2026-05-06 16:08:01,544 - INFO - test_sasclouds_scraper - === Test: validate_scene invalid (missing field) ===
+2026-05-06 16:08:01,544 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:08:01,545 - DEBUG - urllib3.connectionpool - Starting new HTTPS connection (1): www.sasclouds.com:443
+2026-05-06 16:08:02,975 - DEBUG - urllib3.connectionpool - https://www.sasclouds.com:443 "GET /english/normal/ HTTP/1.1" 200 None
+2026-05-06 16:08:02,980 - WARNING - sasclouds_api_scraper - Could not detect API version, using fallback 'v5'
+2026-05-06 16:08:02,989 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:08:02,990 - ERROR - sasclouds_api_scraper - API schema changed! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary']
+2026-05-06 16:08:02,992 - ERROR - sasclouds_api_scraper - Scene sample: {
+  "satelliteId": "GF5"
+}
+2026-05-06 16:08:02,994 - INFO - test_sasclouds_scraper - Invalid scene rejected
+2026-05-06 16:08:03,021 - INFO - test_sasclouds_scraper - === Test: download_and_georeference success ===
+2026-05-06 16:08:03,026 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:08:03,030 - ERROR - sasclouds_api_scraper - Version detection failed: expected string or bytes-like object, got 'MagicMock'
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 45, in detect_api_version
+    match = re.search(r'/api/normal/(v\d+)/', resp.text)
+  File "C:\ProgramData\miniforge3\Lib\re\__init__.py", line 177, in search
+    return _compile(pattern, flags).search(string)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+TypeError: expected string or bytes-like object, got 'MagicMock'
+2026-05-06 16:08:03,037 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:08:03,039 - DEBUG - sasclouds_api_scraper - Downloading image from http://example.com/image.jpg
+2026-05-06 16:08:03,067 - DEBUG - sasclouds_api_scraper - Georeferenced test.jpg
+2026-05-06 16:08:03,071 - INFO - test_sasclouds_scraper - Download and georeferencing succeeded
+2026-05-06 16:08:03,093 - INFO - test_sasclouds_scraper - === Test: download_and_georeference HTTP error ===
+2026-05-06 16:08:03,098 - INFO - sasclouds_api_scraper - Detecting API version from https://www.sasclouds.com/english/normal/
+2026-05-06 16:08:03,112 - ERROR - sasclouds_api_scraper - Version detection failed: expected string or bytes-like object, got 'MagicMock'
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 45, in detect_api_version
+    match = re.search(r'/api/normal/(v\d+)/', resp.text)
+  File "C:\ProgramData\miniforge3\Lib\re\__init__.py", line 177, in search
+    return _compile(pattern, flags).search(string)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+TypeError: expected string or bytes-like object, got 'MagicMock'
+2026-05-06 16:08:03,116 - INFO - sasclouds_api_scraper - Using API base: https://www.sasclouds.com/api/normal/v5
+2026-05-06 16:08:03,117 - DEBUG - sasclouds_api_scraper - Downloading image from http://example.com/missing.jpg
+2026-05-06 16:08:03,118 - WARNING - sasclouds_api_scraper - Failed to download http://example.com/missing.jpg, HTTP 404
+2026-05-06 16:08:03,118 - INFO - test_sasclouds_scraper - HTTP error handled, returned False
