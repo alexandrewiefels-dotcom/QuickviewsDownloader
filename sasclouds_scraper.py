@@ -1,20 +1,38 @@
 """
-SASClouds Scraper – Cloud‑compatible with verbose logging
+Fully automated SASClouds scraper – no manual interaction.
+Accepts AOI bounding box, date range, cloud max via command line arguments.
 """
+
 import re
 import json
 import time
 import sys
-import traceback
 from pathlib import Path
 from datetime import datetime
 import requests
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
-print("🚀 Scraper script started", flush=True)
+# Selectors (same as your original)
+ROW_SELECTOR = "tr.ant-table-row-level-0"
+THUMBNAIL_SELECTOR = ".query-standard-result__quick"
+MODAL_CONTAINER = ".ant-modal"
+MODAL_IMG = ".quickImg"
+MODAL_CLOSE = ".ant-modal-close, .ant-modal-close-x"
+NEXT_PAGE_BUTTON = ".ant-pagination-next:not(.ant-pagination-disabled)"
 
 # ----------------------------------------------------------------------
+# Helper functions (unchanged – copy from your original script)
+# ----------------------------------------------------------------------
+def create_output_folder() -> Path:
+    base_dir = Path("./sasclouds_scrapes")
+    base_dir.mkdir(exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = base_dir / timestamp
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"📁 Output folder: {output_dir}")
+    return output_dir
+
 def extract_image_name_from_thumb(url: str) -> str:
     filename = url.split('/')[-1]
     if '_64.jpg' in filename:
@@ -31,17 +49,15 @@ def download_image(url: str, path: Path) -> bool:
         if resp.status_code == 200:
             path.write_bytes(resp.content)
             return True
-    except Exception as e:
-        print(f"      Download error: {e}")
-    return False
+    except Exception:
+        return False
 
 def create_rotated_world_file(img_path: Path, coords: dict):
     try:
         img = Image.open(img_path)
         width, height = img.size
         img.close()
-    except Exception as e:
-        print(f"      Cannot read image size: {e}")
+    except Exception:
         return
     tl = coords.get("Top left")
     tr = coords.get("Top right")
@@ -108,7 +124,7 @@ def parse_metadata(text: str) -> dict:
             metadata["product_id"] = lines[i+1].strip()
     return metadata
 
-def close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE):
+def close_modal_safe(page):
     try:
         close_btn = page.query_selector(MODAL_CLOSE)
         if close_btn and close_btn.is_visible():
@@ -119,20 +135,13 @@ def close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE):
         pass
 
 def scrape_page(page, page_num, all_features, output_dir):
-    ROW_SELECTOR = "tr.ant-table-row-level-0"
-    THUMBNAIL_SELECTOR = ".query-standard-result__quick"
-    MODAL_CONTAINER = ".ant-modal"
-    MODAL_IMG = ".quickImg"
-    MODAL_CLOSE = ".ant-modal-close, .ant-modal-close-x"
-    NEXT_PAGE_BUTTON = ".ant-pagination-next:not(.ant-pagination-disabled)"
-
     rows = page.query_selector_all(ROW_SELECTOR)
     print(f"\n📄 Page {page_num}: {len(rows)} rows", flush=True)
     for idx, row in enumerate(rows):
         print(f"   Processing row {idx+1}/{len(rows)}", flush=True)
         row.scroll_into_view_if_needed()
         time.sleep(0.3)
-        close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE)
+        close_modal_safe(page)
         time.sleep(0.3)
         thumb = row.query_selector(THUMBNAIL_SELECTOR)
         if not thumb:
@@ -159,7 +168,7 @@ def scrape_page(page, page_num, all_features, output_dir):
         polygon = polygon_from_coords(coords)
         if not polygon:
             print("      ❌ No polygon coordinates, skipping", flush=True)
-            close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE)
+            close_modal_safe(page)
             continue
         metadata = parse_metadata(modal_text)
         base_name = extract_image_name_from_thumb(thumb_url) if thumb_url else f"scene_{len(all_features)+1:04d}"
@@ -183,90 +192,224 @@ def scrape_page(page, page_num, all_features, output_dir):
         feature = {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [polygon]}, "properties": properties}
         all_features.append(feature)
         print(f"      ✅ Extracted {metadata.get('satellite', 'unknown')} - {metadata.get('date', 'unknown')}", flush=True)
-        close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE)
+        close_modal_safe(page)
         time.sleep(0.5)
     return len(rows)
 
 # ----------------------------------------------------------------------
-def main():
-    print("📁 Starting scraper main()", flush=True)
-    # Parse --output argument
-    output_dir = None
-    if len(sys.argv) > 2 and sys.argv[1] == "--output":
-        output_dir = Path(sys.argv[2])
-        print(f"📁 Output directory from argument: {output_dir}", flush=True)
-    else:
-        # fallback (should not happen)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = Path("./sasclouds_scrapes") / timestamp
-        output_dir.mkdir(parents=True, exist_ok=True)
-        print(f"📁 Output directory fallback: {output_dir}", flush=True)
-
-    CATALOG_URL = "https://www.sasclouds.com/english/normal/"
-    ROW_SELECTOR = "tr.ant-table-row-level-0"
-    NEXT_PAGE_BUTTON = ".ant-pagination-next:not(.ant-pagination-disabled)"
-
-    print(f"🌐 Navigating to {CATALOG_URL}", flush=True)
-
+# Automation functions for AOI, date, cloud, search
+# ----------------------------------------------------------------------
+def set_aoi_rectangle(page, bbox):
+    """
+    Draw a rectangle on the Leaflet map using JavaScript.
+    bbox = [west, south, east, north] (decimal degrees)
+    """
+    js = f"""
+    (function() {{
+        // Try to find the Leaflet map object (it may be stored globally)
+        let map = null;
+        if (window.map) map = window.map;
+        else if (window.leafletMap) map = window.leafletMap;
+        else {{
+            // Try to get the map from the DOM
+            const mapDiv = document.querySelector('.leaflet-container');
+            if (mapDiv && mapDiv._leaflet_id) {{
+                map = mapDiv.__map;
+            }}
+        }}
+        if (!map) return false;
+        // Remove existing rectangle if any
+        if (window._aoiRectangle) {{
+            map.removeLayer(window._aoiRectangle);
+        }}
+        const bounds = [[{bbox[1]}, {bbox[0]}], [{bbox[3]}, {bbox[2]}]];
+        window._aoiRectangle = L.rectangle(bounds, {{color: "#ff0000", weight: 2, fillOpacity: 0.2}}).addTo(map);
+        map.fitBounds(bounds);
+        return true;
+    }})();
+    """
     try:
-        with sync_playwright() as p:
-            print("✅ Playwright context created", flush=True)
-            # Launch Chromium in headless mode with required arguments for cloud
-            browser = p.chromium.launch(
-                headless=True,
-                args=['--no-sandbox', '--disable-dev-shm-usage']
-            )
-            print("✅ Browser launched", flush=True)
-            context = browser.new_context(viewport={"width": 1280, "height": 800})
-            page = context.new_page()
-            print("✅ Page created", flush=True)
-
-            print(f"🌐 Loading catalog page...", flush=True)
-            page.goto(CATALOG_URL, wait_until="networkidle")
-            print("✅ Catalog page loaded", flush=True)
-
-            # Give the user time to manually log in and search.
-            # Since we are headless, the user cannot interact. This is a fundamental problem.
-            # We'll wait for the presence of the result table (which appears only after search).
-            print("⏳ Waiting for results to appear (you must have performed the search manually)...", flush=True)
-            try:
-                page.wait_for_selector(ROW_SELECTOR, timeout=300000)  # 5 minutes timeout
-                print("✅ Results found! Proceeding to scrape...", flush=True)
-            except Exception as e:
-                print(f"❌ Timeout waiting for results: {e}", flush=True)
-                print("⚠️ No results found. Did you perform the search manually?", flush=True)
-                browser.close()
-                return
-
-            all_features = []
-            page_num = 1
-            while True:
-                rows = scrape_page(page, page_num, all_features, output_dir)
-                if rows == 0:
-                    print("No rows found on this page, stopping.", flush=True)
-                    break
-                next_btn = page.query_selector(NEXT_PAGE_BUTTON)
-                if not next_btn:
-                    print("No 'Next' button found, finished scraping.", flush=True)
-                    break
-                next_btn.click()
-                page.wait_for_timeout(3000)
-                try:
-                    page.wait_for_selector(ROW_SELECTOR, timeout=10000)
-                except:
-                    print("No rows after clicking 'Next', stopping.", flush=True)
-                    break
-                page_num += 1
-
-            geojson_path = output_dir / "footprints.geojson"
-            with open(geojson_path, "w", encoding="utf-8") as f:
-                json.dump({"type": "FeatureCollection", "features": all_features}, f, indent=2)
-            print(f"\n✅ Scraping finished. Total features: {len(all_features)}", flush=True)
-            browser.close()
+        # Wait a moment for the map to be fully initialised
+        time.sleep(2)
+        result = page.evaluate(js)
+        print(f"   AOI set: {'✅' if result else '⚠️ (map not found)'}", flush=True)
     except Exception as e:
-        print(f"❌ CRITICAL ERROR: {e}", flush=True)
-        traceback.print_exc()
-        sys.exit(1)
+        print(f"   Error setting AOI: {e}", flush=True)
+
+def set_date_range(page, start_date, end_date):
+    """Automatically fill the Ant Design RangePicker."""
+    try:
+        # Click the range picker to open
+        picker = page.query_selector(".ant-picker")
+        if picker:
+            picker.click()
+            time.sleep(0.5)
+            # Find start and end inputs in the dropdown
+            start_input = page.query_selector(".ant-picker-panel input:first-child")
+            if start_input:
+                start_input.fill(start_date)
+            end_input = page.query_selector(".ant-picker-panel input:last-child")
+            if end_input:
+                end_input.fill(end_date)
+            # Confirm by pressing Enter or clicking OK
+            page.keyboard.press("Enter")
+            time.sleep(0.5)
+        else:
+            # Fallback to separate date inputs
+            start_el = page.query_selector("input[name='startDate']")
+            if start_el:
+                start_el.fill(start_date)
+            end_el = page.query_selector("input[name='endDate']")
+            if end_el:
+                end_el.fill(end_date)
+        print(f"   Date range set: {start_date} to {end_date}", flush=True)
+    except Exception as e:
+        print(f"   Error setting date range: {e}", flush=True)
+
+def set_cloud_cover(page, max_cloud):
+    """Set the cloud slider value."""
+    try:
+        slider = page.query_selector(".ant-slider")
+        if slider:
+            # Ant Design slider: we can set the value via JavaScript
+            js = f"""
+            const slider = document.querySelector('.ant-slider');
+            if (slider) {{
+                const track = slider.querySelector('.ant-slider-track');
+                const handle = slider.querySelector('.ant-slider-handle');
+                if (handle) {{
+                    handle.setAttribute('aria-valuenow', {max_cloud});
+                    const percent = {max_cloud} / 100;
+                    if (track) {{
+                        track.style.left = '0%';
+                        track.style.width = (percent * 100) + '%';
+                    }}
+                    if (handle) {{
+                        handle.style.left = (percent * 100) + '%';
+                    }}
+                    // Trigger input event to update any bound data
+                    const inputEvent = new Event('input', {{ bubbles: true }});
+                    handle.dispatchEvent(inputEvent);
+                }}
+            }}
+            """
+            page.evaluate(js)
+            print(f"   Cloud cover set to: {max_cloud}%", flush=True)
+        else:
+            # Try numeric input if slider not found
+            cloud_input = page.query_selector("input[placeholder*='cloud']")
+            if cloud_input:
+                cloud_input.fill(str(max_cloud))
+    except Exception as e:
+        print(f"   Error setting cloud cover: {e}", flush=True)
+
+def click_search(page):
+    """Click the Search button."""
+    try:
+        search_btn = page.query_selector("button.ant-btn-primary")
+        if search_btn:
+            search_btn.click()
+            print("   Search button clicked", flush=True)
+            return True
+        else:
+            print("   Search button not found", flush=True)
+            return False
+    except Exception as e:
+        print(f"   Error clicking search: {e}", flush=True)
+        return False
+
+# ----------------------------------------------------------------------
+# Main (automated)
+# ----------------------------------------------------------------------
+def main():
+    import sys
+    # Parse command line arguments
+    output_dir = None
+    bbox = None
+    start_date = None
+    end_date = None
+    max_cloud = 20
+
+    i = 1
+    while i < len(sys.argv):
+        if sys.argv[i] == "--output" and i+1 < len(sys.argv):
+            output_dir = Path(sys.argv[i+1])
+            i += 2
+        elif sys.argv[i] == "--bbox" and i+4 < len(sys.argv):
+            bbox = [float(sys.argv[i+1]), float(sys.argv[i+2]), float(sys.argv[i+3]), float(sys.argv[i+4])]
+            i += 5
+        elif sys.argv[i] == "--start" and i+1 < len(sys.argv):
+            start_date = sys.argv[i+1]
+            i += 2
+        elif sys.argv[i] == "--end" and i+1 < len(sys.argv):
+            end_date = sys.argv[i+1]
+            i += 2
+        elif sys.argv[i] == "--cloud" and i+1 < len(sys.argv):
+            max_cloud = int(sys.argv[i+1])
+            i += 2
+        else:
+            i += 1
+
+    if output_dir is None:
+        output_dir = create_output_folder()
+    else:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        print(f"📁 Output folder: {output_dir}", flush=True)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
+        context = browser.new_context(viewport={"width": 1280, "height": 800})
+        page = context.new_page()
+
+        print("🌐 Navigating to SASClouds catalog...", flush=True)
+        page.goto("https://www.sasclouds.com/english/normal/", wait_until="networkidle")
+        print("✅ Page loaded", flush=True)
+
+        # Apply filters
+        if bbox:
+            set_aoi_rectangle(page, bbox)
+        if start_date and end_date:
+            set_date_range(page, start_date, end_date)
+        set_cloud_cover(page, max_cloud)
+
+        # Click Search
+        if not click_search(page):
+            browser.close()
+            return
+
+        # Wait for results
+        print("⏳ Waiting for results to load...", flush=True)
+        try:
+            page.wait_for_selector(ROW_SELECTOR, timeout=60000)
+            print("✅ Results loaded", flush=True)
+        except:
+            print("❌ No results found after 60 seconds", flush=True)
+            browser.close()
+            return
+
+        # Scrape
+        all_features = []
+        page_num = 1
+        while True:
+            rows = scrape_page(page, page_num, all_features, output_dir)
+            if rows == 0:
+                break
+            next_btn = page.query_selector(NEXT_PAGE_BUTTON)
+            if not next_btn:
+                break
+            next_btn.click()
+            page.wait_for_timeout(3000)
+            try:
+                page.wait_for_selector(ROW_SELECTOR, timeout=10000)
+            except:
+                break
+            page_num += 1
+
+        geojson_path = output_dir / "footprints.geojson"
+        with open(geojson_path, "w", encoding="utf-8") as f:
+            json.dump({"type": "FeatureCollection", "features": all_features}, f, indent=2)
+        print(f"\n✅ Scraping finished. Total features: {len(all_features)}", flush=True)
+        browser.close()
 
 if __name__ == "__main__":
     main()

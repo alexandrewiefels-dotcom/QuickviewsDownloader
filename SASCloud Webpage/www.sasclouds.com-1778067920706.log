@@ -1,0 +1,4 @@
+judge-browser.min.js:1 Uncaught SyntaxError: Unexpected token '<' (at judge-browser.min.js:1:1)
+normal/:2 Uncaught ReferenceError: IEVersion is not defined
+    at normal/:2:30
+(anonymous) @ normal/:2
