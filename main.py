@@ -10,8 +10,12 @@ import traceback
 from pathlib import Path
 from datetime import datetime
 
-# Correct import – sasclouds_api_scraper has no self-import
-from sasclouds_api_scraper import SASCloudsAPIClient, log_search, log_aoi_upload
+from sasclouds_api_scraper import (
+    SASCloudsAPIClient,
+    log_search,
+    log_aoi_upload,
+    convert_uploaded_file_to_geojson
+)
 
 st.set_page_config(page_title="SASClouds API Scraper", layout="wide")
 
@@ -44,7 +48,7 @@ if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
 # ----------------------------------------------------------------------
-# Satellite and sensor definitions (CORRECTED – all dictionaries)
+# Satellite and sensor definitions (full list)
 # ----------------------------------------------------------------------
 SATELLITE_GROUPS = {
     "Optical": {
@@ -129,16 +133,16 @@ st.markdown("Fast, cloud‑compatible search using the official API. No browser 
 
 with st.expander("How to use", expanded=False):
     st.markdown("""
-    1. Draw your AOI (bounding box or upload a GeoJSON polygon).
+    1. Draw your AOI (bounding box or upload a GeoJSON, Shapefile ZIP, KML, KMZ).
     2. Select date range, cloud cover, and satellites/sensors.
     3. Click **Search and Download** – the API will return all scenes.
     4. Results are zipped and downloaded (images + world files + GeoJSON).
     """)
 
 # ----------------------------------------------------------------------
-# AOI input
+# AOI input (bounding box or file upload)
 # ----------------------------------------------------------------------
-aoi_method = st.radio("AOI input method", ["Bounding box", "GeoJSON polygon"])
+aoi_method = st.radio("AOI input method", ["Bounding box", "Upload file (GeoJSON, Shapefile ZIP, KML, KMZ)"])
 
 if aoi_method == "Bounding box":
     col1, col2 = st.columns(2)
@@ -155,17 +159,29 @@ if aoi_method == "Bounding box":
     }
     aoi_filename = "bbox"
 else:
-    uploaded_geo = st.file_uploader("Upload GeoJSON polygon", type=["geojson"])
-    if uploaded_geo:
-        polygon_geojson = json.load(uploaded_geo)
-        aoi_filename = uploaded_geo.name
-        st.success("Polygon loaded")
+    uploaded_file = st.file_uploader(
+        "Upload AOI file",
+        type=["geojson", "zip", "kml", "kmz"],
+        help="Supported: GeoJSON (.geojson), Shapefile (.zip containing .shp), KML (.kml), KMZ (.kmz)"
+    )
+    if uploaded_file:
+        try:
+            polygon_geojson = convert_uploaded_file_to_geojson(uploaded_file)
+            aoi_filename = uploaded_file.name
+            st.success(f"File loaded: {aoi_filename}")
+            # Preview geometry type
+            geom_type = polygon_geojson.get("type")
+            st.info(f"Geometry type: {geom_type}")
+        except Exception as e:
+            st.error(f"Failed to parse file: {e}")
+            polygon_geojson = None
+            aoi_filename = None
     else:
         polygon_geojson = None
         aoi_filename = None
 
 # ----------------------------------------------------------------------
-# Filters
+# Filters: date range, cloud cover
 # ----------------------------------------------------------------------
 col1, col2 = st.columns(2)
 with col1:
@@ -175,7 +191,7 @@ with col2:
     max_cloud = st.slider("Maximum cloud cover (%)", 0, 100, 20)
 
 # ----------------------------------------------------------------------
-# Satellite selection
+# Satellite selection (grouped expanders with safety checks)
 # ----------------------------------------------------------------------
 st.subheader("Satellites and sensors")
 selected_satellites = []
@@ -210,7 +226,7 @@ for group_name, categories in SATELLITE_GROUPS.items():
 # ----------------------------------------------------------------------
 if st.button("🔍 Search and Download", type="primary"):
     if not polygon_geojson:
-        st.error("Please provide an AOI (bounding box or GeoJSON polygon).")
+        st.error("Please provide an AOI (bounding box or valid file).")
         st.stop()
 
     if not selected_satellites:

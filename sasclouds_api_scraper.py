@@ -1,7 +1,7 @@
 # File: sasclouds_api_scraper.py
 """
 SASClouds API Client – handles AOI upload, scene search, download, georeferencing.
-Includes detailed logging for debugging.
+Supports GeoJSON, Shapefile (ZIP), KML, KMZ uploads.
 """
 
 import json
@@ -9,6 +9,8 @@ import logging
 import re
 import tempfile
 import shutil
+import zipfile
+from io import BytesIO
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional, Any
@@ -16,7 +18,10 @@ from typing import Dict, List, Optional, Any
 import requests
 from PIL import Image
 import shapefile
-from shapely.geometry import shape
+from shapely.geometry import shape as shapely_shape
+import fiona
+import geopandas as gpd
+from pykml import parser
 
 # ----------------------------------------------------------------------
 # Logging setup
@@ -35,7 +40,69 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------
-# API version detection
+# File conversion utilities
+# ----------------------------------------------------------------------
+def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
+    """
+    Convert uploaded file (GeoJSON, Shapefile ZIP, KML, KMZ) to GeoJSON dict.
+    Returns a GeoJSON Polygon or MultiPolygon geometry.
+    """
+    filename = uploaded_file.name
+    content = uploaded_file.read()
+    
+    if filename.endswith('.geojson'):
+        return json.loads(content)
+    
+    if filename.endswith('.zip'):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            zip_path = Path(tmpdir) / "upload.zip"
+            zip_path.write_bytes(content)
+            with zipfile.ZipFile(zip_path, 'r') as zf:
+                zf.extractall(tmpdir)
+            shp_files = list(Path(tmpdir).glob("*.shp"))
+            if not shp_files:
+                raise ValueError("No .shp file found in ZIP")
+            gdf = gpd.read_file(shp_files[0])
+            if not gdf.geometry.iloc[0].geom_type in ['Polygon', 'MultiPolygon']:
+                raise ValueError("Shapefile must contain Polygon geometries")
+            geojson = json.loads(gdf.to_json())
+            if geojson["type"] == "FeatureCollection":
+                return geojson["features"][0]["geometry"]
+            return geojson
+    
+    if filename.endswith('.kml'):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            kml_path = Path(tmpdir) / "upload.kml"
+            kml_path.write_bytes(content)
+            gdf = gpd.read_file(kml_path, driver='KML')
+            if gdf.empty:
+                raise ValueError("No polygon found in KML")
+            geojson = json.loads(gdf.to_json())
+            if geojson["type"] == "FeatureCollection":
+                return geojson["features"][0]["geometry"]
+            return geojson
+    
+    if filename.endswith('.kmz'):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            kmz_path = Path(tmpdir) / "upload.kmz"
+            kmz_path.write_bytes(content)
+            with zipfile.ZipFile(kmz_path, 'r') as zf:
+                zf.extractall(tmpdir)
+            kml_files = list(Path(tmpdir).glob("*.kml"))
+            if not kml_files:
+                raise ValueError("No KML file found in KMZ")
+            gdf = gpd.read_file(kml_files[0], driver='KML')
+            if gdf.empty:
+                raise ValueError("No polygon found in KMZ")
+            geojson = json.loads(gdf.to_json())
+            if geojson["type"] == "FeatureCollection":
+                return geojson["features"][0]["geometry"]
+            return geojson
+    
+    raise ValueError(f"Unsupported file type: {filename}")
+
+# ----------------------------------------------------------------------
+# API version detection and config
 # ----------------------------------------------------------------------
 def detect_api_version(base_url: str = "https://www.sasclouds.com") -> str:
     try:
@@ -54,9 +121,6 @@ def detect_api_version(base_url: str = "https://www.sasclouds.com") -> str:
         logger.error(f"Version detection failed: {e}", exc_info=True)
         return "v5"
 
-# ----------------------------------------------------------------------
-# Configuration loader
-# ----------------------------------------------------------------------
 def load_config(config_path: Path = Path("config.json")) -> Dict:
     if config_path.exists():
         with open(config_path) as f:
@@ -64,7 +128,7 @@ def load_config(config_path: Path = Path("config.json")) -> Dict:
     return {}
 
 # ----------------------------------------------------------------------
-# Logging functions for admin dashboard (no self-import)
+# Logging functions for admin dashboard
 # ----------------------------------------------------------------------
 def log_search(user_session_id: str, aoi_geojson: dict, filters: dict, num_scenes: int):
     record = {
@@ -105,10 +169,31 @@ class SASCloudsAPIClient:
         logger.info(f"Using API base: {self.api_base}")
 
     def _create_shapefile(self, geojson: Dict, tmp_dir: Path) -> Path:
+        """Convert any supported GeoJSON (Polygon, Feature, FeatureCollection) to shapefile."""
         logger.debug(f"Creating shapefile from GeoJSON: {geojson}")
-        geom = shape(geojson)
-        if geom.geom_type != "Polygon":
-            raise ValueError("Only Polygon geometry is supported")
+        # Normalize input: extract geometry from FeatureCollection or Feature
+        if geojson.get("type") == "FeatureCollection":
+            if not geojson.get("features"):
+                raise ValueError("FeatureCollection has no features")
+            geom_data = geojson["features"][0].get("geometry")
+            if not geom_data:
+                raise ValueError("First feature has no geometry")
+            geom = shapely_shape(geom_data)
+        elif geojson.get("type") == "Feature":
+            geom_data = geojson.get("geometry")
+            if not geom_data:
+                raise ValueError("Feature has no geometry")
+            geom = shapely_shape(geom_data)
+        else:
+            geom = shapely_shape(geojson)
+        
+        if geom.geom_type == "MultiPolygon":
+            # Take the largest polygon (by area) as the AOI
+            geom = max(geom.geoms, key=lambda p: p.area)
+            logger.warning("MultiPolygon converted to largest Polygon")
+        elif geom.geom_type != "Polygon":
+            raise ValueError(f"Unsupported geometry type: {geom.geom_type}. Only Polygon is supported.")
+        
         w = shapefile.Writer(tmp_dir / "aoi", shapefile.POLYGON)
         w.field("ID", "N", 10)
         w.poly([list(geom.exterior.coords)])
