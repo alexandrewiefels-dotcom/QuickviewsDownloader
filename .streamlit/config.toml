@@ -1,0 +1,21 @@
+# .streamlit/config.toml
+[global]
+minCachedMessageSize = 1000000
+
+[theme]
+base = "dark"
+primaryColor = "#4F547A"
+backgroundColor = "#121527"
+secondaryBackgroundColor = "#222A63"
+textColor = "#F8FBFF"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[client]
+showSidebarNavigation = false
+
+[server]
+maxUploadSize = 1
+enableWebsocketCompression = false

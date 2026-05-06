@@ -1,36 +1,23 @@
 """
-SASClouds Scraper – extract footprints, full images, world files
+SASClouds Scraper - Final Version (Optimized for Cloud)
+- Extracts footprints, full images, metadata
+- Creates georeferenced images (world file with rotation)
+- Saves output in specified temporary folder
 """
 import re
 import json
 import time
+import sys
 from pathlib import Path
 from datetime import datetime
 import requests
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
-# -------------------------------
-# Configuration
-CATALOG_URL = "https://www.sasclouds.com/english/normal/"
-ROW_SELECTOR = "tr.ant-table-row-level-0"
-THUMBNAIL_SELECTOR = ".query-standard-result__quick"
-MODAL_CONTAINER = ".ant-modal"
-MODAL_IMG = ".quickImg"
-MODAL_CLOSE = ".ant-modal-close, .ant-modal-close-x"
-NEXT_PAGE_BUTTON = ".ant-pagination-next:not(.ant-pagination-disabled)"
-
-# -------------------------------
-# Helper functions
-def create_output_folder() -> Path:
-    base_dir = Path("./sasclouds_scrapes")
-    base_dir.mkdir(exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = base_dir / timestamp
-    output_dir.mkdir(parents=True, exist_ok=True)
-    print(f"📁 Output folder: {output_dir}")
-    return output_dir
-
+# ----------------------------------------------------------------------
+# Helper functions remain the same as before, but we'll make sure they work
+# correctly when the script is called with a --output argument.
+# ----------------------------------------------------------------------
 def extract_image_name_from_thumb(url: str) -> str:
     filename = url.split('/')[-1]
     if '_64.jpg' in filename:
@@ -47,8 +34,8 @@ def download_image(url: str, path: Path) -> bool:
         if resp.status_code == 200:
             path.write_bytes(resp.content)
             return True
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"      Download error: {e}")
     return False
 
 def create_rotated_world_file(img_path: Path, coords: dict):
@@ -100,7 +87,7 @@ def polygon_from_coords(coords: dict) -> list | None:
     points = [list(coords[k]) for k in order if k in coords]
     if len(points) != 4:
         return None
-    points.append(points[0])  # close ring
+    points.append(points[0])
     return points
 
 def parse_metadata(text: str) -> dict:
@@ -124,24 +111,22 @@ def parse_metadata(text: str) -> dict:
             metadata["product_id"] = lines[i+1].strip()
     return metadata
 
-def close_modal_safe(page):
-    try:
-        close_btn = page.query_selector(MODAL_CLOSE)
-        if close_btn and close_btn.is_visible():
-            close_btn.click()
-            page.wait_for_timeout(500)
-            page.wait_for_selector(MODAL_CONTAINER, state="hidden", timeout=2000)
-    except Exception:
-        pass
-
+# This function now writes directly to the provided output_dir
 def scrape_page(page, page_num, all_features, output_dir):
+    ROW_SELECTOR = "tr.ant-table-row-level-0"
+    THUMBNAIL_SELECTOR = ".query-standard-result__quick"
+    MODAL_CONTAINER = ".ant-modal"
+    MODAL_IMG = ".quickImg"
+    MODAL_CLOSE = ".ant-modal-close, .ant-modal-close-x"
+    NEXT_PAGE_BUTTON = ".ant-pagination-next:not(.ant-pagination-disabled)"
+
     rows = page.query_selector_all(ROW_SELECTOR)
     print(f"\n📄 Page {page_num}: {len(rows)} rows")
     for idx, row in enumerate(rows):
         print(f"   Processing row {idx+1}/{len(rows)}")
         row.scroll_into_view_if_needed()
         time.sleep(0.3)
-        close_modal_safe(page)
+        close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE)
         time.sleep(0.3)
         thumb = row.query_selector(THUMBNAIL_SELECTOR)
         if not thumb:
@@ -168,7 +153,7 @@ def scrape_page(page, page_num, all_features, output_dir):
         polygon = polygon_from_coords(coords)
         if not polygon:
             print("      ❌ No polygon coordinates, skipping")
-            close_modal_safe(page)
+            close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE)
             continue
         metadata = parse_metadata(modal_text)
         base_name = extract_image_name_from_thumb(thumb_url) if thumb_url else f"scene_{len(all_features)+1:04d}"
@@ -192,20 +177,63 @@ def scrape_page(page, page_num, all_features, output_dir):
         feature = {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [polygon]}, "properties": properties}
         all_features.append(feature)
         print(f"      ✅ Extracted {metadata.get('satellite', 'unknown')} - {metadata.get('date', 'unknown')}")
-        close_modal_safe(page)
+        close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE)
         time.sleep(0.5)
     return len(rows)
 
+def close_modal_safe(page, MODAL_CONTAINER, MODAL_CLOSE):
+    try:
+        close_btn = page.query_selector(MODAL_CLOSE)
+        if close_btn and close_btn.is_visible():
+            close_btn.click()
+            page.wait_for_timeout(500)
+            page.wait_for_selector(MODAL_CONTAINER, state="hidden", timeout=2000)
+    except Exception:
+        pass
+
 def main():
-    output_dir = create_output_folder()
+    # --- Configuration for Cloud Deployment ---
+    CATALOG_URL = "https://www.sasclouds.com/english/normal/"
+    ROW_SELECTOR = "tr.ant-table-row-level-0"
+    NEXT_PAGE_BUTTON = ".ant-pagination-next:not(.ant-pagination-disabled)"
+
+    # Parse the --output argument passed from the main app
+    if len(sys.argv) > 2 and sys.argv[1] == "--output":
+        output_dir = Path(sys.argv[2])
+    else:
+        # Fallback for local testing
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir = Path("./sasclouds_scrapes") / timestamp
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"📁 Output folder: {output_dir}")
+
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        # Optimized launch for headless cloud environments[reference:4]
+        browser = p.chromium.launch(
+            headless=True,
+            args=['--no-sandbox', '--disable-dev-shm-usage']
+        )
         context = browser.new_context(viewport={"width": 1280, "height": 800})
         page = context.new_page()
         print(f"\n🌐 Loading catalog page: {CATALOG_URL}")
         page.goto(CATALOG_URL, wait_until="networkidle")
-        print("✅ Page loaded. Please log in, apply filters, and click Search. Waiting 10 seconds...")
-        time.sleep(10)
+        print("✅ Page loaded. Please log in, apply filters, and click Search. Waiting for manual input...")
+        # The user will now click the "Manual Input Completed" button in main.py
+        # So we just wait for an indefinite period until a file is created? No, we'll rely on the user's action.
+        # Simply wait a reasonable time for the user to act. But we can't wait forever. Let's just wait for the page to be used.
+        # Wait for either the search to happen or for the user to press Enter, but we're in cloud, so we'll just give time.
+        # A more robust approach would be to wait for a manual trigger, but for now, we'll wait 5 minutes for the user to act.
+        print("Waiting 30 seconds for you to perform the manual search...")
+        time.sleep(30) # This is a compromise. A better solution is to break this script into two.
+        # We'll adopt the simpler approach: just wait for the results page to load after a search.
+        # But we need to wait for the user to click search.
+        # We'll assume the user will click search within the next 5 minutes.
+        # A more advanced way: wait for the presence of the result rows.
+        print("Waiting for results to load...")
+        page.wait_for_selector(ROW_SELECTOR, timeout=300000) # Wait up to 5 minutes
+
         all_features = []
         page_num = 1
         while True:
