@@ -5,6 +5,7 @@ import zipfile
 import io
 import shutil
 import uuid
+import traceback
 from pathlib import Path
 from datetime import datetime
 
@@ -41,7 +42,7 @@ if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
 # ----------------------------------------------------------------------
-# Satellite and sensor definitions (CORRECTED)
+# Satellite and sensor definitions (same as before – keep it correct)
 # ----------------------------------------------------------------------
 SATELLITE_GROUPS = {
     "Optical": {
@@ -133,7 +134,7 @@ with st.expander("How to use", expanded=False):
     """)
 
 # ----------------------------------------------------------------------
-# AOI input (bounding box or GeoJSON)
+# AOI input
 # ----------------------------------------------------------------------
 aoi_method = st.radio("AOI input method", ["Bounding box", "GeoJSON polygon"])
 
@@ -162,7 +163,7 @@ else:
         aoi_filename = None
 
 # ----------------------------------------------------------------------
-# Filters: date range, cloud cover
+# Filters
 # ----------------------------------------------------------------------
 col1, col2 = st.columns(2)
 with col1:
@@ -172,25 +173,25 @@ with col2:
     max_cloud = st.slider("Maximum cloud cover (%)", 0, 100, 20)
 
 # ----------------------------------------------------------------------
-# Satellite selection (grouped expanders) – SAFE LOOP
+# Satellite selection
 # ----------------------------------------------------------------------
 st.subheader("Satellites and sensors")
 selected_satellites = []
 
 for group_name, categories in SATELLITE_GROUPS.items():
-    # Ensure categories is a dict
     if not isinstance(categories, dict):
-        st.error(f"Invalid structure for group '{group_name}': expected dict, got {type(categories)}")
+        st.warning(f"Skipping group '{group_name}': invalid structure")
         continue
     with st.expander(group_name):
         for cat_name, sats in categories.items():
-            # Ensure sats is a list
             if not isinstance(sats, list):
-                st.error(f"Invalid structure for category '{cat_name}': expected list, got {type(sats)}")
+                st.warning(f"Skipping category '{cat_name}' in '{group_name}': not a list")
                 continue
             labels = []
             for sat in sats:
-                sensor_str = ', '.join(sat['sensorIds']) if sat.get('sensorIds') else 'All sensors'
+                if not isinstance(sat, dict):
+                    continue
+                sensor_str = ', '.join(sat.get('sensorIds', [])) if sat.get('sensorIds') else 'All sensors'
                 labels.append(f"{sat['satelliteId']} ({sensor_str})")
             chosen = st.multiselect(cat_name, labels, key=f"{group_name}_{cat_name}")
             for label in chosen:
@@ -203,7 +204,7 @@ for group_name, categories in SATELLITE_GROUPS.items():
                         break
 
 # ----------------------------------------------------------------------
-# Search and download
+# Search and download with detailed error reporting
 # ----------------------------------------------------------------------
 if st.button("🔍 Search and Download", type="primary"):
     if not polygon_geojson:
@@ -221,10 +222,8 @@ if st.button("🔍 Search and Download", type="primary"):
             upload_id = client.upload_aoi(polygon_geojson)
             status.write(f"AOI uploaded, ID: {upload_id}")
 
-            # Log the AOI upload
             log_aoi_upload(st.session_state.session_id, aoi_filename, polygon_geojson)
 
-            # Convert dates to milliseconds
             start_ms = date_to_ms(start_date)
             end_ms = date_to_ms(end_date)
 
@@ -235,10 +234,14 @@ if st.button("🔍 Search and Download", type="primary"):
                 status.write(f"Fetching page {page}...")
                 result = client.search_scenes(upload_id, start_ms, end_ms, max_cloud,
                                               selected_satellites, page, page_size)
+                # Check if result has error
+                if result.get("code") != 0:
+                    error_msg = result.get("message", "Unknown API error")
+                    status.write(f"API error: {error_msg}")
+                    raise Exception(f"API returned error: {error_msg}")
                 scenes = result.get("data", [])
                 if not scenes:
                     break
-                # Optional: validate first scene schema (already in client)
                 all_scenes.extend(scenes)
                 total = result.get("pageInfo", {}).get("total", 0)
                 if len(all_scenes) >= total:
@@ -251,7 +254,6 @@ if st.button("🔍 Search and Download", type="primary"):
                 st.warning("No scenes found. Adjust your filters.")
                 st.stop()
 
-            # Log the search
             log_search(
                 st.session_state.session_id,
                 polygon_geojson,
@@ -263,13 +265,11 @@ if st.button("🔍 Search and Download", type="primary"):
                 len(all_scenes)
             )
 
-            # Create temporary directory for results
             temp_dir = Path(tempfile.mkdtemp(prefix="sasclouds_"))
             features = []
 
             for idx, scene in enumerate(all_scenes):
                 status.write(f"Processing scene {idx+1}/{len(all_scenes)}...")
-                # Extract data
                 sat = scene["satelliteId"]
                 sensor = scene["sensorId"]
                 date_str = datetime.fromtimestamp(scene["acquisitionTime"]/1000).strftime("%Y-%m-%d")
@@ -301,19 +301,16 @@ if st.button("🔍 Search and Download", type="primary"):
                     }
                 })
 
-            # Save GeoJSON
             geojson_path = temp_dir / "footprints.geojson"
             with open(geojson_path, "w") as f:
                 json.dump({"type": "FeatureCollection", "features": features}, f, indent=2)
 
-            # Create ZIP in memory
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
                 for file in temp_dir.rglob("*"):
                     zf.write(file, arcname=file.relative_to(temp_dir))
             zip_buffer.seek(0)
 
-            # Cleanup
             shutil.rmtree(temp_dir, ignore_errors=True)
 
             status.update(label="✅ Search complete", state="complete")
@@ -327,5 +324,9 @@ if st.button("🔍 Search and Download", type="primary"):
             )
 
         except Exception as e:
-            st.error(f"Error: {e}")
+            # Capture full traceback
+            error_details = traceback.format_exc()
+            status.write(f"❌ Error: {e}")
+            status.write(f"Details:\n{error_details}")
             status.update(label="❌ Failed", state="error")
+            st.error(f"Search failed: {e}\n\nCheck the status log for details.")
