@@ -393,3 +393,256 @@ Traceback (most recent call last):
 Exception: Search API error: Invalid parameters (code 2)
 2026-05-07 09:31:27 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
 2026-05-07 09:31:27 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 09:39:54 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 782, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. To fix: (1) log in at https://www.sasclouds.com, (2) open DevTools → Network → click any /api/ request → copy the "Token" header value, (3) add to config.json: {"api_version": "v5", "token": "<value>"}
+2026-05-07 09:39:54 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 09:46:17 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 779, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 09:46:17 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 10:07:56 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 846, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [WARNING ] sasclouds_api_scraper – No "token" in config.json — upload/search will fail with HTTP 401. Run:  python scrape_token.py  to capture it automatically from your browser.
+2026-05-07 10:07:56 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 10:14:06 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 885, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:14:06 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 10:21:28 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:28 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:28 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:28 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 10:21:29 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 885, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:21:29 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 10:30:12 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 989, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:30:12 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 10:54:54 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1141, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 10:54:54 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 11:08:44 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1188, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:08:44 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 11:09:28 [WARNING ] sasclouds_api_scraper – scrape_token_via_browser: timed out — no token captured
+2026-05-07 11:13:06 [WARNING ] sasclouds_api_scraper – scrape_token_via_browser: timed out — no token captured
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 11:14:10 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1188, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:14:10 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 11:17:05 [WARNING ] sasclouds_api_scraper – scrape_token_via_browser: timed out — no token captured
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 11:22:54 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1247, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:54 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:55 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:55 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 11:22:55 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:55 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
+2026-05-07 11:22:55 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']

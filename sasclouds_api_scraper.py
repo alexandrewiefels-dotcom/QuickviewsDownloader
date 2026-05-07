@@ -157,12 +157,431 @@ def _log_event(event: str, **fields) -> None:
         logger.warning(f"Structured log write failed: {exc}")
 
 
+# ── Token scraper ──────────────────────────────────────────────────────────────
+def fetch_token_from_page() -> Optional[str]:
+    """
+    Try to extract the auth token from the sasclouds.com homepage using a plain
+    HTTP GET — no browser, instant.  Returns None when the token is not embedded
+    in the HTML/JS (i.e. requires JavaScript execution or login to appear).
+    """
+    try:
+        resp = requests.get(
+            "https://www.sasclouds.com/english/normal/",
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/147.0.0.0 Safari/537.36"
+                ),
+                "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+            timeout=15,
+        )
+        # Some sites set the token as a cookie which JS then forwards as a header
+        for name in ("token", "Token", "TOKEN", "auth_token", "authToken"):
+            val = resp.cookies.get(name)
+            if val and len(val) > 10:
+                logger.info(f"Token found in cookie '{name}' (length={len(val)})")
+                return val
+        # Token may be embedded as a JS variable in the page HTML
+        for pattern in [
+            r'"[Tt]oken"\s*:\s*"([A-Za-z0-9_\-\.]{20,})"',
+            r"'[Tt]oken'\s*:\s*'([A-Za-z0-9_\-\.]{20,})'",
+            r'[Tt]oken\s*[=:]\s*["\']([A-Za-z0-9_\-\.]{20,})["\']',
+        ]:
+            m = re.search(pattern, resp.text)
+            if m:
+                tok = m.group(1)
+                logger.info(f"Token found in page HTML (length={len(tok)})")
+                return tok
+        logger.debug("fetch_token_from_page: token not found in HTML/cookies")
+    except Exception as exc:
+        logger.debug(f"fetch_token_from_page failed: {exc}")
+    return None
+
+
+def _save_token_to_config(token: str) -> None:
+    cfg = load_config()
+    cfg.setdefault("api_version", "v5")
+    cfg["token"] = token
+    try:
+        with open("config.json", "w", encoding="utf-8") as fh:
+            json.dump(cfg, fh, indent=2)
+            fh.write("\n")
+    except OSError as exc:
+        logger.warning(f"Could not write config.json: {exc}")
+
+
+def auto_login_and_capture_token(
+    username: str,
+    password: str,
+    headless: bool = True,
+    timeout_seconds: int = 90,
+) -> Optional[str]:
+    """
+    Log in to sasclouds.com with the given credentials and capture the Token
+    header from the first /api/normal/ API request.
+
+    Login selectors are heuristic (common Chinese-site patterns). If login
+    fails silently, run with headless=False to watch the browser and inspect
+    the actual form selectors.
+
+    Must be called from the MAIN process (not a background thread) on Windows
+    due to asyncio constraints.  Use scrape_token.py as a subprocess wrapper.
+    """
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        raise RuntimeError(
+            "playwright not installed.\n"
+            "Run:  pip install playwright && playwright install chromium"
+        )
+
+    captured: list = []
+
+    def _on_request(request):
+        if "/api/normal/" not in request.url:
+            return
+        tok = request.headers.get("token") or request.headers.get("Token")
+        if tok and not captured:
+            captured.append(tok)
+            logger.info(f"Token captured after login (length={len(tok)})")
+
+    def _try_fill(page, selectors, value, label):
+        for sel in selectors:
+            try:
+                page.fill(sel, value, timeout=2_000)
+                logger.debug(f"Filled {label!r} using selector {sel!r}")
+                return True
+            except Exception:
+                pass
+        logger.warning(f"Could not fill {label!r} — no selector matched: {selectors}")
+        return False
+
+    def _try_click(page, selectors, label):
+        for sel in selectors:
+            try:
+                page.click(sel, timeout=2_000)
+                logger.debug(f"Clicked {label!r} using selector {sel!r}")
+                return True
+            except Exception:
+                pass
+        logger.warning(f"Could not click {label!r} — no selector matched: {selectors}")
+        return False
+
+    logger.info(f"auto_login_and_capture_token: headless={headless}")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=headless)
+        ctx = browser.new_context(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/147.0.0.0 Safari/537.36"
+            )
+        )
+        page = ctx.new_page()
+        page.on("request", _on_request)
+
+        page.goto("https://www.sasclouds.com/english/normal/", timeout=30_000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=10_000)
+        except Exception:
+            pass
+
+        # Open login dialog / navigate to login page
+        _try_click(page, [
+            "text=Login", "text=登录", "text=Sign In",
+            "a[href*='login']", ".login-btn", "#login-btn",
+            "[class*='login']", "button:has-text('Login')",
+        ], "open login")
+        try:
+            page.wait_for_load_state("networkidle", timeout=6_000)
+        except Exception:
+            pass
+
+        # Username / email field
+        _try_fill(page, [
+            "input[name='loginName']", "input[name='username']",
+            "input[name='userName']",  "input[name='email']",
+            "input[type='email']",     "input[id='username']",
+            "input[id='loginName']",   "input[id='email']",
+            "input[placeholder*='账号']", "input[placeholder*='用户名']",
+            "input[placeholder*='username' i]", "input[placeholder*='email' i]",
+        ], username, "username")
+
+        # Password field
+        _try_fill(page, [
+            "input[type='password']",
+            "input[name='password']",
+            "input[id='password']",
+            "input[placeholder*='密码']",
+            "input[placeholder*='password' i]",
+        ], password, "password")
+
+        # Submit
+        _try_click(page, [
+            "button[type='submit']", "input[type='submit']",
+            "text=Login", "text=登录", "text=Sign In",
+            ".login-submit", "#login-submit",
+            "button:has-text('Login')", "button:has-text('登录')",
+        ], "submit")
+        try:
+            page.wait_for_load_state("networkidle", timeout=15_000)
+        except Exception:
+            pass
+
+        # Wait for a token-bearing API request
+        deadline = time.monotonic() + timeout_seconds
+        while not captured and time.monotonic() < deadline:
+            try:
+                page.wait_for_timeout(500)
+            except Exception:
+                break
+
+        # If still no token, click the search button to trigger an API call
+        if not captured:
+            logger.info("No token yet — triggering a search click")
+            _try_click(page, [
+                "button:has-text('Search')", "text=Search", "text=搜索",
+                ".search-btn", "#search-btn", "button[type='submit']",
+            ], "search trigger")
+            deadline2 = time.monotonic() + 15
+            while not captured and time.monotonic() < deadline2:
+                try:
+                    page.wait_for_timeout(500)
+                except Exception:
+                    break
+
+        browser.close()
+
+    if not captured:
+        logger.warning("auto_login_and_capture_token: no token captured")
+        return None
+
+    token = captured[0]
+    _save_token_to_config(token)
+    _log_event("token_auto_login", token_length=len(token), headless=headless)
+    return token
+
+
+def ensure_playwright_browser() -> None:
+    """
+    Install the Playwright Chromium browser binary if it is not already present.
+    Safe to call repeatedly — Playwright is a no-op when the browser is current.
+    """
+    import subprocess
+    import sys
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"],
+            capture_output=True, text=True, timeout=180,
+        )
+        if result.returncode == 0:
+            logger.info("Playwright Chromium ready")
+        else:
+            logger.warning(f"playwright install returned {result.returncode}: {result.stderr[:300]}")
+    except Exception as exc:
+        logger.warning(f"Could not run playwright install: {exc}")
+
+
+def scrape_token_via_browser(timeout_seconds: int = 90, headless: bool = True) -> Optional[str]:
+    """
+    Capture the sasclouds.com auth token without credentials.
+
+    Strategy (escalating):
+      1. Plain HTTP GET — checks HTML / server cookies instantly.
+      2. Headless Chromium with anti-WAF-detection:
+         a. Intercept EVERY request header for Token.
+         b. Intercept EVERY response header + JSON body for Token.
+         c. Read localStorage / sessionStorage after JS runs.
+         d. Click Search to force an /api/normal/ call.
+      All browser events print() to stdout so they appear in the parent log.
+    """
+    # ── Fast path ─────────────────────────────────────────────────────────────
+    token = fetch_token_from_page()
+    if token:
+        _save_token_to_config(token)
+        _log_event("token_scraped", token_length=len(token), source="http")
+        return token
+
+    print("[scrape] HTTP fast-path: no token in page HTML/cookies")
+
+    # ── Playwright ────────────────────────────────────────────────────────────
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        raise RuntimeError(
+            "playwright is not installed.\n"
+            "Run:  pip install playwright && playwright install chromium"
+        )
+
+    captured: list = []
+    seen_urls: list = []
+
+    def _grab(value: str, source: str):
+        if value and len(value) > 10 and not captured:
+            captured.append(value)
+            print(f"[scrape] TOKEN FOUND via {source} (length={len(value)})")
+
+    def _on_request(request):
+        url = request.url
+        seen_urls.append(url)
+        # Any header that looks like a token
+        for h in ("token", "Token", "authorization", "Authorization", "x-token"):
+            v = request.headers.get(h, "")
+            if v and len(v) > 10:
+                _grab(v.replace("Bearer ", ""), f"request header '{h}' → {url[:60]}")
+
+    def _on_response(response):
+        url = response.url
+        # Response headers
+        for h in ("token", "Token", "x-token", "X-Token",
+                   "authorization", "Authorization", "x-auth-token"):
+            v = response.headers.get(h, "")
+            if v and len(v) > 10:
+                _grab(v.replace("Bearer ", ""), f"response header '{h}' ← {url[:60]}")
+        # JSON response body (for init/auth endpoints)
+        ct = response.headers.get("content-type", "")
+        if "application/json" in ct and not captured:
+            try:
+                body = response.json()
+                def _search_json(obj, depth=0):
+                    if depth > 4 or captured:
+                        return
+                    if isinstance(obj, dict):
+                        for k, v in obj.items():
+                            if k.lower() in ("token", "access_token", "usertoken",
+                                             "auth_token", "authtoken"):
+                                if isinstance(v, str) and len(v) > 10:
+                                    _grab(v, f"response JSON key '{k}' ← {url[:60]}")
+                                    return
+                            _search_json(v, depth + 1)
+                    elif isinstance(obj, list):
+                        for item in obj[:5]:
+                            _search_json(item, depth + 1)
+                _search_json(body)
+            except Exception:
+                pass
+
+    print(f"[scrape] Launching Chromium headless={headless}")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=headless,
+            args=["--disable-blink-features=AutomationControlled"],
+        )
+        ctx = browser.new_context(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/147.0.0.0 Safari/537.36"
+            ),
+            locale="en-US",
+            timezone_id="America/New_York",
+        )
+        # Remove navigator.webdriver flag (WAF fingerprint)
+        ctx.add_init_script(
+            "Object.defineProperty(navigator,'webdriver',{get:()=>undefined});"
+            "window.chrome={runtime:{}};"
+        )
+        page = ctx.new_page()
+        page.on("request",  _on_request)
+        page.on("response", _on_response)
+
+        print("[scrape] GET https://www.sasclouds.com/english/normal/")
+        page.goto("https://www.sasclouds.com/english/normal/", timeout=30_000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=12_000)
+        except Exception:
+            pass
+        print(f"[scrape] Page loaded. Requests seen so far: {len(seen_urls)}")
+
+        # localStorage / sessionStorage
+        if not captured:
+            try:
+                stored = page.evaluate("""() => {
+                    const keys = ['token','Token','TOKEN','auth_token','authToken',
+                                  'access_token','userToken','Authorization'];
+                    for (const k of keys) {
+                        const v = localStorage.getItem(k) || sessionStorage.getItem(k);
+                        if (v && v.length > 10) return v;
+                    }
+                    return null;
+                }""")
+                if stored:
+                    _grab(stored, "localStorage/sessionStorage")
+                else:
+                    print("[scrape] Storage: no token key found")
+            except Exception as exc:
+                print(f"[scrape] Storage check failed: {exc}")
+
+        # Click Search to force an API call
+        if not captured:
+            print("[scrape] Trying to click Search button…")
+            clicked = False
+            for sel in [
+                "button:has-text('Search')", "button:has-text('搜索')",
+                ".search-btn", "#search-btn",
+                "input[type='submit']",  "button[type='submit']",
+                "[class*='search']",
+            ]:
+                try:
+                    page.click(sel, timeout=2_000)
+                    print(f"[scrape] Clicked: {sel!r}")
+                    clicked = True
+                    break
+                except Exception:
+                    pass
+            if not clicked:
+                print("[scrape] No search button found — waiting for any API call")
+
+        # Wait loop
+        deadline = time.monotonic() + timeout_seconds
+        while not captured and time.monotonic() < deadline:
+            try:
+                page.wait_for_timeout(1_000)
+            except Exception:
+                break
+
+        # Diagnostic dump when token not found
+        if not captured:
+            print(f"[scrape] Timed out. Total URLs seen: {len(seen_urls)}")
+            for u in seen_urls[:30]:
+                print(f"  {u[:100]}")
+            try:
+                title = page.title()
+                print(f"[scrape] Page title: {title!r}")
+            except Exception:
+                pass
+
+        browser.close()
+
+    if not captured:
+        print("[scrape] FAILED — no token captured")
+        return None
+
+    token = captured[0]
+    _save_token_to_config(token)
+    _log_event("token_scraped", token_length=len(token), source="browser", headless=headless)
+    print(f"[scrape] Token saved (length={len(token)})")
+    return token
+
+
 # ── Config ─────────────────────────────────────────────────────────────────────
 def load_config(config_path: Path = Path("config.json")) -> Dict:
     if config_path.exists():
         with open(config_path) as f:
             return json.load(f)
     return {}
+
+
+def _read_secret(key: str) -> Optional[str]:
+    """Read a value from st.secrets if Streamlit is available, else return None."""
+    try:
+        import streamlit as st
+        return st.secrets.get(key)
+    except Exception:
+        return None
 
 
 # ── Activity log helpers (human-readable JSONL for admin dashboard) ─────────────
@@ -290,6 +709,9 @@ class SASCloudsAPIClient:
         "sec-ch-ua": '"Google Chrome";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Windows"',
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
     }
 
     def __init__(self, base_url: str = "https://www.sasclouds.com"):
@@ -303,13 +725,60 @@ class SASCloudsAPIClient:
         self.api_base = f"{base_url}/api/normal/{version}"
         self.upload_url = f"{self.api_base}/normalmeta/upload/shp"
         self.search_url = f"{self.api_base}/normalmeta"
+
+        # Token is optional — the API works anonymously (confirmed from HAR 2026-05-06).
+        # Set it if available; omit it otherwise (no Token header = anonymous browsing).
+        token = config.get("token") or _read_secret("sasclouds_token")
+        if token:
+            self.session.headers["Token"] = token
+            logger.info(f"Auth token loaded (length={len(token)})")
+        else:
+            logger.info("No auth token — proceeding anonymously (API is public)")
+
         logger.info(f"API client ready | version={version} | base={self.api_base}")
+
+    def refresh_token(self) -> bool:
+        """
+        Re-fetch the auth token (HTTP fast-path first, then Playwright subprocess)
+        and update the live session header.  Returns True on success.
+        Called automatically when the server returns HTTP 401.
+        """
+        import subprocess, sys
+        logger.info("Refreshing auth token…")
+
+        # Fast path — no browser needed
+        token = fetch_token_from_page()
+
+        # Slow path — run scrape_token.py in a subprocess to avoid asyncio
+        # conflicts on Windows when called from inside the Streamlit process
+        if not token:
+            try:
+                script_path = Path(__file__).parent / "scrape_token.py"
+                proc = subprocess.run(
+                    [sys.executable, str(script_path), "--headless"],
+                    capture_output=True, text=True, timeout=75,
+                    cwd=str(Path(__file__).parent),
+                )
+                if proc.returncode == 0:
+                    token = load_config().get("token")
+            except Exception as exc:
+                logger.error(f"Token refresh subprocess failed: {exc}")
+
+        if token:
+            self.session.headers["Token"] = token
+            _log_event("token_refreshed", token_length=len(token))
+            logger.info(f"Token refreshed (length={len(token)})")
+            return True
+
+        logger.error("Token refresh failed — all methods exhausted")
+        return False
 
     # ── Internal HTTP helper ───────────────────────────────────────────────────
 
     def _http(self, method: str, url: str, **kwargs) -> requests.Response:
         """
-        Perform a request and log its timing at DEBUG level.
+        Perform a request, log its timing at DEBUG level, and write a structured
+        event for every HTTP response (success or HTTP error alike).
         Raises on network failure; HTTP status checking is the caller's job.
         """
         t0 = time.monotonic()
@@ -319,6 +788,14 @@ class SASCloudsAPIClient:
             logger.debug(
                 f"{method} {url} → HTTP {resp.status_code} "
                 f"({duration_ms}ms, {len(resp.content)}B)"
+            )
+            _log_event(
+                "http_request",
+                method=method,
+                url=url,
+                status=resp.status_code,
+                duration_ms=duration_ms,
+                response_bytes=len(resp.content),
             )
             return resp
         except Exception as exc:
@@ -346,7 +823,7 @@ class SASCloudsAPIClient:
         _log_event("version_probe_complete", results=results)
         for n in range(1, 13):
             v = f"v{n}"
-            if isinstance(results.get(v), int) and results[v] != 404:
+            if isinstance(results.get(v), int) and results[v] not in (401, 403, 404):
                 return v
         return None
 
@@ -559,20 +1036,17 @@ class SASCloudsAPIClient:
             shp_path = self._create_shapefile(polygon_geojson, tmp_path)
             try:
                 shp_size = shp_path.stat().st_size
-                shx_size = shp_path.with_suffix(".shx").stat().st_size
-                dbf_size = shp_path.with_suffix(".dbf").stat().st_size
             except OSError:
-                shp_size = shx_size = dbf_size = 0
-            total_upload_bytes = shp_size + shx_size + dbf_size
+                shp_size = 0
+            total_upload_bytes = shp_size
 
+            # HAR confirms the browser only sends the .shp file (not .shx/.dbf).
             files = {
-                "file":     ("aoi.shp", open(shp_path,                       "rb"), "application/octet-stream"),
-                "file_shx": ("aoi.shx", open(shp_path.with_suffix(".shx"),   "rb"), "application/octet-stream"),
-                "file_dbf": ("aoi.dbf", open(shp_path.with_suffix(".dbf"),   "rb"), "application/octet-stream"),
+                "file": ("aoi.shp", open(shp_path, "rb"), "application/octet-stream"),
             }
             logger.debug(
-                f"POST multipart upload | shp={shp_size}B shx={shx_size}B dbf={dbf_size}B | "
-                f"total={total_upload_bytes}B | cookies={[c.name for c in self.session.cookies]}"
+                f"POST multipart upload | shp={shp_size}B | "
+                f"cookies={[c.name for c in self.session.cookies]}"
             )
 
             resp = self._http("POST", self.upload_url, files=files, timeout=30)
@@ -582,6 +1056,20 @@ class SASCloudsAPIClient:
                 f"Upload response | HTTP {resp.status_code} | {duration_ms}ms | "
                 f"body={resp.text[:400]}"
             )
+            if resp.status_code == 401:
+                _log_event("auth_error", url=self.upload_url, http_status=401, body=resp.text[:300])
+                logger.warning("Upload got HTTP 401 — attempting token refresh and retry")
+                if self.refresh_token():
+                    for _, (_, fp, _) in files.items():
+                        fp.seek(0)
+                    resp = self._http("POST", self.upload_url, files=files, timeout=30)
+                    duration_ms = round((time.monotonic() - t0) * 1000)
+                if resp.status_code == 401:
+                    raise Exception(
+                        'HTTP 401 – Token required and auto-refresh failed.\n'
+                        '  Run  python scrape_token.py --visible  locally to capture it,\n'
+                        '  then add to Streamlit secrets:  sasclouds_token = "<value>"'
+                    )
             resp.raise_for_status()
             data = resp.json()
 
@@ -638,8 +1126,6 @@ class SASCloudsAPIClient:
                 upload_id=upload_id,
                 upload_bytes=total_upload_bytes,
                 shp_bytes=shp_size,
-                shx_bytes=shx_size,
-                dbf_bytes=dbf_size,
                 api_version=self.api_version,
             )
             return upload_id
@@ -699,6 +1185,23 @@ class SASCloudsAPIClient:
                 timeout=30,
             )
             duration_ms = round((time.monotonic() - t0) * 1000)
+            if resp.status_code == 401:
+                _log_event("auth_error", url=self.search_url, http_status=401, body=resp.text[:300])
+                logger.warning("Search got HTTP 401 — attempting token refresh and retry")
+                if self.refresh_token():
+                    resp = self._http(
+                        "POST", self.search_url,
+                        json=payload,
+                        headers={"Content-Type": "application/json;charset=UTF-8"},
+                        timeout=30,
+                    )
+                    duration_ms = round((time.monotonic() - t0) * 1000)
+                if resp.status_code == 401:
+                    raise Exception(
+                        'HTTP 401 – Token required and auto-refresh failed.\n'
+                        '  Run  python scrape_token.py --visible  locally to capture it,\n'
+                        '  then add to Streamlit secrets:  sasclouds_token = "<value>"'
+                    )
             resp.raise_for_status()
             data = resp.json()
 

@@ -17,5 +17,5 @@ gatherUsageStats = false
 showSidebarNavigation = false
 
 [server]
-maxUploadSize = 1
+maxUploadSize = 10
 enableWebsocketCompression = false

@@ -5,7 +5,16 @@
       "Bash(python -m pytest tests/test_sasclouds_scraper.py -v --tb=short)",
       "Bash(python -c \"import sasclouds_api_scraper; print\\('sasclouds_api_scraper OK'\\)\")",
       "Bash(python -c \"import search_logic; print\\('search_logic OK'\\)\")",
-      "Bash(python -m pytest tests/ -v)"
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(python -m pytest tests/test_sasclouds_scraper.py -q)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Alexandre\\\\OMEOSpace\\\\Python\\\\App_SASCloud_Scraping\" -Recurse -Depth 2)",
+      "Bash(Select-Object FullName)",
+      "Bash(python -c \"import sys; print\\('Python version:', sys.version\\); import streamlit; print\\('Streamlit OK'\\)\")",
+      "Bash(echo \"Import check status: $?\")",
+      "Bash(python -c \"import pytz; print\\('pytz available'\\); import simplekml; print\\('simplekml available'\\); import plotly; print\\('plotly available'\\)\")",
+      "Bash(Select-String -Path \"C:\\\\Alexandre\\\\OMEOSpace\\\\Python\\\\App_SASCloud_Scraping\\\\SASCloud Webpage\\\\www.sasclouds.com.txt\" -Pattern \"\\(?i\\)token|authorization|bearer\" -Context 3)",
+      "Bash(Select-Object -First 60)",
+      "Bash(Out-String)"
     ]
   }
 }

@@ -5,7 +5,15 @@ from pathlib import Path
 
 import streamlit as st
 
+import os
+import subprocess
+
 from map_utils import handle_drawing, render_main_map
+from sasclouds_api_scraper import (
+    ensure_playwright_browser,
+    load_config,
+    _read_secret,
+)
 from search_logic import create_download_zip, run_search
 from sidebar import render_sidebar
 
@@ -37,6 +45,64 @@ for _noisy in ("urllib3", "httpx", "httpcore", "streamlit", "watchdog"):
 logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="SASClouds API Scraper", layout="wide")
+
+# ── Playwright browser install (once per process) ─────────────────────────────
+@st.cache_resource(show_spinner=False)
+def _install_playwright_browser():
+    ensure_playwright_browser()
+
+_install_playwright_browser()
+
+
+# ── Daily token refresh (cached — re-runs automatically after TTL expires) ────
+@st.cache_resource(ttl=3_600 * 22, show_spinner=False)   # refresh every 22 hours
+def _get_token() -> str:
+    """
+    Returns the anonymous browsing token issued by sasclouds.com — no account
+    or credentials required.  The token is scraped headlessly via Playwright
+    (subprocess to avoid Windows asyncio conflicts) and cached for 22 hours.
+
+    Fallback chain:
+      1. Headless browser scrape — anonymous, works without any login
+      2. Manual token from secrets (sasclouds_token) — set once in dashboard
+      3. Token already in config.json from a previous scrape
+    """
+    import sys
+
+    # 1. Scrape anonymously — runs as a fresh subprocess (no asyncio conflict)
+    logger.info("_get_token: scraping anonymous token via headless browser…")
+    try:
+        script = str(Path(__file__).parent / "scrape_token.py")
+        proc = subprocess.run(
+            [sys.executable, script, "--headless"],
+            capture_output=True, text=True, timeout=150,
+            cwd=str(Path(__file__).parent),
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        )
+        # Always log the full subprocess output so we can debug what happened
+        sub_out = (proc.stdout + proc.stderr).strip()
+        for line in sub_out.splitlines():
+            logger.info(f"  [scrape_token.py] {line}")
+
+        if proc.returncode == 0:
+            token = load_config().get("token", "")
+            if token:
+                logger.info(f"_get_token: token scraped (length={len(token)})")
+                return token
+        logger.warning(f"_get_token: scrape subprocess exit {proc.returncode}")
+    except Exception as exc:
+        logger.error(f"_get_token: scrape error: {exc}")
+
+    # 2. Manual override from Streamlit secrets
+    try:
+        static = st.secrets.get("sasclouds_token", "")
+        if static:
+            return static
+    except Exception:
+        pass
+
+    # 3. Existing token from a previous successful scrape
+    return load_config().get("token", "")
 
 # ── Authentication ────────────────────────────────────────────────────────────
 PASSWORD = st.secrets.get("PASSWORD", "default_fallback")
@@ -70,9 +136,22 @@ if "polygon_geojson" not in st.session_state:
 if "aoi_filename" not in st.session_state:
     st.session_state.aoi_filename = None
 
+# ── Auth token check (once per session, daily auto-refresh) ───────────────────
+if "token_ready" not in st.session_state:
+    token = _get_token()
+    st.session_state.token_ready = bool(token)
+    if token:
+        logger.info("Auth token ready")
+    else:
+        logger.warning("No auth token configured")
+
 # ── Page header ───────────────────────────────────────────────────────────────
 st.title("🛰️ SASClouds API Scraper")
 st.markdown("Fast, cloud-compatible search using the official API. No browser needed.")
+
+# No token warning: the API is public — anonymous browsing works without a token
+# (confirmed from live HAR capture 2026-05-06). Token is only needed if the
+# server starts enforcing auth for anonymous users.
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 sidebar_params = render_sidebar()

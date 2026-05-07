@@ -5,7 +5,6 @@ import logging
 import shutil
 import tempfile
 import time
-import traceback
 import zipfile
 from datetime import date as _date, datetime
 from pathlib import Path
@@ -35,115 +34,127 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
       2. Paginate through scene results
       3. Build results table + map features
       4. Store everything in session_state for the map and download
-
-    Progress is logged to the terminal (via logging) AND shown in the Streamlit
-    UI log container for live feedback.
     """
     t0 = time.time()
     log_lines: list[str] = []
 
+    def _ts() -> str:
+        return datetime.now().strftime("%H:%M:%S")
+
     def add_log(msg: str, level: str = "info"):
-        """Append to the UI log pane and emit to the Python logger."""
-        log_lines.append(msg)
-        log_container.code("\n".join(log_lines[-40:]), language="bash")
+        stamped = f"[{_ts()}] {msg}"
+        log_lines.append(stamped)
+        log_container.code("\n".join(log_lines[-60:]), language="bash")
         getattr(logger, level)(msg)
+
+    progress = st.progress(0, text="Initialising…")
 
     with st.status("Searching…", expanded=True) as status:
         try:
-            client = SASCloudsAPIClient()
-
             # ── 1. Upload AOI ─────────────────────────────────────────
-            add_log("▶ [1/4] Uploading AOI shapefile…")
-            status.write("Uploading AOI…")
+            add_log("▶ [1/4] Building and uploading AOI shapefile…")
+            progress.progress(5, text="Uploading AOI shapefile…")
             t1 = time.time()
-            upload_id = client.upload_aoi(polygon_geojson)
-            add_log(f"  ✓ AOI uploaded in {time.time()-t1:.2f}s → uploadId={upload_id}")
-            status.write(f"AOI uploaded (ID: {upload_id})")
+
+            try:
+                client = SASCloudsAPIClient()
+                upload_id = client.upload_aoi(polygon_geojson)
+            except Exception as exc:
+                add_log(f"  ✗ Upload failed: {exc}", "error")
+                raise
+
+            elapsed1 = time.time() - t1
+            add_log(f"  ✓ Uploaded in {elapsed1:.2f}s  →  uploadId={upload_id}")
+            progress.progress(15, text=f"AOI uploaded ({elapsed1:.1f}s) — querying scenes…")
             log_aoi_upload(session_id, aoi_filename, polygon_geojson)
 
-            # ── 2. Search params summary ──────────────────────────────
-            start_ms = _date_to_ms(start_date)
-            end_ms   = _date_to_ms(end_date)
+            # ── 2. Log search parameters ──────────────────────────────
+            start_ms  = _date_to_ms(start_date)
+            end_ms    = _date_to_ms(end_date)
             sat_names = [s["satelliteId"] for s in selected_satellites]
             add_log(f"▶ [2/4] Search parameters:")
-            add_log(f"  Date range : {start_date} → {end_date}")
+            add_log(f"  Date range : {start_date}  →  {end_date}")
             add_log(f"  Cloud cover: ≤ {max_cloud}%")
-            add_log(f"  Satellites : {len(selected_satellites)} selected")
-            add_log(f"  {', '.join(sat_names)}")
+            add_log(f"  Satellites : {len(sat_names)}  —  {', '.join(sat_names)}")
             logger.info(
-                f"Search params | uploadId={upload_id} | "
-                f"{start_date}→{end_date} | cloud≤{max_cloud}% | "
-                f"satellites({len(selected_satellites)})={sat_names}"
+                f"Search | uploadId={upload_id} | "
+                f"{start_date}→{end_date} | cloud≤{max_cloud}% | sats={sat_names}"
             )
 
             # ── 3. Paginate scenes ────────────────────────────────────
             add_log("▶ [3/4] Fetching scenes (paginated)…")
-            status.write("Fetching scenes…")
             all_scenes: list = []
             page = 1
             page_size = 50
             total_expected = None
 
             while True:
-                add_log(f"  → Page {page} (page_size={page_size}, fetched so far={len(all_scenes)})…")
-                status.write(f"Fetching page {page}…")
+                add_log(f"  → Requesting page {page}  (have {len(all_scenes)} scenes so far)…")
+                progress.progress(
+                    15 if total_expected is None else min(15 + int(70 * len(all_scenes) / max(total_expected, 1)), 85),
+                    text=f"Fetching page {page}…  ({len(all_scenes)}/{total_expected or '?'} scenes)",
+                )
                 t_page = time.time()
 
-                result = client.search_scenes(
-                    upload_id, start_ms, end_ms, max_cloud,
-                    selected_satellites, page, page_size,
-                )
+                try:
+                    result = client.search_scenes(
+                        upload_id, start_ms, end_ms, max_cloud,
+                        selected_satellites, page, page_size,
+                    )
+                except Exception as exc:
+                    add_log(f"  ✗ Network error on page {page}: {exc}", "error")
+                    raise
+
                 elapsed_page = time.time() - t_page
+                api_code = result.get("code")
 
-                if result.get("code") != 0:
+                if api_code != 0:
                     msg = result.get("message", "Unknown API error")
-                    add_log(f"  ✗ API error on page {page}: {msg}", "error")
-                    raise Exception(f"API returned error: {msg}")
+                    add_log(
+                        f"  ✗ API returned code={api_code} on page {page}: {msg}",
+                        "error",
+                    )
+                    raise Exception(f"API error (code {api_code}): {msg}")
 
-                scenes = result.get("data", [])
+                scenes    = result.get("data", [])
                 page_info = result.get("pageInfo", {})
+
                 if total_expected is None:
                     total_expected = page_info.get("total", 0)
                     add_log(f"  Total scenes reported by API: {total_expected}")
 
+                all_scenes.extend(scenes)
+                fetched = len(all_scenes)
+
                 add_log(
-                    f"  ✓ Page {page}: {len(scenes)} scenes returned | "
-                    f"cumulative={len(all_scenes)+len(scenes)}/{total_expected} | "
-                    f"{elapsed_page:.2f}s"
+                    f"  ✓ Page {page}: {len(scenes)} scenes  |  "
+                    f"cumulative {fetched}/{total_expected}  |  {elapsed_page:.2f}s"
                 )
                 logger.info(
-                    f"Page {page}: {len(scenes)} scenes | "
-                    f"cumulative={len(all_scenes)+len(scenes)}/{total_expected} | "
-                    f"{elapsed_page:.2f}s"
+                    f"Page {page}: {len(scenes)} scenes | cumulative {fetched}/{total_expected} | {elapsed_page:.2f}s"
                 )
 
-                if not scenes:
-                    add_log(f"  Empty page {page} – stopping pagination")
-                    break
-
-                all_scenes.extend(scenes)
-
-                if len(all_scenes) >= (total_expected or 0):
-                    add_log(f"  All {total_expected} scenes fetched after {page} page(s)")
+                if not scenes or fetched >= (total_expected or 0):
+                    reason = "empty page" if not scenes else f"all {total_expected} scenes fetched"
+                    add_log(f"  Stopping pagination — {reason} (page {page})")
                     break
 
                 page += 1
 
             total_search_time = time.time() - t0
             add_log(
-                f"▶ Pagination complete: {len(all_scenes)} scenes | "
-                f"{page} page(s) | {total_search_time:.1f}s total"
+                f"▶ Pagination done: {len(all_scenes)} scenes  |  "
+                f"{page} page(s)  |  {total_search_time:.1f}s total"
             )
-            status.write(f"Found {len(all_scenes)} scenes.")
             logger.info(
-                f"Search complete | {len(all_scenes)} scenes | "
-                f"{page} pages | {total_search_time:.2f}s"
+                f"Search complete | {len(all_scenes)} scenes | {page} pages | {total_search_time:.2f}s"
             )
 
             if not all_scenes:
-                st.warning("No scenes found. Try adjusting date range, cloud cover, or AOI.")
+                progress.progress(100, text="No scenes found")
+                st.warning("No scenes found. Try a wider date range, higher cloud limit, or a different AOI.")
                 logger.warning("Search returned 0 scenes")
-                status.update(label="⚠ No scenes found", state="complete")
+                status.update(label="No scenes found", state="complete")
                 return
 
             log_search(
@@ -159,6 +170,7 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
 
             # ── 4. Build table + map features ─────────────────────────
             add_log(f"▶ [4/4] Processing {len(all_scenes)} scenes…")
+            progress.progress(88, text=f"Processing {len(all_scenes)} scenes…")
             features_for_map: list = []
             table_data: list = []
             parse_errors = 0
@@ -177,8 +189,7 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
                     footprint = json.loads(scene.get("boundary", "{}"))
                 except json.JSONDecodeError:
                     logger.warning(
-                        f"Scene {idx+1}/{len(all_scenes)}: invalid boundary JSON "
-                        f"for {prod_id} – skipping"
+                        f"Scene {idx+1}/{len(all_scenes)}: invalid boundary JSON for {prod_id} — skipping"
                     )
                     parse_errors += 1
                     continue
@@ -187,17 +198,13 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
                     "http://quickview.sasclouds.com",
                     "https://quickview.obs.cn-north-10.myhuaweicloud.com",
                 )
-                logger.debug(
-                    f"  Scene {idx+1}/{len(all_scenes)}: {sat}/{sensor} | "
-                    f"{date_str} | cloud={cloud}% | prod={prod_id}"
-                )
 
                 table_data.append({
                     "Satellite/Sensor": f"{sat} {sensor}",
                     "Date": date_str,
                     "Cloud (%)": cloud,
                     "Product ID": prod_id,
-                    "Quickview": f'<a href="{quickview_url}" target="_blank">🔗 View</a>',
+                    "Quickview": f'<a href="{quickview_url}" target="_blank">View</a>',
                 })
                 features_for_map.append({
                     "geometry": footprint,
@@ -212,16 +219,15 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
                 })
 
             if parse_errors:
-                add_log(f"  ⚠ {parse_errors} scene(s) skipped (boundary JSON error)", "warning")
+                add_log(f"  ⚠ {parse_errors} scene(s) skipped — invalid boundary JSON", "warning")
 
             add_log(
-                f"  Built table: {len(table_data)} rows | "
-                f"map features: {len(features_for_map)} polygons | "
+                f"  Table: {len(table_data)} rows  |  "
+                f"map features: {len(features_for_map)}  |  "
                 f"parse errors: {parse_errors}"
             )
             logger.info(
-                f"Results built | table_rows={len(table_data)} | "
-                f"map_features={len(features_for_map)} | parse_errors={parse_errors}"
+                f"Results built | rows={len(table_data)} | features={len(features_for_map)} | parse_errors={parse_errors}"
             )
             _log_event(
                 "search_complete",
@@ -231,7 +237,7 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
                 date_start=str(start_date),
                 date_end=str(end_date),
                 cloud_max=max_cloud,
-                satellite_ids=[s["satelliteId"] for s in selected_satellites],
+                satellite_ids=sat_names,
                 pages_fetched=page,
                 total_scenes=len(all_scenes),
                 table_rows=len(table_data),
@@ -247,20 +253,23 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
             # ── Persist in session_state ──────────────────────────────
             st.session_state["scenes_for_download"]   = all_scenes
             st.session_state["features_for_download"] = features_for_map
-            st.session_state["features_for_map"]      = features_for_map  # read by main map
+            st.session_state["features_for_map"]      = features_for_map
             st.session_state["temp_dir_ready"]        = True
 
-            add_log(f"✅ Search done. {len(all_scenes)} scenes ready. Scroll down to see footprints on the map.")
+            progress.progress(100, text=f"Done — {len(all_scenes)} scenes ready")
+            add_log(f"✅ Complete. {len(all_scenes)} scenes ready. Footprints visible on the map below.")
             status.update(
                 label=f"✅ {len(all_scenes)} scenes found in {total_search_time:.1f}s",
                 state="complete",
             )
 
         except Exception as exc:
-            status.update(label="✗ Search failed", state="error")
-            add_log(f"✗ EXCEPTION: {exc}", "error")
-            logger.error(f"Search failed: {exc}", exc_info=True)
-            st.error(f"Search failed: {exc}\n\n{traceback.format_exc()}")
+            elapsed = time.time() - t0
+            progress.progress(100, text="Search failed")
+            status.update(label="Search failed", state="error")
+            add_log(f"✗ FAILED after {elapsed:.1f}s: {exc}", "error")
+            logger.error(f"Search failed after {elapsed:.1f}s: {exc}", exc_info=True)
+            st.error(f"**Search failed:** {exc}")
 
 
 # ── Download ──────────────────────────────────────────────────────────────────

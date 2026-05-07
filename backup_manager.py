@@ -25,7 +25,7 @@ class BackupManager:
     # ================================================================
     # EDIT THIS VARIABLE TO MATCH YOUR PROJECT
     # ================================================================
-    PROJECT_NAME = "SASCloud_Scraper"  # ← Change this to your project name
+    PROJECT_NAME = "App_SASCloud_Scraping"  # ← Change this to your project name
     # ================================================================
     
     # Excluded directories (case insensitive for some)
@@ -41,7 +41,7 @@ class BackupManager:
         "dist", "build", "egg-info",
         ".pytest_cache", ".mypy_cache", ".coverage",
         ".streamlit/cache",  # Streamlit cache
-    ]
+    
     
     EXCLUDED_EXTENSIONS = [
         ".pyc", ".pyo", ".pyd",
