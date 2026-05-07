@@ -8,3 +8,5 @@ lxml>=4.9.0
 folium>=0.15.0
 streamlit-folium>=0.15.0
 pandas>=2.0.0
+geopandas>=0.14.0   # added for AOIHandler
+pyproj>=3.6.0       # added for area calculation

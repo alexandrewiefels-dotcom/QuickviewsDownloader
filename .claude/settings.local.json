@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(python -m pytest tests/test_sasclouds_scraper.py -v --tb=short)",
+      "Bash(python -c \"import sasclouds_api_scraper; print\\('sasclouds_api_scraper OK'\\)\")",
+      "Bash(python -c \"import search_logic; print\\('search_logic OK'\\)\")",
+      "Bash(python -m pytest tests/ -v)"
+    ]
+  }
+}

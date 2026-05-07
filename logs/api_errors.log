@@ -375,3 +375,21 @@ TypeError: expected string or bytes-like object, got 'MagicMock'
 2026-05-06 16:08:03,117 - DEBUG - sasclouds_api_scraper - Downloading image from http://example.com/missing.jpg
 2026-05-06 16:08:03,118 - WARNING - sasclouds_api_scraper - Failed to download http://example.com/missing.jpg, HTTP 404
 2026-05-06 16:08:03,118 - INFO - test_sasclouds_scraper - HTTP error handled, returned False
+2026-05-07 09:30:05 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 09:30:05 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 742, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 09:30:06 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 09:30:06 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 09:31:27 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 09:31:27 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 09:31:27 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 09:31:27 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 739, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 09:31:27 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 09:31:27 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']

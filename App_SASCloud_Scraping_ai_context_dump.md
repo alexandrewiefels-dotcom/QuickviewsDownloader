@@ -6,11 +6,15 @@ This section shows the location of all files (including non-python files).
 Project Root: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping
 📁 App_SASCloud_Scraping/
   📄 .gitignore
+  📄 backup_manager.py
   📄 main.py
+  📄 map_utils.py
   📄 README.md
   📄 requirements.txt
   📄 sasclouds_api_scraper.py
   📄 sasclouds_scraper.py
+  📄 search_logic.py
+  📄 sidebar.py
   📁 .streamlit/
     📄 config.toml
     📄 secrets.toml
@@ -67,26 +71,582 @@ Project Root: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping
 ## 2. SOURCE CODE AND TEXT CONTENTS
 The following blocks contain the absolute paths and code for relevant scripts.
 
+### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\backup_manager.py
+```py
+# ============================================================================
+# FILE: backup_manager.py – Versioned backup system for any project
+# UPDATED: Added collision protection, excludes dot-folders, editable project name
+# ============================================================================
+
+import os
+import re
+import shutil
+import json
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import List, Dict, Optional
+import zipfile
+
+
+class BackupManager:
+    """
+    Manages versioned backups of project files, stored outside the project root.
+    Excludes all folders starting with a dot (.) and other common exclusions.
+    
+    PROJECT_NAME: Change this variable to match your project name.
+    """
+    
+    # ================================================================
+    # EDIT THIS VARIABLE TO MATCH YOUR PROJECT
+    # ================================================================
+    PROJECT_NAME = "SASCloud_Scraper"  # ← Change this to your project name
+    # ================================================================
+    
+    # Excluded directories (case insensitive for some)
+    EXCLUDED_DIRS = [
+        # Dot folders (any folder starting with .)
+        # Handled dynamically in _should_exclude method
+        "venv", "env", "ENV", ".venv",
+        "__pycache__",
+        "backups",
+        ".git",
+        ".idea", ".vscode",
+        "logs", "tmp", "temp", "node_modules",
+        "dist", "build", "egg-info",
+        ".pytest_cache", ".mypy_cache", ".coverage",
+        ".streamlit/cache",  # Streamlit cache
+    ]
+    
+    EXCLUDED_EXTENSIONS = [
+        ".pyc", ".pyo", ".pyd",
+        ".so", ".dll", ".dylib",
+        ".exe", ".msi", ".bat", ".cmd",
+        ".log", ".tmp", ".cache",
+        ".db-journal", ".wal", ".shm",  # SQLite temp files
+        ".lock", ".pid",
+        ".pycache",
+    ]
+    
+    EXCLUDED_FILES = [
+        ".DS_Store",
+        "Thumbs.db",
+        "desktop.ini",
+        ".gitignore",
+        ".gitattributes",
+        ".env",  # Environment variables (sensitive)
+        ".secrets.toml",  # Secrets file
+    ]
+    
+    def __init__(self, project_root: str = None):
+        """
+        Initialize backup manager.
+        
+        Args:
+            project_root: Path to project root. If None, auto-detects from current file.
+        """
+        if project_root is None:
+            # Auto-detect project root (directory containing this script)
+            current_file = Path(__file__).resolve()
+            
+            # Try to find project root by looking for common markers
+            markers = ["app.py", "main.py", "requirements.txt", "setup.py"]
+            for parent in current_file.parents:
+                if any((parent / marker).exists() for marker in markers):
+                    self.project_root = parent
+                    break
+            else:
+                self.project_root = current_file.parent
+        
+        else:
+            self.project_root = Path(project_root)
+        
+        # Backup base directory (parent of project root)
+        self.backup_base = self.project_root.parent / f"{self.PROJECT_NAME}_backups"
+        self.backup_base.mkdir(exist_ok=True)
+        
+        # Metadata file
+        self.metadata_file = self.backup_base / "backup_metadata.json"
+        self._load_metadata()
+        
+        print(f"📁 Project root: {self.project_root}")
+        print(f"📁 Backup base: {self.backup_base}")
+    
+    def _is_dot_folder(self, path: Path) -> bool:
+        """Check if any part of the path starts with a dot (.)"""
+        for part in path.parts:
+            if part.startswith('.') and len(part) > 1:  # Exclude current dir "."
+                return True
+        return False
+    
+    def _get_unique_path(self, base_path: Path) -> Path:
+        """
+        If base_path exists, appends an incrementing counter until a unique path is found.
+        Works for both directories and files.
+        """
+        if not base_path.exists():
+            return base_path
+        
+        counter = 1
+        suffix = base_path.suffix  # .zip or empty for folders
+        stem = base_path.stem      # filename without extension
+        parent = base_path.parent
+
+        while True:
+            new_path = parent / f"{stem}_{counter}{suffix}"
+            if not new_path.exists():
+                return new_path
+            counter += 1
+    
+    def _sanitize_description(self, description: str) -> str:
+        """Sanitize description for use in filenames"""
+        if not description:
+            return ""
+        sanitized = re.sub(r'[^a-zA-Z0-9_\-]', '_', description)
+        sanitized = re.sub(r'_+', '_', sanitized)
+        return sanitized[:50]
+    
+    def _should_exclude(self, path: Path) -> bool:
+        """
+        Determine if a path should be excluded from backup.
+        Excludes dot-folders, common excluded directories, and file extensions.
+        """
+        # Exclude dot folders (any folder starting with .)
+        if self._is_dot_folder(path):
+            return True
+        
+        # Check excluded directories
+        for excluded in self.EXCLUDED_DIRS:
+            if excluded in path.parts:
+                return True
+        
+        # Check excluded file extensions
+        if path.is_file():
+            for ext in self.EXCLUDED_EXTENSIONS:
+                if path.suffix.lower() == ext:
+                    return True
+            
+            # Check excluded filenames
+            if path.name in self.EXCLUDED_FILES:
+                return True
+        
+        return False
+    
+    def _get_all_project_files(self) -> List[Path]:
+        """Recursively get all project files, excluding unwanted ones."""
+        files = []
+        
+        for item in self.project_root.rglob("*"):
+            # Skip if should be excluded
+            if self._should_exclude(item):
+                continue
+            
+            # Skip if item is inside backup directory
+            if self.backup_base in item.parents or item == self.backup_base:
+                continue
+            
+            if item.is_file():
+                files.append(item)
+        
+        return files
+    
+    def _load_metadata(self):
+        """Load backup metadata from JSON file."""
+        if self.metadata_file.exists():
+            try:
+                with open(self.metadata_file, 'r', encoding='utf-8') as f:
+                    self.metadata = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                self.metadata = {"backups": [], "current_version": "1.0.0", "last_backup": None}
+        else:
+            self.metadata = {"backups": [], "current_version": "1.0.0", "last_backup": None}
+    
+    def _save_metadata(self):
+        """Save backup metadata to JSON file."""
+        with open(self.metadata_file, 'w', encoding='utf-8') as f:
+            json.dump(self.metadata, f, indent=2, default=str)
+    
+    def _get_next_version(self) -> str:
+        """Generate next version number."""
+        if not self.metadata["backups"]:
+            return "1.0.0"
+        
+        # Find highest version number
+        versions = []
+        for backup in self.metadata["backups"]:
+            try:
+                parts = backup["version"].split('.')
+                versions.append(int(parts[-1]))
+            except (ValueError, KeyError, IndexError):
+                versions.append(0)
+        
+        if versions:
+            next_num = max(versions) + 1
+        else:
+            next_num = 1
+        
+        return f"1.0.{next_num}"
+    
+    def create_backup(self, description: str = "", include_data: bool = True) -> Dict:
+        """
+        Create a full backup of the project.
+        
+        Args:
+            description: Optional description of the backup
+            include_data: Whether to include data files (default True)
+        
+        Returns:
+            Dict with backup information
+        """
+        version = self._get_next_version()
+        timestamp = datetime.now()
+        timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
+        
+        desc_suffix = self._sanitize_description(description)
+        if desc_suffix:
+            backup_name = f"{self.PROJECT_NAME}_backup_v{version}_{desc_suffix}_{timestamp_str}"
+        else:
+            backup_name = f"{self.PROJECT_NAME}_backup_v{version}_{timestamp_str}"
+        
+        # Ensure unique backup path
+        backup_path = self._get_unique_path(self.backup_base / backup_name)
+        backup_path.mkdir(parents=True, exist_ok=True)
+        
+        print(f"\n📦 Creating backup: {backup_path.name}")
+        
+        # Copy all project files
+        file_count = 0
+        for src_file in self._get_all_project_files():
+            # Calculate relative path from project root
+            rel_path = src_file.relative_to(self.project_root)
+            dst_file = backup_path / rel_path
+            
+            # Create parent directories
+            dst_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Copy file
+            shutil.copy2(src_file, dst_file)
+            file_count += 1
+        
+        # Create backup info file
+        backup_info = {
+            "version": version,
+            "timestamp": timestamp.isoformat(),
+            "description": description,
+            "path": str(backup_path),
+            "include_data": include_data,
+            "file_count": file_count,
+            "project_name": self.PROJECT_NAME,
+            "project_root": str(self.project_root)
+        }
+        
+        with open(backup_path / "backup_info.json", 'w', encoding='utf-8') as f:
+            json.dump(backup_info, f, indent=2, default=str)
+        
+        # Update metadata
+        self.metadata["backups"].append(backup_info)
+        self.metadata["last_backup"] = timestamp.isoformat()
+        self._save_metadata()
+        
+        print(f"✅ Backup created: {backup_path.name}")
+        print(f"   Version: v{version}")
+        print(f"   Files backed up: {file_count}")
+        
+        return backup_info
+    
+    def create_zip_backup(self, description: str = "", include_data: bool = True) -> Path:
+        """
+        Create a compressed zip backup.
+        
+        Args:
+            description: Optional description
+            include_data: Whether to include data files
+        
+        Returns:
+            Path to created zip file
+        """
+        # First create the folder backup
+        backup_info = self.create_backup(description, include_data)
+        backup_dir = Path(backup_info["path"])
+        
+        version = backup_info["version"]
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        desc_suffix = self._sanitize_description(description)
+        if desc_suffix:
+            zip_name = f"{self.PROJECT_NAME}_backup_v{version}_{desc_suffix}_{timestamp}.zip"
+        else:
+            zip_name = f"{self.PROJECT_NAME}_backup_v{version}_{timestamp}.zip"
+        
+        # Ensure unique zip filename
+        zip_path = self._get_unique_path(backup_dir / zip_name)
+        
+        print(f"\n📦 Creating zip archive: {zip_path.name}")
+        
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for file_path in backup_dir.rglob("*"):
+                if file_path.is_file() and file_path != zip_path:
+                    arcname = file_path.relative_to(backup_dir)
+                    zipf.write(file_path, arcname)
+        
+        print(f"✅ Zip backup created: {zip_path.name}")
+        print(f"   Size: {zip_path.stat().st_size / (1024*1024):.2f} MB")
+        
+        return zip_path
+    
+    def list_backups(self) -> List[Dict]:
+        """List all available backups."""
+        return self.metadata["backups"]
+    
+    def restore_backup(self, version: str, target_dir: Path = None, dry_run: bool = False) -> bool:
+        """
+        Restore a backup version.
+        
+        Args:
+            version: Version to restore (e.g., "1.0.5")
+            target_dir: Target directory (default: project root)
+            dry_run: If True, only show what would be restored
+        
+        Returns:
+            True if successful
+        """
+        # Find backup info
+        backup_info = None
+        for b in self.metadata["backups"]:
+            if b["version"] == version:
+                backup_info = b
+                break
+        
+        if not backup_info:
+            print(f"❌ Backup version {version} not found")
+            print(f"   Available versions: {[b['version'] for b in self.metadata['backups']]}")
+            return False
+        
+        backup_path = Path(backup_info["path"])
+        if not backup_path.exists():
+            print(f"❌ Backup directory not found: {backup_path}")
+            return False
+        
+        if target_dir is None:
+            target_dir = self.project_root
+        
+        print(f"\n🔄 Restoring backup v{version}")
+        print(f"   From: {backup_path}")
+        print(f"   To: {target_dir}")
+        
+        if dry_run:
+            print("\n📋 Files that would be restored:")
+            for item in backup_path.rglob("*"):
+                if item.is_file() and item.name != "backup_info.json":
+                    rel = item.relative_to(backup_path)
+                    print(f"   - {rel}")
+            print(f"\n   Total: {backup_info['file_count']} files")
+            return True
+        
+        # Create a pre-restore backup for safety
+        pre_restore_backup = self.create_backup(f"Pre-restore before restoring v{version}")
+        print(f"📦 Created safety backup: v{pre_restore_backup['version']}")
+        
+        # Restore files
+        restored_count = 0
+        for item in backup_path.iterdir():
+            if item.name == "backup_info.json":
+                continue
+            
+            dst = target_dir / item.name
+            if item.is_dir():
+                if dst.exists():
+                    shutil.rmtree(dst)
+                shutil.copytree(item, dst, ignore_dangling_symlinks=True)
+            else:
+                shutil.copy2(item, dst)
+            restored_count += 1
+        
+        print(f"✅ Restored version {version} ({restored_count} items)")
+        return True
+    
+    def cleanup_old_backups(self, keep_count: int = 10) -> int:
+        """
+        Delete old backups, keeping only the most recent N.
+        
+        Args:
+            keep_count: Number of backups to keep
+        
+        Returns:
+            Number of backups deleted
+        """
+        if len(self.metadata["backups"]) <= keep_count:
+            print(f"ℹ️ Only {len(self.metadata['backups'])} backups, nothing to clean (keep={keep_count})")
+            return 0
+        
+        to_delete = self.metadata["backups"][:-keep_count]
+        deleted_count = 0
+        
+        for backup in to_delete:
+            backup_path = Path(backup["path"])
+            if backup_path.exists():
+                shutil.rmtree(backup_path)
+                deleted_count += 1
+                print(f"🗑️ Deleted old backup: v{backup['version']} ({backup['timestamp'][:19]})")
+        
+        # Keep only the most recent backups
+        self.metadata["backups"] = self.metadata["backups"][-keep_count:]
+        self._save_metadata()
+        
+        print(f"✅ Cleanup complete. Kept {keep_count} backups, deleted {deleted_count}")
+        return deleted_count
+    
+    def get_backup_size(self, version: str = None) -> float:
+        """Get size of backup(s) in MB."""
+        if version:
+            for backup in self.metadata["backups"]:
+                if backup["version"] == version:
+                    backup_path = Path(backup["path"])
+                    if backup_path.exists():
+                        total_size = sum(f.stat().st_size for f in backup_path.rglob("*") if f.is_file())
+                        return total_size / (1024 * 1024)
+                    return 0
+            return 0
+        else:
+            total_size = 0
+            for backup in self.metadata["backups"]:
+                backup_path = Path(backup["path"])
+                if backup_path.exists():
+                    total_size += sum(f.stat().st_size for f in backup_path.rglob("*") if f.is_file())
+            return total_size / (1024 * 1024)
+    
+    def export_manifest(self, version: str = None) -> Dict:
+        """Export detailed manifest of backed up files."""
+        if version:
+            backups = [b for b in self.metadata["backups"] if b["version"] == version]
+        else:
+            backups = self.metadata["backups"]
+        
+        manifest = {
+            "exported_at": datetime.now().isoformat(),
+            "project_name": self.PROJECT_NAME,
+            "backups": []
+        }
+        
+        for backup in backups:
+            backup_path = Path(backup["path"])
+            if not backup_path.exists():
+                continue
+            
+            files = []
+            for file_path in backup_path.rglob("*"):
+                if file_path.is_file() and file_path.name != "backup_info.json":
+                    rel = file_path.relative_to(backup_path)
+                    files.append({
+                        "path": str(rel),
+                        "size_bytes": file_path.stat().st_size,
+                        "modified": datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+                    })
+            
+            manifest["backups"].append({
+                "version": backup["version"],
+                "timestamp": backup["timestamp"],
+                "description": backup["description"],
+                "file_count": len(files),
+                "total_size_mb": sum(f["size_bytes"] for f in files) / (1024 * 1024),
+                "files": files
+            })
+        
+        return manifest
+
+
+def main():
+    """CLI interface for backup management."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description=f"{BackupManager.PROJECT_NAME} - Backup Manager",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python backup_manager.py --create
+  python backup_manager.py --create --description "Before major update"
+  python backup_manager.py --create-zip --description "Release v2.0"
+  python backup_manager.py --list
+  python backup_manager.py --restore 1.0.5
+  python backup_manager.py --restore 1.0.5 --dry-run
+  python backup_manager.py --cleanup --keep 5
+  python backup_manager.py --size
+        """
+    )
+    
+    parser.add_argument("--create", "-c", action="store_true", help="Create a new backup folder")
+    parser.add_argument("--create-zip", "-z", action="store_true", help="Create a zip backup inside the backup folder")
+    parser.add_argument("--list", "-l", action="store_true", help="List all backups")
+    parser.add_argument("--restore", "-r", type=str, help="Restore a specific version")
+    parser.add_argument("--dry-run", action="store_true", help="Preview restore without copying files")
+    parser.add_argument("--cleanup", action="store_true", help="Clean old backups")
+    parser.add_argument("--keep", type=int, default=10, help="Number of backups to keep (default: 10)")
+    parser.add_argument("--description", "-d", type=str, default="", help="Backup description")
+    parser.add_argument("--no-data", action="store_true", help="Exclude data files from backup")
+    parser.add_argument("--size", "-s", action="store_true", help="Show backup sizes")
+    parser.add_argument("--manifest", "-m", type=str, help="Export manifest to JSON file")
+    
+    args = parser.parse_args()
+    
+    manager = BackupManager()
+    
+    if args.create:
+        manager.create_backup(args.description, not args.no_data)
+    
+    elif args.create_zip:
+        manager.create_zip_backup(args.description, not args.no_data)
+    
+    elif args.list:
+        backups = manager.list_backups()
+        if not backups:
+            print("\n📦 No backups found.")
+        else:
+            print("\n📦 Available Backups:")
+            print("-" * 90)
+            for b in backups:
+                size = manager.get_backup_size(b["version"])
+                print(f"  v{b['version']:<8} | {b['timestamp'][:19]} | {b['description'] or 'No description':<30} | {b['file_count']:>6} files | {size:.2f} MB")
+    
+    elif args.restore:
+        manager.restore_backup(args.restore, dry_run=args.dry_run)
+    
+    elif args.cleanup:
+        manager.cleanup_old_backups(args.keep)
+    
+    elif args.size:
+        total_size = manager.get_backup_size()
+        print(f"\n📊 Backup Statistics for {BackupManager.PROJECT_NAME}:")
+        print(f"   Total backups: {len(manager.list_backups())}")
+        print(f"   Total size: {total_size:.2f} MB")
+        print(f"   Backup location: {manager.backup_base}")
+    
+    elif args.manifest:
+        manifest = manager.export_manifest()
+        with open(args.manifest, 'w', encoding='utf-8') as f:
+            json.dump(manifest, f, indent=2, default=str)
+        print(f"✅ Manifest exported to: {args.manifest}")
+    
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
+
+```
+
+--- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\backup_manager.py ---
+
+
 ### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\main.py
 ```py
 # File: main.py
 import streamlit as st
-import json
-import tempfile
-import zipfile
-import io
-import shutil
 import uuid
-import traceback
-from pathlib import Path
-from datetime import datetime
-
-from sasclouds_api_scraper import (
-    SASCloudsAPIClient,
-    log_search,
-    log_aoi_upload,
-    convert_uploaded_file_to_geojson
-)
+from sidebar import render_sidebar
+from map_utils import show_aoi_map
+from search_logic import run_search, create_download_zip
 
 st.set_page_config(page_title="SASClouds API Scraper", layout="wide")
 
@@ -119,8 +679,195 @@ if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
 # ----------------------------------------------------------------------
-# Satellite and sensor definitions (full list)
+# Main content area
 # ----------------------------------------------------------------------
+st.title("🛰️ SASClouds API Scraper")
+st.markdown("Fast, cloud‑compatible search using the official API. No browser needed.")
+
+# Render sidebar and get parameters
+sidebar_params = render_sidebar()
+
+# Display AOI preview if defined
+if sidebar_params["polygon_geojson"]:
+    st.subheader("📍 Area of Interest (AOI)")
+    show_aoi_map(sidebar_params["polygon_geojson"])
+
+# Execute search when button clicked
+if sidebar_params["search_clicked"]:
+    if not sidebar_params["polygon_geojson"]:
+        st.error("Please provide an AOI (bounding box or valid file).")
+    elif not sidebar_params["selected_satellites"]:
+        st.warning("No satellites selected. Please choose at least one.")
+    else:
+        log_container = st.empty()
+        run_search(
+            polygon_geojson=sidebar_params["polygon_geojson"],
+            aoi_filename=sidebar_params["aoi_filename"],
+            start_date=sidebar_params["start_date"],
+            end_date=sidebar_params["end_date"],
+            max_cloud=sidebar_params["max_cloud"],
+            selected_satellites=sidebar_params["selected_satellites"],
+            session_id=st.session_state.session_id,
+            log_container=log_container
+        )
+
+# Download button (appears after search)
+create_download_zip()
+```
+
+--- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\main.py ---
+
+
+### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\map_utils.py
+```py
+# File: map_utils.py
+import folium
+from streamlit_folium import st_folium
+import streamlit as st
+
+def show_aoi_map(geojson):
+    """Display a Leaflet map with the AOI polygon."""
+    if not geojson:
+        return
+    try:
+        # Extract geometry
+        if geojson.get("type") == "FeatureCollection":
+            geom = geojson["features"][0]["geometry"]
+        elif geojson.get("type") == "Feature":
+            geom = geojson["geometry"]
+        else:
+            geom = geojson
+        # Compute bounds
+        coords = geom["coordinates"][0]
+        lats = [c[1] for c in coords]
+        lons = [c[0] for c in coords]
+        center = [(min(lats)+max(lats))/2, (min(lons)+max(lons))/2]
+        m = folium.Map(location=[center[0], center[1]], zoom_start=6)
+        folium.GeoJson(geom, style_function=lambda x: {"color": "blue", "weight": 3, "fillOpacity": 0.2}).add_to(m)
+        st_folium(m, width=600, height=400)
+    except Exception as e:
+        st.warning(f"Could not display AOI on map: {e}")
+
+def show_footprints_map(features):
+    """Display a Leaflet map with footprint polygons and popups."""
+    if not features:
+        return
+    # Determine center from first feature
+    first_geom = features[0]["geometry"]
+    coords = first_geom["coordinates"][0]
+    lons = [c[0] for c in coords]
+    lats = [c[1] for c in coords]
+    center_lat = sum(lats) / len(lats)
+    center_lon = sum(lons) / len(lons)
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=8)
+    for feat in features:
+        popup_html = f"""
+        <b>{feat['properties']['satellite']} {feat['properties']['sensor']}</b><br>
+        Date: {feat['properties']['date']}<br>
+        Cloud: {feat['properties']['cloud']}%<br>
+        <img src="{feat['properties']['quickview']}" width="200"><br>
+        <a href="{feat['properties']['quickview']}" target="_blank">Open full image</a>
+        """
+        folium.GeoJson(
+            feat["geometry"],
+            popup=folium.Popup(popup_html, max_width=300),
+            style_function=lambda x: {"color": "red", "weight": 2, "fillOpacity": 0.1}
+        ).add_to(m)
+    st_folium(m, width=800, height=500)
+```
+
+--- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\map_utils.py ---
+
+
+### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\README.md
+```md
+# SASClouds Satellite Image Scraper
+
+A **Streamlit** application that automates the extraction of satellite image footprints, full‑size quickviews, and georeferenced images from the [SASClouds](https://www.sasclouds.com/english/normal/) catalog.
+
+## Features
+
+- 🔐 Password‑protected access (via Streamlit secrets)
+- 🌐 Automated browser control (Playwright) – you log in and apply filters manually once
+- 🗺️ Extracts footprint polygons (4 corners) and metadata
+- 🖼️ Downloads full‑size quickview images and creates **world files (.jgw)** with rotation support
+- 📁 Timestamped output folders for each scraping session
+- 📤 Export any session as ZIP file, preview footprints on a map
+
+## Prerequisites
+
+- Python 3.9+
+- [Playwright browsers](https://playwright.dev/python/docs/intro) (installed automatically via script)
+
+## Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/sasclouds-scraper.git
+   cd sasclouds-scraper
+
+
+## For developer:
+Create a virtual environment (recommended)
+- bash
+- python -m venv venv
+- source venv/bin/activate   # Linux/Mac
+- venv\Scripts\activate      # Windows
+
+## Run the Streamlit app
+- bash
+- streamlit run main.py
+```
+
+--- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\README.md ---
+
+
+### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\requirements.txt
+```txt
+streamlit>=1.28.0
+requests>=2.31.0
+Pillow>=10.0.0
+pyshp>=2.3.0
+shapely>=2.0.0
+pykml>=0.2.0
+lxml>=4.9.0
+folium>=0.15.0
+streamlit-folium>=0.15.0
+pandas>=2.0.0
+```
+
+--- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\requirements.txt ---
+
+
+### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py
+```py
+# File: sasclouds_api_scraper.py
+"""
+SASClouds API Client – handles AOI upload, scene search, download, georeferencing.
+Supports GeoJSON, Shapefile (ZIP), KML, KMZ uploads.
+"""
+
+import json
+import logging
+import re
+import tempfile
+import shutil
+import zipfile
+from io import BytesIO
+from pathlib import Path
+from datetime import datetime
+from typing import Dict, List, Optional, Any
+
+import requests
+from PIL import Image
+import shapefile
+from shapely.geometry import shape as shapely_shape
+from shapely.validation import explain_validity
+from pykml import parser
+
+# ======================================================================
+# Satellite and sensor definitions (full list)
+# ======================================================================
 SATELLITE_GROUPS = {
     "Optical": {
         "2-meter": [
@@ -191,346 +938,6 @@ SATELLITE_GROUPS = {
 }
 
 # ----------------------------------------------------------------------
-# Helper: date to milliseconds
-# ----------------------------------------------------------------------
-def date_to_ms(dt):
-    return int(dt.timestamp() * 1000)
-
-# ----------------------------------------------------------------------
-# Main UI
-# ----------------------------------------------------------------------
-st.title("🛰️ SASClouds API Scraper")
-st.markdown("Fast, cloud‑compatible search using the official API. No browser needed.")
-
-with st.expander("How to use", expanded=False):
-    st.markdown("""
-    1. Draw your AOI (bounding box or upload a GeoJSON, Shapefile ZIP, KML, KMZ).
-    2. Select date range, cloud cover, and satellites/sensors.
-    3. Click **Search and Download** – the API will return all scenes.
-    4. Results are zipped and downloaded (images + world files + GeoJSON).
-    """)
-
-# ----------------------------------------------------------------------
-# AOI input (bounding box or file upload)
-# ----------------------------------------------------------------------
-aoi_method = st.radio("AOI input method", ["Bounding box", "Upload file (GeoJSON, Shapefile ZIP, KML, KMZ)"])
-
-if aoi_method == "Bounding box":
-    col1, col2 = st.columns(2)
-    with col1:
-        min_lon = st.number_input("West (min lon)", value=-73.0, format="%.6f")
-        min_lat = st.number_input("South (min lat)", value=8.0, format="%.6f")
-    with col2:
-        max_lon = st.number_input("East (max lon)", value=-72.0, format="%.6f")
-        max_lat = st.number_input("North (max lat)", value=9.0, format="%.6f")
-    polygon_geojson = {
-        "type": "Polygon",
-        "coordinates": [[[min_lon, min_lat], [max_lon, min_lat],
-                         [max_lon, max_lat], [min_lon, max_lat], [min_lon, min_lat]]]
-    }
-    aoi_filename = "bbox"
-else:
-    uploaded_file = st.file_uploader(
-        "Upload AOI file",
-        type=["geojson", "zip", "kml", "kmz"],
-        help="Supported: GeoJSON (.geojson), Shapefile (.zip containing .shp), KML (.kml), KMZ (.kmz)"
-    )
-    if uploaded_file:
-        try:
-            polygon_geojson = convert_uploaded_file_to_geojson(uploaded_file)
-            aoi_filename = uploaded_file.name
-            st.success(f"File loaded: {aoi_filename}")
-            # Preview geometry type
-            geom_type = polygon_geojson.get("type")
-            st.info(f"Geometry type: {geom_type}")
-        except Exception as e:
-            st.error(f"Failed to parse file: {e}")
-            polygon_geojson = None
-            aoi_filename = None
-    else:
-        polygon_geojson = None
-        aoi_filename = None
-
-# ----------------------------------------------------------------------
-# Filters: date range, cloud cover
-# ----------------------------------------------------------------------
-col1, col2 = st.columns(2)
-with col1:
-    start_date = st.date_input("Start date", value=datetime(2025, 1, 1))
-    end_date = st.date_input("End date", value=datetime(2026, 4, 11))
-with col2:
-    max_cloud = st.slider("Maximum cloud cover (%)", 0, 100, 20)
-
-# ----------------------------------------------------------------------
-# Satellite selection (grouped expanders with safety checks)
-# ----------------------------------------------------------------------
-st.subheader("Satellites and sensors")
-selected_satellites = []
-
-for group_name, categories in SATELLITE_GROUPS.items():
-    if not isinstance(categories, dict):
-        st.warning(f"Skipping group '{group_name}': invalid structure")
-        continue
-    with st.expander(group_name):
-        for cat_name, sats in categories.items():
-            if not isinstance(sats, list):
-                st.warning(f"Skipping category '{cat_name}' in '{group_name}': not a list")
-                continue
-            labels = []
-            for sat in sats:
-                if not isinstance(sat, dict):
-                    continue
-                sensor_str = ', '.join(sat.get('sensorIds', [])) if sat.get('sensorIds') else 'All sensors'
-                labels.append(f"{sat['satelliteId']} ({sensor_str})")
-            chosen = st.multiselect(cat_name, labels, key=f"{group_name}_{cat_name}")
-            for label in chosen:
-                for sat in sats:
-                    if label.startswith(sat['satelliteId']):
-                        selected_satellites.append({
-                            "satelliteId": sat['satelliteId'],
-                            "sensorIds": sat.get('sensorIds', [])
-                        })
-                        break
-
-# ----------------------------------------------------------------------
-# Search and download with detailed logging
-# ----------------------------------------------------------------------
-if st.button("🔍 Search and Download", type="primary"):
-    if not polygon_geojson:
-        st.error("Please provide an AOI (bounding box or valid file).")
-        st.stop()
-
-    if not selected_satellites:
-        st.warning("No satellites selected. Please choose at least one.")
-        st.stop()
-
-    log_container = st.empty()
-    log_lines = []
-
-    def add_log(msg):
-        log_lines.append(msg)
-        log_container.code("\n".join(log_lines[-30:]), language="bash")
-
-    with st.status("Processing...", expanded=True) as status:
-        try:
-            client = SASCloudsAPIClient()
-            status.write("Uploading AOI...")
-            add_log("Starting AOI upload...")
-            upload_id = client.upload_aoi(polygon_geojson)
-            status.write(f"AOI uploaded, ID: {upload_id}")
-            add_log(f"AOI upload successful, ID: {upload_id}")
-
-            add_log("Logging AOI upload...")
-            log_aoi_upload(st.session_state.session_id, aoi_filename, polygon_geojson)
-
-            start_ms = date_to_ms(start_date)
-            end_ms = date_to_ms(end_date)
-            add_log(f"Date range: {start_date} to {end_date} (ms: {start_ms} - {end_ms})")
-            add_log(f"Cloud cover max: {max_cloud}%")
-            add_log(f"Selected satellites: {json.dumps(selected_satellites, indent=2)}")
-
-            all_scenes = []
-            page = 1
-            page_size = 50
-            while True:
-                status.write(f"Fetching page {page}...")
-                add_log(f"Fetching page {page}...")
-                result = client.search_scenes(upload_id, start_ms, end_ms, max_cloud,
-                                              selected_satellites, page, page_size)
-                if result.get("code") != 0:
-                    error_msg = result.get("message", "Unknown API error")
-                    add_log(f"API error: {error_msg}")
-                    raise Exception(f"API returned error: {error_msg}")
-                scenes = result.get("data", [])
-                add_log(f"Page {page} returned {len(scenes)} scenes")
-                if not scenes:
-                    break
-                all_scenes.extend(scenes)
-                total = result.get("pageInfo", {}).get("total", 0)
-                add_log(f"Total scenes so far: {len(all_scenes)} / {total}")
-                if len(all_scenes) >= total:
-                    break
-                page += 1
-
-            status.write(f"Found {len(all_scenes)} scenes.")
-            add_log(f"Total scenes found: {len(all_scenes)}")
-
-            if not all_scenes:
-                st.warning("No scenes found. Adjust your filters.")
-                st.stop()
-
-            add_log("Logging search...")
-            log_search(
-                st.session_state.session_id,
-                polygon_geojson,
-                {
-                    "satellites": selected_satellites,
-                    "cloud_max": max_cloud,
-                    "date_range": [start_date.isoformat(), end_date.isoformat()]
-                },
-                len(all_scenes)
-            )
-
-            temp_dir = Path(tempfile.mkdtemp(prefix="sasclouds_"))
-            add_log(f"Created temporary directory: {temp_dir}")
-            features = []
-
-            for idx, scene in enumerate(all_scenes):
-                status.write(f"Processing scene {idx+1}/{len(all_scenes)}...")
-                add_log(f"Processing scene {idx+1}/{len(all_scenes)}...")
-                sat = scene["satelliteId"]
-                sensor = scene["sensorId"]
-                date_str = datetime.fromtimestamp(scene["acquisitionTime"]/1000).strftime("%Y-%m-%d")
-                cloud = scene["cloudPercent"]
-                prod_id = scene["productId"]
-                footprint = json.loads(scene["boundary"])
-                quickview_url = scene["quickViewUri"].replace(
-                    "http://quickview.sasclouds.com",
-                    "https://quickview.obs.cn-north-10.myhuaweicloud.com"
-                )
-                img_name = f"{sat}_{sensor}_{date_str}_{prod_id}.jpg"
-                img_path = temp_dir / img_name
-
-                add_log(f"  Downloading {img_name} from {quickview_url[:80]}...")
-                if client.download_and_georeference(quickview_url, footprint, img_path):
-                    add_log(f"  ✅ Downloaded {img_name}")
-                else:
-                    add_log(f"  ❌ Failed {img_name}")
-
-                features.append({
-                    "type": "Feature",
-                    "geometry": footprint,
-                    "properties": {
-                        "satellite": sat,
-                        "sensor": sensor,
-                        "date": date_str,
-                        "cloud_cover": cloud,
-                        "product_id": prod_id,
-                        "image": img_name
-                    }
-                })
-
-            geojson_path = temp_dir / "footprints.geojson"
-            with open(geojson_path, "w") as f:
-                json.dump({"type": "FeatureCollection", "features": features}, f, indent=2)
-            add_log(f"GeoJSON saved: {geojson_path}")
-
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-                for file in temp_dir.rglob("*"):
-                    zf.write(file, arcname=file.relative_to(temp_dir))
-            zip_buffer.seek(0)
-            add_log(f"ZIP created, size: {len(zip_buffer.getvalue())} bytes")
-
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            add_log("Temporary directory cleaned up")
-
-            status.update(label="✅ Search complete", state="complete")
-            st.success(f"Found {len(all_scenes)} scenes. Click below to download.")
-            st.download_button(
-                label="📥 Download ZIP",
-                data=zip_buffer.getvalue(),
-                file_name=f"sasclouds_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
-                mime="application/zip",
-                use_container_width=True
-            )
-
-        except Exception as e:
-            error_details = traceback.format_exc()
-            status.write(f"❌ Error: {e}")
-            status.write(f"Details:\n{error_details}")
-            add_log(f"❌ EXCEPTION: {e}")
-            add_log(error_details)
-            status.update(label="❌ Failed", state="error")
-            st.error(f"Search failed: {e}\n\nCheck the log above for details.")
-```
-
---- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\main.py ---
-
-
-### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\README.md
-```md
-# SASClouds Satellite Image Scraper
-
-A **Streamlit** application that automates the extraction of satellite image footprints, full‑size quickviews, and georeferenced images from the [SASClouds](https://www.sasclouds.com/english/normal/) catalog.
-
-## Features
-
-- 🔐 Password‑protected access (via Streamlit secrets)
-- 🌐 Automated browser control (Playwright) – you log in and apply filters manually once
-- 🗺️ Extracts footprint polygons (4 corners) and metadata
-- 🖼️ Downloads full‑size quickview images and creates **world files (.jgw)** with rotation support
-- 📁 Timestamped output folders for each scraping session
-- 📤 Export any session as ZIP file, preview footprints on a map
-
-## Prerequisites
-
-- Python 3.9+
-- [Playwright browsers](https://playwright.dev/python/docs/intro) (installed automatically via script)
-
-## Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/sasclouds-scraper.git
-   cd sasclouds-scraper
-
-
-## For developer:
-Create a virtual environment (recommended)
-- bash
-- python -m venv venv
-- source venv/bin/activate   # Linux/Mac
-- venv\Scripts\activate      # Windows
-
-## Run the Streamlit app
-- bash
-- streamlit run main.py
-```
-
---- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\README.md ---
-
-
-### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\requirements.txt
-```txt
-streamlit>=1.28.0
-requests>=2.31.0
-Pillow>=10.0.0
-pyshp>=2.3.0
-shapely>=2.0.0
-```
-
---- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\requirements.txt ---
-
-
-### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py
-```py
-# File: sasclouds_api_scraper.py
-"""
-SASClouds API Client – handles AOI upload, scene search, download, georeferencing.
-Supports GeoJSON, Shapefile (ZIP), KML, KMZ uploads.
-"""
-
-import json
-import logging
-import re
-import tempfile
-import shutil
-import zipfile
-from io import BytesIO
-from pathlib import Path
-from datetime import datetime
-from typing import Dict, List, Optional, Any
-
-import requests
-from PIL import Image
-import shapefile
-from shapely.geometry import shape as shapely_shape
-import fiona
-import geopandas as gpd
-from pykml import parser
-
-# ----------------------------------------------------------------------
 # Logging setup
 # ----------------------------------------------------------------------
 LOG_DIR = Path("./logs")
@@ -547,7 +954,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------
-# File conversion utilities
+# File conversion utilities (without geopandas/fiona)
 # ----------------------------------------------------------------------
 def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
     """
@@ -569,25 +976,39 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
             shp_files = list(Path(tmpdir).glob("*.shp"))
             if not shp_files:
                 raise ValueError("No .shp file found in ZIP")
-            gdf = gpd.read_file(shp_files[0])
-            if not gdf.geometry.iloc[0].geom_type in ['Polygon', 'MultiPolygon']:
-                raise ValueError("Shapefile must contain Polygon geometries")
-            geojson = json.loads(gdf.to_json())
-            if geojson["type"] == "FeatureCollection":
-                return geojson["features"][0]["geometry"]
-            return geojson
+            # Read shapefile using pyshp
+            sf = shapefile.Reader(shp_files[0])
+            shapes = sf.shapes()
+            if not shapes:
+                raise ValueError("No shapes found in shapefile")
+            # Take first shape (assuming polygon)
+            parts = list(shapes[0].parts) + [len(shapes[0].points)]
+            rings = []
+            for i in range(len(parts)-1):
+                ring_points = shapes[0].points[parts[i]:parts[i+1]]
+                rings.append([[p[0], p[1]] for p in ring_points])
+            if not rings:
+                raise ValueError("No polygon coordinates")
+            # Explicitly close the shapefile reader
+            sf.close()
+            # Return as Polygon geometry (GeoJSON)
+            return {"type": "Polygon", "coordinates": rings}
     
     if filename.endswith('.kml'):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            kml_path = Path(tmpdir) / "upload.kml"
-            kml_path.write_bytes(content)
-            gdf = gpd.read_file(kml_path, driver='KML')
-            if gdf.empty:
-                raise ValueError("No polygon found in KML")
-            geojson = json.loads(gdf.to_json())
-            if geojson["type"] == "FeatureCollection":
-                return geojson["features"][0]["geometry"]
-            return geojson
+        # Parse KML using pykml
+        root = parser.parse(BytesIO(content)).getroot()
+        ns = {"kml": "http://www.opengis.net/kml/2.2"}
+        coords_elem = root.find(".//kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns)
+        if coords_elem is None:
+            raise ValueError("No polygon found in KML")
+        coords_text = coords_elem.text.strip()
+        points = []
+        for coord in coords_text.split():
+            lon, lat, alt = coord.split(',')[:2]
+            points.append([float(lon), float(lat)])
+        if not points:
+            raise ValueError("No coordinates")
+        return {"type": "Polygon", "coordinates": [points]}
     
     if filename.endswith('.kmz'):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -598,13 +1019,60 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
             kml_files = list(Path(tmpdir).glob("*.kml"))
             if not kml_files:
                 raise ValueError("No KML file found in KMZ")
-            gdf = gpd.read_file(kml_files[0], driver='KML')
-            if gdf.empty:
+            # Parse the first KML
+            root = parser.parse(kml_files[0]).getroot()
+            ns = {"kml": "http://www.opengis.net/kml/2.2"}
+            coords_elem = root.find(".//kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns)
+            if coords_elem is None:
                 raise ValueError("No polygon found in KMZ")
-            geojson = json.loads(gdf.to_json())
-            if geojson["type"] == "FeatureCollection":
-                return geojson["features"][0]["geometry"]
-            return geojson
+            coords_text = coords_elem.text.strip()
+            points = []
+            for coord in coords_text.split():
+                lon, lat, alt = coord.split(',')[:2]
+                points.append([float(lon), float(lat)])
+            if not points:
+                raise ValueError("No coordinates")
+            return {"type": "Polygon", "coordinates": [points]}
+    
+    raise ValueError(f"Unsupported file type: {filename}")
+    
+    if filename.endswith('.kml'):
+        root = parser.parse(BytesIO(content)).getroot()
+        ns = {"kml": "http://www.opengis.net/kml/2.2"}
+        coords_elem = root.find(".//kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns)
+        if coords_elem is None:
+            raise ValueError("No polygon found in KML")
+        coords_text = coords_elem.text.strip()
+        points = []
+        for coord in coords_text.split():
+            lon, lat, alt = coord.split(',')[:2]
+            points.append([float(lon), float(lat)])
+        if not points:
+            raise ValueError("No coordinates")
+        return {"type": "Polygon", "coordinates": [points]}
+    
+    if filename.endswith('.kmz'):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            kmz_path = Path(tmpdir) / "upload.kmz"
+            kmz_path.write_bytes(content)
+            with zipfile.ZipFile(kmz_path, 'r') as zf:
+                zf.extractall(tmpdir)
+            kml_files = list(Path(tmpdir).glob("*.kml"))
+            if not kml_files:
+                raise ValueError("No KML file found in KMZ")
+            root = parser.parse(kml_files[0]).getroot()
+            ns = {"kml": "http://www.opengis.net/kml/2.2"}
+            coords_elem = root.find(".//kml:Polygon/kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", ns)
+            if coords_elem is None:
+                raise ValueError("No polygon found in KMZ")
+            coords_text = coords_elem.text.strip()
+            points = []
+            for coord in coords_text.split():
+                lon, lat, alt = coord.split(',')[:2]
+                points.append([float(lon), float(lat)])
+            if not points:
+                raise ValueError("No coordinates")
+            return {"type": "Polygon", "coordinates": [points]}
     
     raise ValueError(f"Unsupported file type: {filename}")
 
@@ -676,9 +1144,10 @@ class SASCloudsAPIClient:
         logger.info(f"Using API base: {self.api_base}")
 
     def _create_shapefile(self, geojson: Dict, tmp_dir: Path) -> Path:
-        """Convert any supported GeoJSON (Polygon, Feature, FeatureCollection) to shapefile."""
+        """Convert any supported GeoJSON to shapefile after validating polygon."""
         logger.debug(f"Creating shapefile from GeoJSON: {geojson}")
-        # Normalize input: extract geometry from FeatureCollection or Feature
+        
+        # Extract geometry
         if geojson.get("type") == "FeatureCollection":
             if not geojson.get("features"):
                 raise ValueError("FeatureCollection has no features")
@@ -695,11 +1164,19 @@ class SASCloudsAPIClient:
             geom = shapely_shape(geojson)
         
         if geom.geom_type == "MultiPolygon":
-            # Take the largest polygon (by area) as the AOI
             geom = max(geom.geoms, key=lambda p: p.area)
             logger.warning("MultiPolygon converted to largest Polygon")
         elif geom.geom_type != "Polygon":
             raise ValueError(f"Unsupported geometry type: {geom.geom_type}. Only Polygon is supported.")
+        
+        # Validate polygon
+        if not geom.is_valid:
+            logger.warning(f"Invalid polygon: {explain_validity(geom)}. Attempting to fix with buffer(0).")
+            geom = geom.buffer(0)
+            if not geom.is_valid:
+                raise ValueError("Polygon is invalid and could not be fixed. Please simplify the AOI.")
+        
+        logger.info(f"Polygon bounds: minx={geom.bounds[0]}, miny={geom.bounds[1]}, maxx={geom.bounds[2]}, maxy={geom.bounds[3]}")
         
         w = shapefile.Writer(tmp_dir / "aoi", shapefile.POLYGON)
         w.field("ID", "N", 10)
@@ -712,29 +1189,40 @@ class SASCloudsAPIClient:
 
     def upload_aoi(self, polygon_geojson: Dict) -> str:
         logger.info("Uploading AOI...")
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
+        tmp_dir = None
+        files = None
+        try:
+            tmp_dir = tempfile.TemporaryDirectory()
+            tmp_path = Path(tmp_dir.name)
             shp_path = self._create_shapefile(polygon_geojson, tmp_path)
+            # Open files and keep handles for later closing
             files = {
                 "file": ("aoi.shp", open(shp_path, "rb"), "application/octet-stream"),
                 "file_shx": ("aoi.shx", open(shp_path.with_suffix(".shx"), "rb"), "application/octet-stream"),
                 "file_dbf": ("aoi.dbf", open(shp_path.with_suffix(".dbf"), "rb"), "application/octet-stream"),
             }
             logger.debug(f"Uploading files: {list(files.keys())}")
-            try:
-                resp = requests.post(self.upload_url, files=files, timeout=30)
-                logger.debug(f"Upload response status: {resp.status_code}")
-                resp.raise_for_status()
-                data = resp.json()
-                logger.debug(f"Upload response JSON: {data}")
-                if data["code"] != 0:
-                    raise Exception(f"Upload failed with code {data['code']}: {data.get('message')}")
-                upload_id = data["data"]["uploadId"]
-                logger.info(f"AOI uploaded successfully, ID: {upload_id}")
-                return upload_id
-            except Exception as e:
-                logger.error(f"AOI upload failed: {e}", exc_info=True)
-                raise
+            resp = requests.post(self.upload_url, files=files, timeout=30)
+            logger.debug(f"Upload response status: {resp.status_code}")
+            resp.raise_for_status()
+            data = resp.json()
+            logger.debug(f"Upload response JSON: {data}")
+            if data["code"] != 0:
+                error_msg = data.get("message", "Unknown error")
+                if "out-of-range" in error_msg.lower():
+                    raise Exception(f"AOI out of range: The polygon may be outside the satellite coverage area. Try a smaller AOI or a region known to have data (e.g., within ±80° latitude). Details: {error_msg}")
+                raise Exception(f"Upload failed: {error_msg} (code {data['code']})")
+            upload_id = data["data"]["uploadId"]
+            logger.info(f"AOI uploaded successfully, ID: {upload_id}")
+            return upload_id
+        finally:
+            # Close all opened file handles
+            if files:
+                for key, (_, fp, _) in files.items():
+                    fp.close()
+            # Clean up temporary directory
+            if tmp_dir:
+                tmp_dir.cleanup()
 
     def search_scenes(self, upload_id: str, start_ms: int, end_ms: int,
                       cloud_max: int, satellites: List[Dict],
@@ -1227,6 +1715,342 @@ if __name__ == "__main__":
 ```
 
 --- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_scraper.py ---
+
+
+### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\search_logic.py
+```py
+# File: search_logic.py
+import json
+import tempfile
+import zipfile
+import io
+import shutil
+import traceback
+from pathlib import Path
+from datetime import datetime
+import streamlit as st
+import pandas as pd
+from sasclouds_api_scraper import SASCloudsAPIClient, log_search, log_aoi_upload
+from map_utils import show_footprints_map
+
+def date_to_ms(dt):
+    return int(dt.timestamp() * 1000)
+
+def run_search(polygon_geojson, aoi_filename, start_date, end_date, max_cloud, selected_satellites, session_id, log_container):
+    """Execute the search, display results (table, map), and store data for download."""
+    log_lines = []
+    def add_log(msg):
+        log_lines.append(msg)
+        log_container.code("\n".join(log_lines[-30:]), language="bash")
+    
+    with st.status("Searching...", expanded=True) as status:
+        try:
+            client = SASCloudsAPIClient()
+            status.write("Uploading AOI...")
+            add_log("Starting AOI upload...")
+            upload_id = client.upload_aoi(polygon_geojson)
+            status.write(f"AOI uploaded, ID: {upload_id}")
+            add_log(f"AOI upload successful, ID: {upload_id}")
+
+            add_log("Logging AOI upload...")
+            log_aoi_upload(session_id, aoi_filename, polygon_geojson)
+
+            start_ms = date_to_ms(start_date)
+            end_ms = date_to_ms(end_date)
+            add_log(f"Date range: {start_date} to {end_date} (ms: {start_ms} - {end_ms})")
+            add_log(f"Cloud cover max: {max_cloud}%")
+            add_log(f"Selected satellites: {json.dumps(selected_satellites, indent=2)}")
+
+            all_scenes = []
+            page = 1
+            page_size = 50
+            while True:
+                status.write(f"Fetching page {page}...")
+                add_log(f"Fetching page {page}...")
+                result = client.search_scenes(upload_id, start_ms, end_ms, max_cloud,
+                                              selected_satellites, page, page_size)
+                if result.get("code") != 0:
+                    error_msg = result.get("message", "Unknown API error")
+                    add_log(f"API error: {error_msg}")
+                    raise Exception(f"API returned error: {error_msg}")
+                scenes = result.get("data", [])
+                add_log(f"Page {page} returned {len(scenes)} scenes")
+                if not scenes:
+                    break
+                all_scenes.extend(scenes)
+                total = result.get("pageInfo", {}).get("total", 0)
+                add_log(f"Total scenes so far: {len(all_scenes)} / {total}")
+                if len(all_scenes) >= total:
+                    break
+                page += 1
+
+            status.write(f"Found {len(all_scenes)} scenes.")
+            add_log(f"Total scenes found: {len(all_scenes)}")
+
+            if not all_scenes:
+                st.warning("No scenes found. Adjust your filters.")
+                return
+
+            add_log("Logging search...")
+            log_search(
+                session_id,
+                polygon_geojson,
+                {
+                    "satellites": selected_satellites,
+                    "cloud_max": max_cloud,
+                    "date_range": [start_date.isoformat(), end_date.isoformat()]
+                },
+                len(all_scenes)
+            )
+
+            # Build table and map data
+            features_for_map = []
+            table_data = []
+            for scene in all_scenes:
+                sat = scene["satelliteId"]
+                sensor = scene["sensorId"]
+                date_str = datetime.fromtimestamp(scene["acquisitionTime"]/1000).strftime("%Y-%m-%d")
+                cloud = scene["cloudPercent"]
+                prod_id = scene["productId"]
+                footprint = json.loads(scene["boundary"])
+                quickview_url = scene["quickViewUri"].replace(
+                    "http://quickview.sasclouds.com",
+                    "https://quickview.obs.cn-north-10.myhuaweicloud.com"
+                )
+                table_data.append({
+                    "Name": f"{sat} {sensor}",
+                    "Date": date_str,
+                    "Cloud (%)": cloud,
+                    "Product ID": prod_id,
+                    "Quickview": f'<a href="{quickview_url}" target="_blank">🔗</a>'
+                })
+                features_for_map.append({
+                    "geometry": footprint,
+                    "properties": {
+                        "satellite": sat,
+                        "sensor": sensor,
+                        "date": date_str,
+                        "cloud": cloud,
+                        "product_id": prod_id,
+                        "quickview": quickview_url
+                    }
+                })
+            
+            # Display table
+            st.subheader("📋 Search Results")
+            df = pd.DataFrame(table_data)
+            st.markdown(df.to_html(escape=False, index=False), unsafe_allow_html=True)
+            
+            # Display map
+            st.subheader("🗺️ Footprint Map")
+            show_footprints_map(features_for_map)
+            
+            # Store data for download
+            st.session_state.scenes_for_download = all_scenes
+            st.session_state.features_for_download = features_for_map
+            st.session_state.temp_dir_ready = True
+            
+        except Exception as e:
+            error_details = traceback.format_exc()
+            status.write(f"❌ Error: {e}")
+            status.write(f"Details:\n{error_details}")
+            add_log(f"❌ EXCEPTION: {e}")
+            add_log(error_details)
+            status.update(label="❌ Search failed", state="error")
+            st.error(f"Search failed: {e}\n\nCheck the log above for details.")
+
+def create_download_zip():
+    """Create a ZIP file from stored scenes and provide download button."""
+    if not st.session_state.get("temp_dir_ready") or not st.session_state.get("scenes_for_download"):
+        return
+    
+    all_scenes = st.session_state.scenes_for_download
+    features_for_download = st.session_state.features_for_download
+    
+    if st.button("📥 Download ZIP", type="primary"):
+        with st.status("Creating download package...", expanded=True) as status:
+            try:
+                temp_dir = Path(tempfile.mkdtemp(prefix="sasclouds_"))
+                features = []
+                for idx, (scene, feat) in enumerate(zip(all_scenes, features_for_download)):
+                    status.write(f"Processing scene {idx+1}/{len(all_scenes)}...")
+                    sat = scene["satelliteId"]
+                    sensor = scene["sensorId"]
+                    date_str = datetime.fromtimestamp(scene["acquisitionTime"]/1000).strftime("%Y-%m-%d")
+                    cloud = scene["cloudPercent"]
+                    prod_id = scene["productId"]
+                    footprint = feat["geometry"]
+                    quickview_url = feat["properties"]["quickview"]
+                    img_name = f"{sat}_{sensor}_{date_str}_{prod_id}.jpg"
+                    img_path = temp_dir / img_name
+                    
+                    client = SASCloudsAPIClient()
+                    if client.download_and_georeference(quickview_url, footprint, img_path):
+                        status.write(f"  Downloaded {img_name}")
+                    else:
+                        status.write(f"  Failed {img_name}")
+                    
+                    features.append({
+                        "type": "Feature",
+                        "geometry": footprint,
+                        "properties": {
+                            "satellite": sat,
+                            "sensor": sensor,
+                            "date": date_str,
+                            "cloud_cover": cloud,
+                            "product_id": prod_id,
+                            "image": img_name
+                        }
+                    })
+                
+                geojson_path = temp_dir / "footprints.geojson"
+                with open(geojson_path, "w") as f:
+                    json.dump({"type": "FeatureCollection", "features": features}, f, indent=2)
+                
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for file in temp_dir.rglob("*"):
+                        zf.write(file, arcname=file.relative_to(temp_dir))
+                zip_buffer.seek(0)
+                
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                status.update(label="✅ Package ready", state="complete")
+                st.download_button(
+                    label="📥 Download ZIP",
+                    data=zip_buffer.getvalue(),
+                    file_name=f"sasclouds_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                    mime="application/zip",
+                    use_container_width=True
+                )
+                # Clear session state after download
+                st.session_state.temp_dir_ready = False
+                st.session_state.scenes_for_download = None
+                st.session_state.features_for_download = None
+            except Exception as e:
+                st.error(f"Failed to create ZIP: {e}")
+```
+
+--- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\search_logic.py ---
+
+
+### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sidebar.py
+```py
+# File: sidebar.py
+import streamlit as st
+from datetime import datetime
+import folium
+from streamlit_folium import st_folium
+from sasclouds_api_scraper import convert_uploaded_file_to_geojson, SATELLITE_GROUPS
+
+def render_sidebar():
+    """Render all sidebar filters and return the selected parameters."""
+    with st.sidebar:
+        st.header("🔍 Search Parameters")
+        
+        # AOI input method
+        aoi_method = st.radio("AOI input method", ["Bounding box", "Upload file", "Draw on map"])
+        
+        polygon_geojson = None
+        aoi_filename = None
+        
+        if aoi_method == "Bounding box":
+            col1, col2 = st.columns(2)
+            with col1:
+                min_lon = st.number_input("West (min lon)", value=-73.0, format="%.6f")
+                min_lat = st.number_input("South (min lat)", value=8.0, format="%.6f")
+            with col2:
+                max_lon = st.number_input("East (max lon)", value=-72.0, format="%.6f")
+                max_lat = st.number_input("North (max lat)", value=9.0, format="%.6f")
+            polygon_geojson = {
+                "type": "Polygon",
+                "coordinates": [[[min_lon, min_lat], [max_lon, min_lat],
+                                 [max_lon, max_lat], [min_lon, max_lat], [min_lon, min_lat]]]
+            }
+            aoi_filename = "bbox"
+        
+        elif aoi_method == "Upload file":
+            uploaded_file = st.file_uploader(
+                "Upload AOI file",
+                type=["geojson", "zip", "kml", "kmz"],
+                help="Supported: GeoJSON (.geojson), Shapefile (.zip containing .shp), KML (.kml), KMZ (.kmz)"
+            )
+            if uploaded_file:
+                try:
+                    polygon_geojson = convert_uploaded_file_to_geojson(uploaded_file)
+                    aoi_filename = uploaded_file.name
+                    st.success(f"File loaded: {aoi_filename}")
+                    st.info(f"Geometry type: {polygon_geojson.get('type')}")
+                except Exception as e:
+                    st.error(f"Failed to parse file: {e}")
+        
+        else:  # Draw on map
+            st.markdown("**How to use:**")
+            st.markdown("1. Pan and zoom the map to your area of interest.\n2. Click the button to set the AOI from the current map view.\n3. Proceed with the search.")
+            # Default map centered on Beijing (land area with good satellite coverage)
+            m = folium.Map(location=[39.9042, 116.4074], zoom_start=9)
+            map_data = st_folium(m, width=600, height=400, key="aoi_draw_map")
+            if map_data and map_data.get("bounds"):
+                bounds = map_data["bounds"]
+                # bounds format: [[south, west], [north, east]]
+                south, west = bounds[0][0], bounds[0][1]
+                north, east = bounds[1][0], bounds[1][1]
+                st.caption(f"Current map bounds: West={west:.4f}, South={south:.4f}, East={east:.4f}, North={north:.4f}")
+                if st.button("Set AOI from current map view", use_container_width=True):
+                    polygon_geojson = {
+                        "type": "Polygon",
+                        "coordinates": [[[west, south], [east, south],
+                                         [east, north], [west, north], [west, south]]]
+                    }
+                    aoi_filename = "map_drawn"
+                    st.success(f"AOI set to bounding box: ({west:.4f}, {south:.4f}) to ({east:.4f}, {north:.4f})")
+            else:
+                st.info("Map loading...")
+        
+        # Date range and cloud cover
+        st.subheader("Temporal & Cloud Filters")
+        start_date = st.date_input("Start date", value=datetime(2025, 1, 1))
+        end_date = st.date_input("End date", value=datetime(2026, 4, 11))
+        max_cloud = st.slider("Maximum cloud cover (%)", 0, 100, 20)
+        
+        # Satellite selection (grouped expanders)
+        st.subheader("🛰️ Satellites and sensors")
+        selected_satellites = []
+        for group_name, categories in SATELLITE_GROUPS.items():
+            with st.expander(group_name):
+                for cat_name, sats in categories.items():
+                    if not isinstance(sats, list):
+                        st.warning(f"Skipping category '{cat_name}': not a list")
+                        continue
+                    labels = []
+                    for sat in sats:
+                        if not isinstance(sat, dict):
+                            continue
+                        sensor_str = ', '.join(sat.get('sensorIds', [])) if sat.get('sensorIds') else 'All sensors'
+                        labels.append(f"{sat['satelliteId']} ({sensor_str})")
+                    chosen = st.multiselect(cat_name, labels, key=f"{group_name}_{cat_name}")
+                    for label in chosen:
+                        for sat in sats:
+                            if label.startswith(sat['satelliteId']):
+                                selected_satellites.append({
+                                    "satelliteId": sat['satelliteId'],
+                                    "sensorIds": sat.get('sensorIds', [])
+                                })
+                                break
+        
+        search_clicked = st.button("🔍 Search", type="primary", use_container_width=True)
+        
+        return {
+            "polygon_geojson": polygon_geojson,
+            "aoi_filename": aoi_filename,
+            "start_date": start_date,
+            "end_date": end_date,
+            "max_cloud": max_cloud,
+            "selected_satellites": selected_satellites,
+            "search_clicked": search_clicked
+        }
+```
+
+--- END OF FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sidebar.py ---
 
 
 ### FILE: C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\pages\admin_dashboard.py
