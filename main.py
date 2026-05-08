@@ -121,8 +121,8 @@ if "token_ready" not in st.session_state:
     logger.info(f"Token status: {'configured' if token else 'none — anonymous v5 API'}")
 
 # ── Page header ───────────────────────────────────────────────────────────────
-st.title("🛰️ SASClouds API Scraper")
-st.markdown("Fast, cloud-compatible search using the official API. No browser needed.")
+st.title("🛰️ SASClouds downloader")
+st.markdown("Search using the official public API.")
 
 # No token warning: the API is public — anonymous browsing works without a token
 # (confirmed from live HAR capture 2026-05-06). Token is only needed if the
