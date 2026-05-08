@@ -171,17 +171,68 @@ def _order_corners(footprint_geojson):
 
 # ── Main map ──────────────────────────────────────────────────────────────────
 
-# Leaflet.ImageTransform CDN — perspective-correct 4-corner image warping
-_IMAGE_TRANSFORM_JS = (
-    "https://cdn.jsdelivr.net/npm/leaflet-image-transform@0.0.3"
-    "/dist/L.ImageTransform.min.js"
-)
-# Disable pointer events on the transform canvases so clicks pass through
-_NOTRANSFORM_CSS = (
-    "<style>"
-    ".leaflet-overlay-pane canvas{pointer-events:none!important;}"
-    "</style>"
-)
+# Self-contained Canvas 2D warp layer — no external plugin needed.
+# Uses an affine transform that maps the image exactly to TL/TR/BL corners
+# (affine = exact for parallelogram swaths; good approximation for all satellite strips).
+_WARP_LAYER_JS = """<script>
+(function(){
+  if (window._ImageWarpLayerDefined) return;
+  window._ImageWarpLayerDefined = true;
+  L.ImageWarpLayer = L.Layer.extend({
+    initialize: function(src, corners, options) {
+      this._corners = corners;
+      this._opacity = (options && options.opacity != null) ? options.opacity : 1.0;
+      this._img = new Image();
+      this._ready = false;
+      var self = this;
+      this._img.onload = function() { self._ready = true; if (self._map) self._draw(); };
+      this._img.src = src;
+    },
+    onAdd: function(map) {
+      this._map = map;
+      if (!this._canvas) {
+        this._canvas = document.createElement('canvas');
+        this._canvas.style.cssText = 'position:absolute;pointer-events:none';
+      }
+      map.getPanes().overlayPane.appendChild(this._canvas);
+      map.on('moveend zoomend viewreset', this._draw, this);
+      this._draw();
+    },
+    onRemove: function(map) {
+      if (this._canvas && this._canvas.parentNode)
+        this._canvas.parentNode.removeChild(this._canvas);
+      map.off('moveend zoomend viewreset', this._draw, this);
+      this._map = null;
+    },
+    _draw: function() {
+      var map = this._map;
+      if (!map || !this._ready) return;
+      var size = map.getSize();
+      var c = this._canvas;
+      c.width = size.x; c.height = size.y;
+      var tl = map.containerPointToLayerPoint([0, 0]);
+      L.DomUtil.setPosition(c, tl);
+      var ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, size.x, size.y);
+      ctx.globalAlpha = this._opacity;
+      var pts = this._corners.map(function(ll) {
+        var p = map.latLngToLayerPoint(L.latLng(ll[0], ll[1]));
+        return [p.x - tl.x, p.y - tl.y];
+      });
+      var iw = this._img.naturalWidth, ih = this._img.naturalHeight;
+      if (!iw || !ih) return;
+      ctx.save();
+      ctx.transform(
+        (pts[1][0] - pts[0][0]) / iw, (pts[1][1] - pts[0][1]) / iw,
+        (pts[3][0] - pts[0][0]) / ih, (pts[3][1] - pts[0][1]) / ih,
+        pts[0][0], pts[0][1]
+      );
+      ctx.drawImage(this._img, 0, 0);
+      ctx.restore();
+    }
+  });
+})();
+</script>"""
 
 
 def render_main_map(
@@ -264,14 +315,12 @@ def render_main_map(
             popup=None,
         ).add_to(m)
 
-    # ── Georeferenced quickviews via L.imageTransform ─────────────────────────
-    # Each active preview scene is perspective-warped to its exact footprint corners.
+    # ── Georeferenced quickviews via Canvas warp ──────────────────────────────
+    # Each preview scene is drawn onto a Canvas using an affine transform that
+    # maps the image to its exact 4 footprint corners (TL, TR, BR, BL).
+    # The layer class is defined inline — no external plugin required.
     if preview_scenes:
-        # Inject the plugin + CSS once
-        m.get_root().header.add_child(
-            Element(f'<script src="{_IMAGE_TRANSFORM_JS}"></script>')
-        )
-        m.get_root().header.add_child(Element(_NOTRANSFORM_CSS))
+        m.get_root().header.add_child(Element(_WARP_LAYER_JS))
 
         map_var = m.get_name()
         ok_count = 0
@@ -291,28 +340,18 @@ def render_main_map(
             props = feat["properties"]
             corners_js = _json.dumps(corners)
 
-            # Inline script: wait for plugin to load, then add ImageTransform layer.
-            # Falls back to a plain ImageOverlay if the plugin isn't available.
+            # L.ImageWarpLayer is defined inline in <head>, so it is guaranteed
+            # to exist by the time this body script runs.
             js = f"""
 <script>
 (function(){{
-  var _img = "{img_data}";
-  var _corners = {corners_js};
-  var _map = {map_var};
-  function _addLayer() {{
-    if (typeof L.imageTransform === 'undefined') {{
-      setTimeout(_addLayer, 80);
-      return;
-    }}
-    L.imageTransform(_img, _corners, {{opacity: 0.9, interactive: false}}).addTo(_map);
-  }}
-  _addLayer();
+  new L.ImageWarpLayer("{img_data}", {corners_js}, {{opacity: 0.85}}).addTo({map_var});
 }})();
 </script>"""
             m.get_root().html.add_child(Element(js))
             ok_count += 1
             logger.debug(
-                f"ImageTransform queued | {props.get('satellite')} "
+                f"Quickview warp queued | {props.get('satellite')} "
                 f"{props.get('date')} | corners={corners}"
             )
 

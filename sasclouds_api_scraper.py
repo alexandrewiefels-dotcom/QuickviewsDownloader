@@ -1384,8 +1384,8 @@ class SASCloudsAPIClient:
                 size_bytes=size_bytes,
                 image_width=width,
                 image_height=height,
-                x_res_deg=round(x_res, 8),
-                y_res_deg=round(y_res, 8),
+                col_pixel_deg=round(A, 8),
+                row_pixel_deg=round(E, 8),
             )
             return True
 

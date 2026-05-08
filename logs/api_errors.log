@@ -2208,3 +2208,27 @@ Traceback (most recent call last):
     raise Exception(f"Search API error: {msg} (code {api_code})")
 Exception: Search API error: Upstream unavailable (code 2)
 2026-05-08 10:02:40 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 11:54:36 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/17760/731/544/GF5A_AHSI_W78.6_N2.0_20260410_017760_L10000434897.jpg | 1232ms | name 'x_res' is not defined
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1387, in download_and_georeference
+    x_res_deg=round(x_res, 8),
+                    ^^^^^
+NameError: name 'x_res' is not defined
+2026-05-08 11:54:37 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/17454/727/541/GF5A_AHSI_W76.7_N0.5_20260320_017454_L10000423474.jpg | 459ms | name 'x_res' is not defined
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1387, in download_and_georeference
+    x_res_deg=round(x_res, 8),
+                    ^^^^^
+NameError: name 'x_res' is not defined
+2026-05-08 11:54:37 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/16173/731/543/GF5A_AHSI_W78.8_N1.5_20251222_016173_L10000378215.jpg | 231ms | name 'x_res' is not defined
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1387, in download_and_georeference
+    x_res_deg=round(x_res, 8),
+                    ^^^^^
+NameError: name 'x_res' is not defined
+2026-05-08 11:54:37 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/15867/728/540/GF5A_AHSI_W76.8_N0.0_20251201_015867_L10000367264.jpg | 266ms | name 'x_res' is not defined
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1387, in download_and_georeference
+    x_res_deg=round(x_res, 8),
+                    ^^^^^
+NameError: name 'x_res' is not defined
