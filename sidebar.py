@@ -36,11 +36,11 @@ def render_sidebar():
 
             col1, col2 = st.columns(2)
             with col1:
-                min_lon = st.number_input("West (min lon)", value=-73.0, format="%.6f")
-                min_lat = st.number_input("South (min lat)", value=8.0, format="%.6f")
+                min_lon = st.number_input("West (min lon)", value=116.0, format="%.6f")
+                min_lat = st.number_input("South (min lat)", value=39.5, format="%.6f")
             with col2:
-                max_lon = st.number_input("East (max lon)", value=-72.0, format="%.6f")
-                max_lat = st.number_input("North (max lat)", value=9.0, format="%.6f")
+                max_lon = st.number_input("East (max lon)", value=117.0, format="%.6f")
+                max_lat = st.number_input("North (max lat)", value=40.5, format="%.6f")
             polygon_geojson = {
                 "type": "Polygon",
                 "coordinates": [[[min_lon, min_lat], [max_lon, min_lat],

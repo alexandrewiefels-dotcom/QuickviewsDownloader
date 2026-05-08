@@ -16,6 +16,8 @@ from sasclouds_api_scraper import SASCloudsAPIClient, log_aoi_upload, log_search
 
 logger = logging.getLogger(__name__)
 
+_TABLE_PAGE_SIZE = 20
+
 
 def _date_to_ms(dt) -> int:
     """Convert date or datetime to Unix milliseconds."""
@@ -33,7 +35,7 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
       1. Upload AOI shapefile → get uploadId
       2. Paginate through scene results
       3. Build results table + map features
-      4. Store everything in session_state for the map and download
+      4. Store everything in session_state for the table and map
     """
     t0 = time.time()
     log_lines: list[str] = []
@@ -48,6 +50,13 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
         getattr(logger, level)(msg)
 
     progress = st.progress(0, text="Initialising…")
+
+    # Clear table state from any previous search
+    for key in list(st.session_state.keys()):
+        if key.startswith("chk_") or key.startswith("eye_"):
+            del st.session_state[key]
+    st.session_state.pop("results_page", None)
+    st.session_state.pop("preview_idx", None)
 
     with st.status("Searching…", expanded=True) as status:
         try:
@@ -168,11 +177,10 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
                 len(all_scenes),
             )
 
-            # ── 4. Build table + map features ─────────────────────────
+            # ── 4. Build features ─────────────────────────────────────
             add_log(f"▶ [4/4] Processing {len(all_scenes)} scenes…")
             progress.progress(88, text=f"Processing {len(all_scenes)} scenes…")
             features_for_map: list = []
-            table_data: list = []
             parse_errors = 0
 
             for idx, scene in enumerate(all_scenes):
@@ -199,13 +207,6 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
                     "https://quickview.obs.cn-north-10.myhuaweicloud.com",
                 )
 
-                table_data.append({
-                    "Satellite/Sensor": f"{sat} {sensor}",
-                    "Date": date_str,
-                    "Cloud (%)": cloud,
-                    "Product ID": prod_id,
-                    "Quickview": f'<a href="{quickview_url}" target="_blank">View</a>',
-                })
                 features_for_map.append({
                     "geometry": footprint,
                     "properties": {
@@ -222,12 +223,10 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
                 add_log(f"  ⚠ {parse_errors} scene(s) skipped — invalid boundary JSON", "warning")
 
             add_log(
-                f"  Table: {len(table_data)} rows  |  "
-                f"map features: {len(features_for_map)}  |  "
-                f"parse errors: {parse_errors}"
+                f"  map features: {len(features_for_map)}  |  parse errors: {parse_errors}"
             )
             logger.info(
-                f"Results built | rows={len(table_data)} | features={len(features_for_map)} | parse_errors={parse_errors}"
+                f"Results built | features={len(features_for_map)} | parse_errors={parse_errors}"
             )
             _log_event(
                 "search_complete",
@@ -240,15 +239,9 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
                 satellite_ids=sat_names,
                 pages_fetched=page,
                 total_scenes=len(all_scenes),
-                table_rows=len(table_data),
                 parse_errors=parse_errors,
                 elapsed_s=round(time.time() - t0, 2),
             )
-
-            # ── Display results table ─────────────────────────────────
-            st.subheader(f"📋 Search Results ({len(table_data)} scenes)")
-            df = pd.DataFrame(table_data)
-            st.markdown(df.to_html(escape=False, index=False), unsafe_allow_html=True)
 
             # ── Persist in session_state ──────────────────────────────
             st.session_state["scenes_for_download"]   = all_scenes
@@ -272,29 +265,123 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
             st.error(f"**Search failed:** {exc}")
 
 
+# ── Results table ─────────────────────────────────────────────────────────────
+
+def render_results_table():
+    """Interactive results table: per-scene selection, quickview preview, download."""
+    all_scenes = st.session_state.get("scenes_for_download") or []
+    features   = st.session_state.get("features_for_download") or []
+    if not all_scenes:
+        return
+
+    n       = len(all_scenes)
+    n_pages = max(1, (n + _TABLE_PAGE_SIZE - 1) // _TABLE_PAGE_SIZE)
+    page    = max(0, min(st.session_state.get("results_page", 0), n_pages - 1))
+
+    # Collect current selection from Streamlit checkbox widget state
+    sel_indices = [i for i in range(n) if st.session_state.get(f"chk_{i}", False)]
+    n_sel = len(sel_indices)
+
+    # ── Header + controls ─────────────────────────────────────────────────────
+    st.subheader(f"📋 Results — {n} scenes")
+
+    ctl = st.columns([1, 1, 3, 1, 1, 1])
+    if ctl[0].button("Select All", use_container_width=True):
+        for i in range(n):
+            st.session_state[f"chk_{i}"] = True
+        st.rerun()
+    if ctl[1].button("Deselect All", use_container_width=True):
+        for i in range(n):
+            st.session_state[f"chk_{i}"] = False
+        st.rerun()
+    ctl[2].caption(f"{n_sel} of {n} selected")
+    if n_pages > 1:
+        if ctl[3].button("◀", disabled=page == 0):
+            st.session_state.results_page = page - 1
+            st.rerun()
+        ctl[4].caption(f"p. {page + 1}/{n_pages}")
+        if ctl[5].button("▶", disabled=page >= n_pages - 1):
+            st.session_state.results_page = page + 1
+            st.rerun()
+
+    # ── Column headers ────────────────────────────────────────────────────────
+    W = [0.35, 1.4, 1.1, 1.5, 0.75, 0.55]
+    hdr = st.columns(W)
+    for col, label in zip(hdr, ["", "Satellite", "Sensor", "Date", "Cloud %", ""]):
+        col.markdown(f"**{label}**")
+    st.divider()
+
+    # ── Data rows ─────────────────────────────────────────────────────────────
+    start = page * _TABLE_PAGE_SIZE
+    end   = min(start + _TABLE_PAGE_SIZE, n)
+
+    for idx in range(start, end):
+        scene = all_scenes[idx]
+        sat   = scene.get("satelliteId", "")
+        sen   = scene.get("sensorId", "")
+        dt    = datetime.fromtimestamp(scene.get("acquisitionTime", 0) / 1000).strftime("%Y-%m-%d")
+        cld   = scene.get("cloudPercent", 0)
+
+        row = st.columns(W)
+        row[0].checkbox("", key=f"chk_{idx}", label_visibility="collapsed")
+        row[1].write(sat)
+        row[2].write(sen)
+        row[3].write(dt)
+        row[4].write(f"{cld:.1f}")
+
+        preview_active = st.session_state.get("preview_idx") == idx
+        eye_label = "🔍" if preview_active else "👁️"
+        if row[5].button(eye_label, key=f"eye_{idx}", help="Show quickview on map"):
+            st.session_state.preview_idx = None if preview_active else idx
+            st.rerun()
+
+    # ── Action buttons ────────────────────────────────────────────────────────
+    st.divider()
+    bc = st.columns(3)
+
+    with bc[0]:
+        if st.button(
+            f"📥 Download Selected ({n_sel})",
+            type="primary",
+            disabled=n_sel == 0,
+            use_container_width=True,
+        ):
+            _do_download_zip(
+                [all_scenes[i] for i in sel_indices],
+                [features[i] for i in sel_indices],
+            )
+
+    with bc[1]:
+        if st.button(
+            "🗺️ Show Selected on Map",
+            disabled=n_sel == 0,
+            use_container_width=True,
+        ):
+            st.session_state["features_for_map"] = [features[i] for i in sel_indices]
+            st.rerun()
+
+    with bc[2]:
+        if st.button("📥 Download All", use_container_width=True):
+            _do_download_zip(all_scenes, features)
+
+
 # ── Download ──────────────────────────────────────────────────────────────────
 
-def create_download_zip():
-    """Download all quickview images, georeference them, and bundle as a ZIP."""
-    if not st.session_state.get("temp_dir_ready") or not st.session_state.get("scenes_for_download"):
+def _do_download_zip(scenes: list, features: list):
+    """Download quickviews for the given scenes and serve a ZIP."""
+    if not scenes:
+        st.warning("No scenes to download.")
         return
 
-    all_scenes            = st.session_state["scenes_for_download"]
-    features_for_download = st.session_state["features_for_download"]
-
-    if not st.button("📥 Prepare & Download ZIP", type="primary"):
-        return
-
-    with st.status("Creating download package…", expanded=True) as status:
+    with st.status(f"Creating download package — {len(scenes)} scenes…", expanded=True) as status:
         try:
             temp_dir = Path(tempfile.mkdtemp(prefix="sasclouds_"))
-            logger.info(f"Download package: {len(all_scenes)} scenes → {temp_dir}")
+            logger.info(f"Download package: {len(scenes)} scenes → {temp_dir}")
             client = SASCloudsAPIClient()
             features_out: list = []
-            ok = 0
-            fail = 0
+            ok = fail = 0
 
-            for idx, (scene, feat) in enumerate(zip(all_scenes, features_for_download)):
+            for idx, (scene, feat) in enumerate(zip(scenes, features)):
                 sat      = scene["satelliteId"]
                 sensor   = scene["sensorId"]
                 date_str = datetime.fromtimestamp(scene["acquisitionTime"] / 1000).strftime("%Y-%m-%d")
@@ -305,15 +392,14 @@ def create_download_zip():
                 img_name = f"{sat}_{sensor}_{date_str}_{prod_id}.jpg"
                 img_path = temp_dir / img_name
 
-                status.write(f"[{idx+1}/{len(all_scenes)}] {img_name}")
-                logger.info(f"[{idx+1}/{len(all_scenes)}] Downloading {img_name}")
+                status.write(f"[{idx + 1}/{len(scenes)}] {img_name}")
+                logger.info(f"[{idx + 1}/{len(scenes)}] Downloading {img_name}")
 
                 if client.download_and_georeference(qv_url, footprint, img_path):
                     ok += 1
-                    logger.debug(f"  ✓ {img_name}")
                 else:
                     fail += 1
-                    logger.warning(f"  ✗ Failed to download/georeference {img_name}")
+                    logger.warning(f"  ✗ Failed: {img_name}")
 
                 features_out.append({
                     "type": "Feature",
@@ -329,44 +415,38 @@ def create_download_zip():
                 })
 
             logger.info(f"Downloads complete: {ok} ok, {fail} failed")
-            _log_event(
-                "download_batch_complete",
-                total=len(all_scenes),
-                ok=ok,
-                failed=fail,
-            )
+            _log_event("download_batch_complete", total=len(scenes), ok=ok, failed=fail)
 
             geojson_path = temp_dir / "footprints.geojson"
             with open(geojson_path, "w") as f:
                 json.dump({"type": "FeatureCollection", "features": features_out}, f, indent=2)
-            logger.info(f"footprints.geojson written ({len(features_out)} features)")
 
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            zip_buf = io.BytesIO()
+            with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 for file in temp_dir.rglob("*"):
                     zf.write(file, arcname=file.relative_to(temp_dir))
-            zip_buffer.seek(0)
+            zip_buf.seek(0)
             shutil.rmtree(temp_dir, ignore_errors=True)
 
             status.update(
-                label=f"✅ Package ready – {ok} images downloaded, {fail} failed",
+                label=f"✅ Package ready — {ok} images, {fail} failed",
                 state="complete",
             )
-            logger.info("ZIP package ready for download")
+            logger.info("ZIP ready for download")
 
             st.download_button(
-                label="📥 Download ZIP",
-                data=zip_buffer.getvalue(),
+                label=f"📥 Download ZIP ({ok} images)",
+                data=zip_buf.getvalue(),
                 file_name=f"sasclouds_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
                 mime="application/zip",
                 use_container_width=True,
             )
 
-            # Clear download state but keep footprints on the map
-            st.session_state["temp_dir_ready"]        = False
-            st.session_state["scenes_for_download"]   = None
-            st.session_state["features_for_download"] = None
-
         except Exception as exc:
             logger.error(f"ZIP creation failed: {exc}", exc_info=True)
             st.error(f"Failed to create ZIP: {exc}")
+
+
+def create_download_zip():
+    """Legacy entry point — kept for backward compatibility."""
+    pass

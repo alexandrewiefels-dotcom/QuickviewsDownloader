@@ -496,36 +496,37 @@ class TestSASCloudsAPIClient:
             client = SASCloudsAPIClient()
         assert "v99" in client.api_base
 
-    def test_upload_aoi_returns_upload_id(self, mock_requests_post, mock_shapefile_writer,
+    def test_upload_aoi_returns_upload_id(self, mock_requests_post,
                                            mock_tempfile_dir, sample_polygon_geojson):
+        # mock_shapefile_writer intentionally absent — we need real .shp/.shx/.dbf
+        # files on disk so that Path.read_bytes() succeeds.
         mock_requests_post._mock_response.json.return_value = {
             "code": 0, "data": {"uploadId": "uid_abc"},
         }
         mock_requests_post._mock_response.text = '{"code":0,"data":{"uploadId":"uid_abc"}}'
-        with patch("builtins.open", mock_open(read_data=b"data")):
-            uid = SASCloudsAPIClient().upload_aoi(sample_polygon_geojson)
+        uid = SASCloudsAPIClient().upload_aoi(sample_polygon_geojson)
         assert uid == "uid_abc"
 
-    def test_upload_aoi_raises_on_api_error(self, mock_requests_post, mock_shapefile_writer,
+    def test_upload_aoi_raises_on_api_error(self, mock_requests_post,
                                              mock_tempfile_dir, sample_polygon_geojson):
+        # mock_shapefile_writer intentionally absent — real files required for read_bytes().
         mock_requests_post._mock_response.json.return_value = {
             "code": 1, "message": "Invalid polygon",
         }
         mock_requests_post._mock_response.text = '{"code":1,"message":"Invalid polygon"}'
-        with patch("builtins.open", mock_open(read_data=b"data")):
-            with pytest.raises(Exception, match="Upload failed: Invalid polygon"):
-                SASCloudsAPIClient().upload_aoi(sample_polygon_geojson)
+        with pytest.raises(Exception, match="Upload failed: Invalid polygon"):
+            SASCloudsAPIClient().upload_aoi(sample_polygon_geojson)
 
     def test_upload_aoi_raises_helpful_message_for_out_of_range(
-            self, mock_requests_post, mock_shapefile_writer,
+            self, mock_requests_post,
             mock_tempfile_dir, sample_polygon_geojson):
+        # mock_shapefile_writer intentionally absent — real files required for read_bytes().
         mock_requests_post._mock_response.json.return_value = {
             "code": 1, "message": "region out-of-range detected",
         }
         mock_requests_post._mock_response.text = '{"code":1,"message":"region out-of-range detected"}'
-        with patch("builtins.open", mock_open(read_data=b"data")):
-            with pytest.raises(Exception, match="AOI rejected"):
-                SASCloudsAPIClient().upload_aoi(sample_polygon_geojson)
+        with pytest.raises(Exception, match="AOI is outside the SASClouds archive coverage"):
+            SASCloudsAPIClient().upload_aoi(sample_polygon_geojson)
 
     def test_search_scenes_returns_data(self, mock_requests_post):
         mock_requests_post._mock_response.json.return_value = {
@@ -901,7 +902,7 @@ class TestSearchLogic:
         with caplog.at_level(logging.INFO, logger="search_logic"):
             run_search(**_search_kwargs(sample_polygon_geojson))
         text = caplog.text
-        assert "AOI uploaded" in text       # upload confirmation
+        assert "Uploaded in" in text        # upload confirmation (search_logic add_log)
         assert "Page 1" in text             # pagination progress
         assert "Search complete" in text    # final summary
 

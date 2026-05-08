@@ -106,7 +106,10 @@ SATELLITE_GROUPS = {
 
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-LOG_DIR = Path("./logs")
+# Use absolute paths so the app works regardless of the working directory
+# (Streamlit runs with the user's shell CWD, not the script directory).
+_APP_DIR = Path(__file__).parent
+LOG_DIR = _APP_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 _STRUCTURED_LOG = LOG_DIR / "api_interactions.jsonl"
@@ -206,7 +209,7 @@ def _save_token_to_config(token: str) -> None:
     cfg.setdefault("api_version", "v5")
     cfg["token"] = token
     try:
-        with open("config.json", "w", encoding="utf-8") as fh:
+        with open(_CONFIG_PATH, "w", encoding="utf-8") as fh:
             json.dump(cfg, fh, indent=2)
             fh.write("\n")
     except OSError as exc:
@@ -568,9 +571,13 @@ def scrape_token_via_browser(timeout_seconds: int = 90, headless: bool = True) -
 
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-def load_config(config_path: Path = Path("config.json")) -> Dict:
-    if config_path.exists():
-        with open(config_path) as f:
+_CONFIG_PATH = _APP_DIR / "config.json"
+
+
+def load_config(config_path: Path = None) -> Dict:
+    path = config_path if config_path is not None else _CONFIG_PATH
+    if path.exists():
+        with open(path) as f:
             return json.load(f)
     return {}
 
@@ -808,7 +815,11 @@ class SASCloudsAPIClient:
     # ── Version detection ──────────────────────────────────────────────────────
 
     def _probe_api_version(self, base_url: str) -> Optional[str]:
-        """Try v1–v12 with a lightweight OPTIONS request; return first non-404 version."""
+        """
+        Probe v1–v12 with OPTIONS to find which version the server recognises.
+        Falls back to 'v5' (confirmed via HAR) when the WAF returns 204 for all
+        versions — that means CORS preflight is handled globally and tells us nothing.
+        """
         logger.info("Probing API versions v1–v12 via OPTIONS requests…")
         results: dict = {}
         for n in range(1, 13):
@@ -821,6 +832,16 @@ class SASCloudsAPIClient:
                 results[v] = f"ERR({exc})"
         logger.info(f"Version probe results: {results}")
         _log_event("version_probe_complete", results=results)
+
+        # If the WAF returns the same status for every version the probe is useless.
+        unique_statuses = {v for v in results.values() if isinstance(v, int)}
+        if len(unique_statuses) <= 1:
+            logger.info(
+                "All versions returned the same status — WAF is handling CORS preflight. "
+                "Falling back to hardcoded v5 (confirmed from live HAR)."
+            )
+            return "v5"
+
         for n in range(1, 13):
             v = f"v{n}"
             if isinstance(results.get(v), int) and results[v] not in (401, 403, 404):
@@ -1015,7 +1036,15 @@ class SASCloudsAPIClient:
 
         w = shapefile.Writer(tmp_dir / "aoi", shapefile.POLYGON)
         w.field("ID", "N", 10)
-        w.poly([list(geom.exterior.coords)])
+        # The SASClouds server uses ESRI shapefile convention:
+        # CW = outer ring, CCW = inner ring (hole).
+        # Sending a CCW ring causes the server to interpret it as a hole →
+        # empty MultiPolygon geometry → "Out-of-range error" or 0 search results.
+        # Confirmed: fiona/GDAL writes CW outer rings and the server accepts them.
+        coords = list(geom.exterior.coords)
+        if geom.exterior.is_ccw:
+            coords = coords[::-1]   # ensure CW (ESRI convention)
+        w.poly([coords])
         w.record(1)
         w.close()
 
@@ -1034,18 +1063,19 @@ class SASCloudsAPIClient:
             tmp_dir = tempfile.TemporaryDirectory()
             tmp_path = Path(tmp_dir.name)
             shp_path = self._create_shapefile(polygon_geojson, tmp_path)
-            try:
-                shp_size = shp_path.stat().st_size
-            except OSError:
-                shp_size = 0
-            total_upload_bytes = shp_size
 
-            # HAR confirms the browser only sends the .shp file (not .shx/.dbf).
+            # Single-field upload: .shp only — confirmed from HAR analysis (2026-05-08).
+            # The server uses ESRI convention (CW = outer ring), so the .shp must have
+            # CW winding (see _create_shapefile). With correct CW winding the server
+            # parses the shape and returns a valid geojson without needing .shx or .dbf.
+            shp_bytes = shp_path.read_bytes()
+            total_upload_bytes = len(shp_bytes)
+
             files = {
-                "file": ("aoi.shp", open(shp_path, "rb"), "application/octet-stream"),
+                "file": ("aoi.shp", shp_bytes, "application/octet-stream"),
             }
             logger.debug(
-                f"POST multipart upload | shp={shp_size}B | "
+                f"POST multipart upload | shp={len(shp_bytes)}B | "
                 f"cookies={[c.name for c in self.session.cookies]}"
             )
 
@@ -1060,15 +1090,11 @@ class SASCloudsAPIClient:
                 _log_event("auth_error", url=self.upload_url, http_status=401, body=resp.text[:300])
                 logger.warning("Upload got HTTP 401 — attempting token refresh and retry")
                 if self.refresh_token():
-                    for _, (_, fp, _) in files.items():
-                        fp.seek(0)
                     resp = self._http("POST", self.upload_url, files=files, timeout=30)
                     duration_ms = round((time.monotonic() - t0) * 1000)
                 if resp.status_code == 401:
                     raise Exception(
-                        'HTTP 401 – Token required and auto-refresh failed.\n'
-                        '  Run  python scrape_token.py --visible  locally to capture it,\n'
-                        '  then add to Streamlit secrets:  sasclouds_token = "<value>"'
+                        'HTTP 401 – Token required. Set sasclouds_token in .streamlit/secrets.toml'
                     )
             resp.raise_for_status()
             data = resp.json()
@@ -1095,28 +1121,32 @@ class SASCloudsAPIClient:
                         coord_hint = (
                             f"W={b[0]:.4f} S={b[1]:.4f} E={b[2]:.4f} N={b[3]:.4f}"
                         )
-                        in_asia = -20 <= b[0] <= 160 and -15 <= b[1] <= 55
-                        coverage_hint = (
-                            "AOI is OUTSIDE typical Chinese satellite coverage "
-                            "(approx lon -20–160, lat -15–55)"
-                            if not in_asia else
-                            "AOI is within typical coverage — likely an API version or session issue"
-                        )
                     except Exception:
                         coord_hint = "(could not parse AOI bounds)"
-                        coverage_hint = "unknown"
-                    cookies = [c.name for c in self.session.cookies]
                     raise Exception(
-                        f"AOI rejected: server returned 'out-of-range'.\n"
-                        f"  API base  : {self.api_base}\n"
-                        f"  AOI bounds: {coord_hint}\n"
-                        f"  Coverage  : {coverage_hint}\n"
-                        f"  Cookies   : {cookies}\n"
-                        f"  Fix       : create config.json with {{\"api_version\": \"v5\"}}"
+                        f"AOI is outside the SASClouds archive coverage.\n"
+                        f"  Bounds : {coord_hint}\n"
+                        f"  The SASClouds archive covers regions where Chinese satellites\n"
+                        f"  have collected imagery (Asia, parts of Africa, South America).\n"
+                        f"  Try an AOI within that footprint, or choose different satellites."
                     )
                 raise Exception(f"Upload failed: {error_msg} (code {data['code']})")
 
             upload_id = data["data"]["uploadId"]
+            server_geojson = data["data"].get("geojson", "")
+            try:
+                parsed = json.loads(server_geojson) if server_geojson else {}
+                coords = parsed.get("coordinates", None)
+                if coords == [] or coords is None:
+                    logger.warning(
+                        f"Server parsed AOI but returned empty geometry — "
+                        f"geojson={server_geojson[:120]!r}. "
+                        "Search will return 0 scenes."
+                    )
+                else:
+                    logger.info(f"Server AOI geometry: type={parsed.get('type')} coords_len={len(coords)}")
+            except Exception:
+                pass
             logger.info(f"AOI uploaded | uploadId={upload_id} | {duration_ms}ms")
             _log_event(
                 "aoi_upload_success",
@@ -1125,18 +1155,11 @@ class SASCloudsAPIClient:
                 duration_ms=duration_ms,
                 upload_id=upload_id,
                 upload_bytes=total_upload_bytes,
-                shp_bytes=shp_size,
                 api_version=self.api_version,
             )
             return upload_id
 
         finally:
-            if files:
-                for _, (_, fp, _) in files.items():
-                    try:
-                        fp.close()
-                    except Exception:
-                        pass
             if tmp_dir:
                 tmp_dir.cleanup()
 

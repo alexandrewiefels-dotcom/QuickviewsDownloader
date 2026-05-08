@@ -646,3 +646,1565 @@ Exception: Search API error: Invalid parameters (code 2)
 2026-05-07 11:22:55 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
 2026-05-07 11:22:55 [WARNING ] sasclouds_api_scraper – No auth token found. Upload/search will fail with HTTP 401. Fix: run the "Capture Token" button in the sidebar, or set sasclouds_token in .streamlit/secrets.toml.
 2026-05-07 11:22:55 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 18:56:44 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Not a valid .shp file' | full_body={"code":1,"message":"Not a valid .shp file","data":null}
+2026-05-07 19:24:03 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Out-of-range error' | full_body={"code":1,"message":"Out-of-range error","data":null}
+2026-05-07 19:28:00 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Out-of-range error' | full_body={"code":1,"message":"Out-of-range error","data":null}
+2026-05-07 19:29:17 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Out-of-range error' | full_body={"code":1,"message":"Out-of-range error","data":null}
+2026-05-07 19:33:46 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Out-of-range error' | full_body={"code":1,"message":"Out-of-range error","data":null}
+2026-05-07 19:43:59 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:43:59 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:43:59 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:43:59 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-07 19:43:59 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-07 19:43:59 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-07 19:43:59 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1270, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-07 19:43:59 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-07 19:46:24 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:46:24 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:46:24 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:46:24 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-07 19:46:24 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-07 19:46:24 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-07 19:46:24 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1270, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-07 19:46:24 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-07 19:46:36 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:46:36 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 19:46:36 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 19:46:36 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 19:46:36 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1270, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 19:46:37 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 19:46:37 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 19:47:21 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:47:21 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 19:47:21 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 19:47:21 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 19:47:21 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1270, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 19:47:21 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 19:47:21 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 19:51:55 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:51:55 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:51:55 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:51:55 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-07 19:51:55 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-07 19:51:55 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-07 19:51:55 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1270, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-07 19:51:55 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-07 19:52:30 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:52:30 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:52:30 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:52:30 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-07 19:52:30 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-07 19:52:30 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-07 19:52:30 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1270, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-07 19:52:30 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-07 19:52:33 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Out-of-range error' | full_body={"code":1,"message":"Out-of-range error","data":null}
+2026-05-07 19:52:40 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:52:40 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 19:52:40 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 19:52:40 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 19:52:40 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1270, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 19:52:40 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 19:52:40 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-07 19:55:16 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:55:16 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:55:16 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:55:16 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-07 19:55:16 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-07 19:55:16 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-07 19:55:16 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1270, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-07 19:55:16 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-07 19:55:19 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Out-of-range error' | full_body={"code":1,"message":"Out-of-range error","data":null}
+2026-05-07 19:55:27 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-07 19:55:27 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-07 19:55:27 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-07 19:55:27 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-07 19:55:27 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1270, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-07 19:55:27 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-07 19:55:27 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-08 09:10:47 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:10:47 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:10:47 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:10:47 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 09:10:47 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 09:10:47 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 09:10:47 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1263, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 09:10:48 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 09:13:14 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:13:14 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:13:14 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:13:14 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 09:13:14 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 09:13:14 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 09:13:14 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1263, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 09:13:14 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 09:13:24 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson='{"type":"MultiPolygon","coordinates":[]}'. Search will return 0 scenes.
+2026-05-08 09:17:29 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:17:29 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:17:29 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:17:29 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 09:17:29 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 09:17:29 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 09:17:29 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1263, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 09:17:29 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 09:17:33 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson='{"type":"MultiPolygon","coordinates":[]}'. Search will return 0 scenes.
+2026-05-08 09:17:44 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:17:44 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:17:44 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:17:44 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 09:17:44 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 09:17:44 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 09:17:44 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1263, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 09:17:44 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 09:17:49 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson='{"type":"MultiPolygon","coordinates":[]}'. Search will return 0 scenes.
+2026-05-08 09:24:59 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:24:59 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:24:59 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:24:59 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 09:24:59 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 09:24:59 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 09:24:59 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1267, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 09:24:59 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 09:25:15 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:25:15 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:25:15 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:25:15 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 09:25:15 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 09:25:15 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 09:25:15 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1267, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 09:25:15 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 09:25:18 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:25:48 [ERROR   ] sasclouds_api_scraper – Network error | POST https://www.sasclouds.com/api/normal/v5/normalmeta | 30016ms | HTTPSConnectionPool(host='www.sasclouds.com', port=443): Read timed out. (read timeout=30)
+2026-05-08 09:25:48 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): HTTPSConnectionPool(host='www.sasclouds.com', port=443): Read timed out. (read timeout=30)
+Traceback (most recent call last):
+  File "C:\Python312\Lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\urllib3\connection.py", line 516, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\http\client.py", line 1428, in getresponse
+    response.begin()
+  File "C:\Python312\Lib\http\client.py", line 331, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\http\client.py", line 292, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\socket.py", line 707, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\ssl.py", line 1252, in recv_into
+    return self.read(nbytes, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\ssl.py", line 1104, in read
+    return self._sslobj.read(len, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Python312\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\urllib3\util\retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\Python312\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+  File "C:\Python312\Lib\site-packages\urllib3\connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='www.sasclouds.com', port=443): Read timed out. (read timeout=30)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1206, in search_scenes
+    resp = self._http(
+           ^^^^^^^^^^^
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\requests\adapters.py", line 690, in send
+    raise ReadTimeout(e, request=request)
+requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='www.sasclouds.com', port=443): Read timed out. (read timeout=30)
+2026-05-08 09:32:13 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:32:13 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:32:14 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:32:14 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 09:32:14 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 09:32:14 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 09:32:14 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1265, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 09:32:14 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 09:32:40 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:32:41 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:32:41 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:32:41 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 09:32:41 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 09:32:41 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 09:32:41 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1265, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 09:32:41 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 09:36:24 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5B/22392/1/101/GF5B_AHSI_E116.9_N39.2_20251122_022392_L10001143157.jpg | 558ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/101/GF5B_AHSI_E116.9_N39.2_20251122_022392_L10001143157.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:24 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5B/22392/1/101/GF5B_AHSI_E116.9_N39.2_20251122_022392_L10001143157.jpg | 564ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/101/GF5B_AHSI_E116.9_N39.2_20251122_022392_L10001143157.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/101/GF5B_AHSI_E116.9_N39.2_20251122_022392_L10001143157.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/101/GF5B_AHSI_E116.9_N39.2_20251122_022392_L10001143157.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:25 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5B/22392/1/100/GF5B_AHSI_E117.1_N39.7_20251122_022392_L10001143156.jpg | 496ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/100/GF5B_AHSI_E117.1_N39.7_20251122_022392_L10001143156.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:25 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5B/22392/1/100/GF5B_AHSI_E117.1_N39.7_20251122_022392_L10001143156.jpg | 502ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/100/GF5B_AHSI_E117.1_N39.7_20251122_022392_L10001143156.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/100/GF5B_AHSI_E117.1_N39.7_20251122_022392_L10001143156.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/100/GF5B_AHSI_E117.1_N39.7_20251122_022392_L10001143156.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:25 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5B/22392/1/99/GF5B_AHSI_E117.2_N40.2_20251122_022392_L10001143155.jpg | 397ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/99/GF5B_AHSI_E117.2_N40.2_20251122_022392_L10001143155.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:25 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5B/22392/1/99/GF5B_AHSI_E117.2_N40.2_20251122_022392_L10001143155.jpg | 400ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/99/GF5B_AHSI_E117.2_N40.2_20251122_022392_L10001143155.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/99/GF5B_AHSI_E117.2_N40.2_20251122_022392_L10001143155.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/99/GF5B_AHSI_E117.2_N40.2_20251122_022392_L10001143155.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:26 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5B/22392/1/98/GF5B_AHSI_E117.4_N40.7_20251122_022392_L10001143154.jpg | 508ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/98/GF5B_AHSI_E117.4_N40.7_20251122_022392_L10001143154.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:26 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5B/22392/1/98/GF5B_AHSI_E117.4_N40.7_20251122_022392_L10001143154.jpg | 512ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/98/GF5B_AHSI_E117.4_N40.7_20251122_022392_L10001143154.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/98/GF5B_AHSI_E117.4_N40.7_20251122_022392_L10001143154.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/22392/1/98/GF5B_AHSI_E117.4_N40.7_20251122_022392_L10001143154.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:26 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5A/15582/311/621/GF5A_AHSI_E115.6_N40.2_20251112_015582_L10000357143.jpg | 601ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/15582/311/621/GF5A_AHSI_E115.6_N40.2_20251112_015582_L10000357143.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:26 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5A/15582/311/621/GF5A_AHSI_E115.6_N40.2_20251112_015582_L10000357143.jpg | 604ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/15582/311/621/GF5A_AHSI_E115.6_N40.2_20251112_015582_L10000357143.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/15582/311/621/GF5A_AHSI_E115.6_N40.2_20251112_015582_L10000357143.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/15582/311/621/GF5A_AHSI_E115.6_N40.2_20251112_015582_L10000357143.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:27 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5A/15582/311/620/GF5A_AHSI_E115.8_N39.7_20251112_015582_L10000357142.jpg | 627ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/15582/311/620/GF5A_AHSI_E115.8_N39.7_20251112_015582_L10000357142.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:27 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5A/15582/311/620/GF5A_AHSI_E115.8_N39.7_20251112_015582_L10000357142.jpg | 633ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/15582/311/620/GF5A_AHSI_E115.8_N39.7_20251112_015582_L10000357142.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/15582/311/620/GF5A_AHSI_E115.8_N39.7_20251112_015582_L10000357142.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/15582/311/620/GF5A_AHSI_E115.8_N39.7_20251112_015582_L10000357142.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:35 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5A/13994/310/619/GF5A_AHSI_E116.2_N39.2_20250726_013994_L10000300344.jpg | 400ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13994/310/619/GF5A_AHSI_E116.2_N39.2_20250726_013994_L10000300344.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:35 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5A/13994/310/619/GF5A_AHSI_E116.2_N39.2_20250726_013994_L10000300344.jpg | 402ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13994/310/619/GF5A_AHSI_E116.2_N39.2_20250726_013994_L10000300344.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13994/310/619/GF5A_AHSI_E116.2_N39.2_20250726_013994_L10000300344.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13994/310/619/GF5A_AHSI_E116.2_N39.2_20250726_013994_L10000300344.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:35 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5B/20469/5/99/GF5B_AHSI_E115.7_N40.2_20250713_020469_L10000955574.jpg | 493ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20469/5/99/GF5B_AHSI_E115.7_N40.2_20250713_020469_L10000955574.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:35 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5B/20469/5/99/GF5B_AHSI_E115.7_N40.2_20250713_020469_L10000955574.jpg | 496ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20469/5/99/GF5B_AHSI_E115.7_N40.2_20250713_020469_L10000955574.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20469/5/99/GF5B_AHSI_E115.7_N40.2_20250713_020469_L10000955574.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20469/5/99/GF5B_AHSI_E115.7_N40.2_20250713_020469_L10000955574.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:36 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5B/20469/5/98/GF5B_AHSI_E115.9_N40.6_20250713_020469_L10000955573.jpg | 617ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20469/5/98/GF5B_AHSI_E115.9_N40.6_20250713_020469_L10000955573.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:36 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5B/20469/5/98/GF5B_AHSI_E115.9_N40.6_20250713_020469_L10000955573.jpg | 620ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20469/5/98/GF5B_AHSI_E115.9_N40.6_20250713_020469_L10000955573.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20469/5/98/GF5B_AHSI_E115.9_N40.6_20250713_020469_L10000955573.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20469/5/98/GF5B_AHSI_E115.9_N40.6_20250713_020469_L10000955573.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:37 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5A/13790/308/622/GF5A_AHSI_E116.9_N40.7_20250712_013790_L10000292627.jpg | 500ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/622/GF5A_AHSI_E116.9_N40.7_20250712_013790_L10000292627.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:37 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5A/13790/308/622/GF5A_AHSI_E116.9_N40.7_20250712_013790_L10000292627.jpg | 504ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/622/GF5A_AHSI_E116.9_N40.7_20250712_013790_L10000292627.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/622/GF5A_AHSI_E116.9_N40.7_20250712_013790_L10000292627.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/622/GF5A_AHSI_E116.9_N40.7_20250712_013790_L10000292627.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:37 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5A/13790/308/621/GF5A_AHSI_E117.1_N40.2_20250712_013790_L10000292626.jpg | 586ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/621/GF5A_AHSI_E117.1_N40.2_20250712_013790_L10000292626.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:37 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5A/13790/308/621/GF5A_AHSI_E117.1_N40.2_20250712_013790_L10000292626.jpg | 589ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/621/GF5A_AHSI_E117.1_N40.2_20250712_013790_L10000292626.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/621/GF5A_AHSI_E117.1_N40.2_20250712_013790_L10000292626.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/621/GF5A_AHSI_E117.1_N40.2_20250712_013790_L10000292626.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:38 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5A/13790/308/620/GF5A_AHSI_E117.3_N39.7_20250712_013790_L10000292625.jpg | 480ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/620/GF5A_AHSI_E117.3_N39.7_20250712_013790_L10000292625.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:38 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5A/13790/308/620/GF5A_AHSI_E117.3_N39.7_20250712_013790_L10000292625.jpg | 486ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/620/GF5A_AHSI_E117.3_N39.7_20250712_013790_L10000292625.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/620/GF5A_AHSI_E117.3_N39.7_20250712_013790_L10000292625.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5A/13790/308/620/GF5A_AHSI_E117.3_N39.7_20250712_013790_L10000292625.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:38 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5B/20367/4/99/GF5B_AHSI_E116.2_N40.2_20250706_020367_L10000950268.jpg | 475ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20367/4/99/GF5B_AHSI_E116.2_N40.2_20250706_020367_L10000950268.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:38 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5B/20367/4/99/GF5B_AHSI_E116.2_N40.2_20250706_020367_L10000950268.jpg | 480ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20367/4/99/GF5B_AHSI_E116.2_N40.2_20250706_020367_L10000950268.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20367/4/99/GF5B_AHSI_E116.2_N40.2_20250706_020367_L10000950268.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20367/4/99/GF5B_AHSI_E116.2_N40.2_20250706_020367_L10000950268.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:39 [ERROR   ] sasclouds_api_scraper – Network error | GET https://quickview.sasclouds.com/GF5B/20367/4/98/GF5B_AHSI_E116.4_N40.7_20250706_020367_L10000950267.jpg | 367ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20367/4/98/GF5B_AHSI_E116.4_N40.7_20250706_020367_L10000950267.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:36:39 [ERROR   ] sasclouds_api_scraper – download_and_georeference failed | https://quickview.sasclouds.com/GF5B/20367/4/98/GF5B_AHSI_E116.4_N40.7_20250706_020367_L10000950267.jpg | 373ms | HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20367/4/98/GF5B_AHSI_E116.4_N40.7_20250706_020367_L10000950267.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 483, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\ssl_.py", line 527, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\ProgramData\miniforge3\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\ProgramData\miniforge3\Lib\site-packages\urllib3\util\retry.py", line 535, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20367/4/98/GF5B_AHSI_E116.4_N40.7_20250706_020367_L10000950267.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1301, in download_and_georeference
+    resp = self._http("GET", image_url, timeout=30)
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 793, in _http
+    resp = self.session.request(method, url, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\ProgramData\miniforge3\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com', port=443): Max retries exceeded with url: /GF5B/20367/4/98/GF5B_AHSI_E116.4_N40.7_20250706_020367_L10000950267.jpg (Caused by SSLError(SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'quickview.sasclouds.com'. (_ssl.c:1032)")))
+2026-05-08 09:51:38 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:51:38 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:51:38 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:51:38 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 09:51:38 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 09:51:39 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 09:51:39 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1265, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 09:51:39 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 09:53:00 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:53:00 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:53:00 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 09:53:00 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 09:53:00 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 09:53:01 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 09:53:01 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1265, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 09:53:01 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 10:02:40 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 10:02:40 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 10:02:40 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 10:02:40 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 10:02:40 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 10:02:40 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 10:02:40 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1265, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 10:02:40 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg

@@ -14,7 +14,10 @@
       "Bash(python -c \"import pytz; print\\('pytz available'\\); import simplekml; print\\('simplekml available'\\); import plotly; print\\('plotly available'\\)\")",
       "Bash(Select-String -Path \"C:\\\\Alexandre\\\\OMEOSpace\\\\Python\\\\App_SASCloud_Scraping\\\\SASCloud Webpage\\\\www.sasclouds.com.txt\" -Pattern \"\\(?i\\)token|authorization|bearer\" -Context 3)",
       "Bash(Select-Object -First 60)",
-      "Bash(Out-String)"
+      "Bash(Out-String)",
+      "Bash(ls \"C:\\\\Users\\\\Raquel\\\\logs\\\\\" 2>/dev/null || echo \"no logs dir there\"; ls \"C:\\\\Alexandre\\\\OMEOSpace\\\\Python\\\\App_SASCloud_Scraping\\\\logs\\\\\")",
+      "Read(//c/Users/Raquel/logs\" 2>/dev/**)",
+      "Bash(python tests/run_tests.py)"
     ]
   }
 }
