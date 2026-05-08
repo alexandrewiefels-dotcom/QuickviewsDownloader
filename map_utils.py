@@ -1,10 +1,12 @@
 # File: map_utils.py
 import base64
+import json as _json
 import logging
 from functools import lru_cache
 
 import folium
 import requests as _requests
+from branca.element import Element
 from folium.plugins import Draw
 from shapely.affinity import translate
 from shapely.geometry import box, mapping
@@ -137,30 +139,74 @@ def handle_drawing(map_data) -> dict | None:
     return None
 
 
+# ── Corner ordering ───────────────────────────────────────────────────────────
+
+def _order_corners(footprint_geojson):
+    """
+    Return footprint corners ordered [NW, NE, SE, SW] as [[lat, lon], ...]
+    for use with Leaflet.ImageTransform (TL, TR, BR, BL convention).
+    Assumes roughly north-up imagery.
+    """
+    try:
+        coords = footprint_geojson["coordinates"][0]
+        pts = list(coords[:-1]) if (len(coords) > 1 and coords[0] == coords[-1]) else list(coords)
+        if len(pts) < 3:
+            return None
+        # Split into top/bottom halves by latitude, then sort each by longitude
+        by_lat = sorted(pts, key=lambda c: c[1], reverse=True)
+        half   = len(pts) // 2 + len(pts) % 2
+        top    = sorted(by_lat[:half], key=lambda c: c[0])   # ascending lon → [NW, NE]
+        bot    = sorted(by_lat[half:], key=lambda c: c[0])   # ascending lon → [SW, SE]
+        nw, ne = top[0],  top[-1]
+        sw, se = bot[0],  bot[-1]
+        return [
+            [nw[1], nw[0]],   # TL / NW  [lat, lon]
+            [ne[1], ne[0]],   # TR / NE
+            [se[1], se[0]],   # BR / SE
+            [sw[1], sw[0]],   # BL / SW
+        ]
+    except Exception:
+        return None
+
+
 # ── Main map ──────────────────────────────────────────────────────────────────
+
+# Leaflet.ImageTransform CDN — perspective-correct 4-corner image warping
+_IMAGE_TRANSFORM_JS = (
+    "https://cdn.jsdelivr.net/npm/leaflet-image-transform@0.0.3"
+    "/dist/L.ImageTransform.min.js"
+)
+# Disable pointer events on the transform canvases so clicks pass through
+_NOTRANSFORM_CSS = (
+    "<style>"
+    ".leaflet-overlay-pane canvas{pointer-events:none!important;}"
+    "</style>"
+)
+
 
 def render_main_map(
     polygon_geojson=None,
     features_for_map=None,
-    preview_scene=None,
+    preview_scenes=None,      # list of feature dicts to show as georef quickviews
     stored_center=None,
     stored_zoom=None,
 ):
     """
-    Interactive Folium map with:
+    Interactive Folium map:
     - Drawing tools (polygon / rectangle)
     - AOI overlay (blue)
-    - Search footprints coloured per satellite, with hover tooltip
-    - Georeferenced quickview ImageOverlay when a scene is previewed
+    - Search footprints coloured per satellite, hover tooltip, no click action
+    - Multiple georeferenced quickviews via Leaflet.ImageTransform (4-corner warp)
     Returns st_folium map_data dict.
     """
+    preview_scenes = preview_scenes or []
+
     # ── Default centre / zoom ─────────────────────────────────────────────────
     center, zoom = stored_center or [20.0, 0.0], stored_zoom or 3
 
-    if preview_scene and not stored_center:
-        # First activation of a preview: fly to the scene
+    if preview_scenes and not stored_center:
         try:
-            geom = shapely_shape(preview_scene["geometry"])
+            geom = shapely_shape(preview_scenes[0]["geometry"])
             w, s, e, n = geom.bounds
             center = [(s + n) / 2, (w + e) / 2]
             zoom = 9
@@ -191,7 +237,13 @@ def render_main_map(
         except Exception:
             pass
 
-    m = folium.Map(location=center, zoom_start=zoom)
+    m = folium.Map(
+        location=center,
+        zoom_start=zoom,
+        zoom_snap=0.25,
+        zoom_delta=0.5,
+        wheel_px_per_zoom_level=80,
+    )
 
     # Drawing tools
     Draw(
@@ -209,41 +261,62 @@ def render_main_map(
             polygon_geojson,
             name="AOI",
             style_function=lambda _: {"color": "#0055cc", "weight": 3, "fillOpacity": 0.15},
+            popup=None,
         ).add_to(m)
 
-    # ── Quickview ImageOverlay ─────────────────────────────────────────────────
-    # Shown when the user clicks the eye button on a scene in the results table.
-    # interactive=False means clicking or hovering the image has no effect.
-    if preview_scene:
-        qv_url = preview_scene["properties"].get("quickview", "")
-        props  = preview_scene["properties"]
-        if qv_url:
-            try:
-                geom = shapely_shape(preview_scene["geometry"])
-                w, s, e, n = geom.bounds
-                bounds = [[s, w], [n, e]]
+    # ── Georeferenced quickviews via L.imageTransform ─────────────────────────
+    # Each active preview scene is perspective-warped to its exact footprint corners.
+    if preview_scenes:
+        # Inject the plugin + CSS once
+        m.get_root().header.add_child(
+            Element(f'<script src="{_IMAGE_TRANSFORM_JS}"></script>')
+        )
+        m.get_root().header.add_child(Element(_NOTRANSFORM_CSS))
 
-                img_data = _fetch_image_b64(qv_url)
-                if img_data:
-                    folium.raster_layers.ImageOverlay(
-                        image=img_data,
-                        bounds=bounds,
-                        name=(
-                            f"Quickview — {props.get('satellite', '')} "
-                            f"{props.get('sensor', '')} {props.get('date', '')}"
-                        ),
-                        opacity=0.9,
-                        interactive=False,
-                        zindex=10,
-                        show=True,
-                    ).add_to(m)
-                    logger.debug(
-                        f"ImageOverlay added | bounds={bounds} | scene={props.get('satellite')}"
-                    )
-                else:
-                    logger.warning("Quickview image could not be fetched for overlay")
-            except Exception as exc:
-                logger.warning(f"ImageOverlay error: {exc}")
+        map_var = m.get_name()
+        ok_count = 0
+
+        for feat in preview_scenes:
+            qv_url = feat["properties"].get("quickview", "")
+            if not qv_url:
+                continue
+            corners = _order_corners(feat["geometry"])
+            if corners is None:
+                continue
+            img_data = _fetch_image_b64(qv_url)
+            if not img_data:
+                logger.warning(f"Quickview fetch failed: {qv_url[:60]}")
+                continue
+
+            props = feat["properties"]
+            corners_js = _json.dumps(corners)
+
+            # Inline script: wait for plugin to load, then add ImageTransform layer.
+            # Falls back to a plain ImageOverlay if the plugin isn't available.
+            js = f"""
+<script>
+(function(){{
+  var _img = "{img_data}";
+  var _corners = {corners_js};
+  var _map = {map_var};
+  function _addLayer() {{
+    if (typeof L.imageTransform === 'undefined') {{
+      setTimeout(_addLayer, 80);
+      return;
+    }}
+    L.imageTransform(_img, _corners, {{opacity: 0.9, interactive: false}}).addTo(_map);
+  }}
+  _addLayer();
+}})();
+</script>"""
+            m.get_root().html.add_child(Element(js))
+            ok_count += 1
+            logger.debug(
+                f"ImageTransform queued | {props.get('satellite')} "
+                f"{props.get('date')} | corners={corners}"
+            )
+
+        logger.info(f"Quickview layers: {ok_count}/{len(preview_scenes)} added")
 
     # ── Footprints layer ───────────────────────────────────────────────────────
     if features_for_map:
@@ -313,13 +386,13 @@ def render_main_map(
             logger.warning(f"{split_errors} footprints skipped (antimeridian split error)")
         logger.debug(f"Footprints layer: {len(features_for_map)} scenes")
 
-    if polygon_geojson or features_for_map or preview_scene:
+    if polygon_geojson or features_for_map or preview_scenes:
         folium.LayerControl(collapsed=False).add_to(m)
 
     logger.info(
         f"Map rendered | AOI={'yes' if polygon_geojson else 'no'} | "
         f"footprints={len(features_for_map) if features_for_map else 0} | "
-        f"preview={'yes' if preview_scene else 'no'} | "
+        f"previews={len(preview_scenes)} | "
         f"centre={center} zoom={zoom}"
     )
 

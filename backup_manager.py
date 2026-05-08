@@ -1,491 +1,556 @@
 # ============================================================================
 # FILE: backup_manager.py – Versioned backup system for any project
-# UPDATED: Added collision protection, excludes dot-folders, editable project name
 # ============================================================================
 
-import os
+import hashlib
+import json
 import re
 import shutil
-import json
-import time
+import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Optional
-import zipfile
+from typing import Dict, List, Optional
 
 
 class BackupManager:
     """
-    Manages versioned backups of project files, stored outside the project root.
-    Excludes all folders starting with a dot (.) and other common exclusions.
-    
-    PROJECT_NAME: Change this variable to match your project name.
+    Manages versioned folder and ZIP backups stored in a sibling directory.
+
+    - Folder backups  : ../ProjectName_backups/ProjectName_backup_vN_TIMESTAMP/
+    - ZIP backups     : ../ProjectName_backups/ProjectName_backup_vN_TIMESTAMP.zip
+      (no intermediate folder copy — ZIPs write directly from source files)
+    - SHA-256 checksums stored and verified at restore time
+    - Relative paths in metadata so the backup folder is portable
     """
-    
-    # ================================================================
-    # EDIT THIS VARIABLE TO MATCH YOUR PROJECT
-    # ================================================================
-    PROJECT_NAME = "App_SASCloud_Scraping"  # ← Change this to your project name
-    # ================================================================
-    
-    # Excluded directories (case insensitive for some)
-    EXCLUDED_DIRS = [
-        # Dot folders (any folder starting with .)
-        # Handled dynamically in _should_exclude method
+
+    EXCLUDED_DIRS: set = {
         "venv", "env", "ENV", ".venv",
         "__pycache__",
-        "backups",
-        ".git",
+        ".git", ".hg", ".svn",
         ".idea", ".vscode",
-        "logs", "tmp", "temp", "node_modules",
-        "dist", "build", "egg-info",
-        ".pytest_cache", ".mypy_cache", ".coverage",
-        ".streamlit/cache",  # Streamlit cache
-    
-    
-    EXCLUDED_EXTENSIONS = [
+        ".pytest_cache", ".mypy_cache",
+        "node_modules", "dist", "build",
+        "logs", "tmp", "temp",
+    }
+
+    EXCLUDED_EXTENSIONS: set = {
         ".pyc", ".pyo", ".pyd",
         ".so", ".dll", ".dylib",
-        ".exe", ".msi", ".bat", ".cmd",
+        ".exe", ".msi",
         ".log", ".tmp", ".cache",
-        ".db-journal", ".wal", ".shm",  # SQLite temp files
+        ".db-journal", ".wal", ".shm",
         ".lock", ".pid",
-        ".pycache",
-    ]
-    
-    EXCLUDED_FILES = [
-        ".DS_Store",
-        "Thumbs.db",
-        "desktop.ini",
-        ".gitignore",
-        ".gitattributes",
-        ".env",  # Environment variables (sensitive)
-        ".secrets.toml",  # Secrets file
-    ]
-    
-    def __init__(self, project_root: str = None):
+    }
+
+    EXCLUDED_FILES: set = {
+        ".DS_Store", "Thumbs.db", "desktop.ini",
+        ".gitignore", ".gitattributes",
+        ".env", "secrets.toml",
+    }
+
+    def __init__(self, project_root: str = None, project_name: str = None):
         """
-        Initialize backup manager.
-        
         Args:
-            project_root: Path to project root. If None, auto-detects from current file.
+            project_root:  Path to project root. Auto-detected from this script's
+                           location if omitted.
+            project_name:  Name used in backup folder/file names. Defaults to the
+                           project root directory's name.
         """
         if project_root is None:
-            # Auto-detect project root (directory containing this script)
-            current_file = Path(__file__).resolve()
-            
-            # Try to find project root by looking for common markers
-            markers = ["app.py", "main.py", "requirements.txt", "setup.py"]
-            for parent in current_file.parents:
-                if any((parent / marker).exists() for marker in markers):
+            current = Path(__file__).resolve()
+            markers = {"main.py", "app.py", "requirements.txt", "setup.py", "pyproject.toml"}
+            for parent in current.parents:
+                if any((parent / m).exists() for m in markers):
                     self.project_root = parent
                     break
             else:
-                self.project_root = current_file.parent
-        
+                self.project_root = current.parent
         else:
-            self.project_root = Path(project_root)
-        
-        # Backup base directory (parent of project root)
-        self.backup_base = self.project_root.parent / f"{self.PROJECT_NAME}_backups"
+            self.project_root = Path(project_root).resolve()
+
+        self.project_name = project_name or self.project_root.name
+
+        self.backup_base = self.project_root.parent / f"{self.project_name}_backups"
         self.backup_base.mkdir(exist_ok=True)
-        
-        # Metadata file
+
         self.metadata_file = self.backup_base / "backup_metadata.json"
         self._load_metadata()
-        
-        print(f"📁 Project root: {self.project_root}")
-        print(f"📁 Backup base: {self.backup_base}")
-    
-    def _is_dot_folder(self, path: Path) -> bool:
-        """Check if any part of the path starts with a dot (.)"""
-        for part in path.parts:
-            if part.startswith('.') and len(part) > 1:  # Exclude current dir "."
-                return True
-        return False
-    
-    def _get_unique_path(self, base_path: Path) -> Path:
-        """
-        If base_path exists, appends an incrementing counter until a unique path is found.
-        Works for both directories and files.
-        """
-        if not base_path.exists():
-            return base_path
-        
-        counter = 1
-        suffix = base_path.suffix  # .zip or empty for folders
-        stem = base_path.stem      # filename without extension
-        parent = base_path.parent
 
-        while True:
-            new_path = parent / f"{stem}_{counter}{suffix}"
-            if not new_path.exists():
-                return new_path
-            counter += 1
-    
-    def _sanitize_description(self, description: str) -> str:
-        """Sanitize description for use in filenames"""
-        if not description:
-            return ""
-        sanitized = re.sub(r'[^a-zA-Z0-9_\-]', '_', description)
-        sanitized = re.sub(r'_+', '_', sanitized)
-        return sanitized[:50]
-    
+        print(f"📁 Project : {self.project_root}")
+        print(f"📁 Backups : {self.backup_base}")
+
+    # ── Exclusion ─────────────────────────────────────────────────────────────
+
     def _should_exclude(self, path: Path) -> bool:
-        """
-        Determine if a path should be excluded from backup.
-        Excludes dot-folders, common excluded directories, and file extensions.
-        """
-        # Exclude dot folders (any folder starting with .)
-        if self._is_dot_folder(path):
-            return True
-        
-        # Check excluded directories
-        for excluded in self.EXCLUDED_DIRS:
-            if excluded in path.parts:
+        try:
+            rel = path.relative_to(self.project_root)
+        except ValueError:
+            return False
+
+        for part in rel.parts:
+            if part.startswith("."):
                 return True
-        
-        # Check excluded file extensions
+            if part in self.EXCLUDED_DIRS:
+                return True
+
         if path.is_file():
-            for ext in self.EXCLUDED_EXTENSIONS:
-                if path.suffix.lower() == ext:
-                    return True
-            
-            # Check excluded filenames
+            if path.suffix.lower() in self.EXCLUDED_EXTENSIONS:
+                return True
             if path.name in self.EXCLUDED_FILES:
                 return True
-        
+
         return False
-    
-    def _get_all_project_files(self) -> List[Path]:
-        """Recursively get all project files, excluding unwanted ones."""
+
+    def _project_files(self) -> List[Path]:
         files = []
-        
         for item in self.project_root.rglob("*"):
-            # Skip if should be excluded
+            if not item.is_file():
+                continue
             if self._should_exclude(item):
                 continue
-            
-            # Skip if item is inside backup directory
-            if self.backup_base in item.parents or item == self.backup_base:
+            try:
+                if self.backup_base in item.parents:
+                    continue
+            except Exception:
                 continue
-            
-            if item.is_file():
-                files.append(item)
-        
-        return files
-    
+            files.append(item)
+        return sorted(files)
+
+    # ── Checksums ─────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _sha256(path: Path) -> str:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(65536), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    def _build_checksums(self, files: List[Path]) -> Dict[str, str]:
+        return {
+            str(f.relative_to(self.project_root)): self._sha256(f)
+            for f in files
+        }
+
+    def _verify_checksums(self, backup_path: Path, checksums: Dict[str, str]) -> List[str]:
+        """Return list of failure descriptions (empty = all OK)."""
+        failures = []
+        for rel_str, expected in checksums.items():
+            dst = backup_path / rel_str
+            if not dst.exists():
+                failures.append(f"MISSING  {rel_str}")
+            elif self._sha256(dst) != expected:
+                failures.append(f"CORRUPT  {rel_str}")
+        return failures
+
+    # ── Metadata ──────────────────────────────────────────────────────────────
+
     def _load_metadata(self):
-        """Load backup metadata from JSON file."""
         if self.metadata_file.exists():
             try:
-                with open(self.metadata_file, 'r', encoding='utf-8') as f:
+                with open(self.metadata_file, encoding="utf-8") as f:
                     self.metadata = json.load(f)
+                self._migrate_metadata()
+                return
             except (json.JSONDecodeError, IOError):
-                self.metadata = {"backups": [], "current_version": "1.0.0", "last_backup": None}
-        else:
-            self.metadata = {"backups": [], "current_version": "1.0.0", "last_backup": None}
-    
+                pass
+        self.metadata = {"backups": [], "last_backup": None}
+
+    def _migrate_metadata(self):
+        """Upgrade entries written by the old format to the new schema."""
+        for b in self.metadata.get("backups", []):
+            # Old format stored absolute "path"; new format stores "rel_path"
+            if "path" in b and "rel_path" not in b:
+                b["rel_path"] = Path(b["path"]).name
+            # Old format used "1.0.X" version strings; new format uses int
+            if isinstance(b.get("version"), str) and "." in str(b["version"]):
+                try:
+                    b["version"] = int(b["version"].split(".")[-1])
+                except (ValueError, IndexError):
+                    pass
+
     def _save_metadata(self):
-        """Save backup metadata to JSON file."""
-        with open(self.metadata_file, 'w', encoding='utf-8') as f:
+        with open(self.metadata_file, "w", encoding="utf-8") as f:
             json.dump(self.metadata, f, indent=2, default=str)
-    
-    def _get_next_version(self) -> str:
-        """Generate next version number."""
+
+    def _next_version(self) -> int:
         if not self.metadata["backups"]:
-            return "1.0.0"
-        
-        # Find highest version number
-        versions = []
-        for backup in self.metadata["backups"]:
-            try:
-                parts = backup["version"].split('.')
-                versions.append(int(parts[-1]))
-            except (ValueError, KeyError, IndexError):
-                versions.append(0)
-        
-        if versions:
-            next_num = max(versions) + 1
-        else:
-            next_num = 1
-        
-        return f"1.0.{next_num}"
-    
-    def create_backup(self, description: str = "", include_data: bool = True) -> Dict:
-        """
-        Create a full backup of the project.
-        
-        Args:
-            description: Optional description of the backup
-            include_data: Whether to include data files (default True)
-        
-        Returns:
-            Dict with backup information
-        """
-        version = self._get_next_version()
-        timestamp = datetime.now()
-        timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
-        
-        desc_suffix = self._sanitize_description(description)
-        if desc_suffix:
-            backup_name = f"{self.PROJECT_NAME}_backup_v{version}_{desc_suffix}_{timestamp_str}"
-        else:
-            backup_name = f"{self.PROJECT_NAME}_backup_v{version}_{timestamp_str}"
-        
-        # Ensure unique backup path
-        backup_path = self._get_unique_path(self.backup_base / backup_name)
-        backup_path.mkdir(parents=True, exist_ok=True)
-        
-        print(f"\n📦 Creating backup: {backup_path.name}")
-        
-        # Copy all project files
-        file_count = 0
-        for src_file in self._get_all_project_files():
-            # Calculate relative path from project root
-            rel_path = src_file.relative_to(self.project_root)
-            dst_file = backup_path / rel_path
-            
-            # Create parent directories
-            dst_file.parent.mkdir(parents=True, exist_ok=True)
-            
-            # Copy file
-            shutil.copy2(src_file, dst_file)
-            file_count += 1
-        
-        # Create backup info file
-        backup_info = {
-            "version": version,
-            "timestamp": timestamp.isoformat(),
-            "description": description,
-            "path": str(backup_path),
-            "include_data": include_data,
-            "file_count": file_count,
-            "project_name": self.PROJECT_NAME,
-            "project_root": str(self.project_root)
-        }
-        
-        with open(backup_path / "backup_info.json", 'w', encoding='utf-8') as f:
-            json.dump(backup_info, f, indent=2, default=str)
-        
-        # Update metadata
-        self.metadata["backups"].append(backup_info)
-        self.metadata["last_backup"] = timestamp.isoformat()
-        self._save_metadata()
-        
-        print(f"✅ Backup created: {backup_path.name}")
-        print(f"   Version: v{version}")
-        print(f"   Files backed up: {file_count}")
-        
-        return backup_info
-    
-    def create_zip_backup(self, description: str = "", include_data: bool = True) -> Path:
-        """
-        Create a compressed zip backup.
-        
-        Args:
-            description: Optional description
-            include_data: Whether to include data files
-        
-        Returns:
-            Path to created zip file
-        """
-        # First create the folder backup
-        backup_info = self.create_backup(description, include_data)
-        backup_dir = Path(backup_info["path"])
-        
-        version = backup_info["version"]
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        desc_suffix = self._sanitize_description(description)
-        if desc_suffix:
-            zip_name = f"{self.PROJECT_NAME}_backup_v{version}_{desc_suffix}_{timestamp}.zip"
-        else:
-            zip_name = f"{self.PROJECT_NAME}_backup_v{version}_{timestamp}.zip"
-        
-        # Ensure unique zip filename
-        zip_path = self._get_unique_path(backup_dir / zip_name)
-        
-        print(f"\n📦 Creating zip archive: {zip_path.name}")
-        
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for file_path in backup_dir.rglob("*"):
-                if file_path.is_file() and file_path != zip_path:
-                    arcname = file_path.relative_to(backup_dir)
-                    zipf.write(file_path, arcname)
-        
-        print(f"✅ Zip backup created: {zip_path.name}")
-        print(f"   Size: {zip_path.stat().st_size / (1024*1024):.2f} MB")
-        
-        return zip_path
-    
-    def list_backups(self) -> List[Dict]:
-        """List all available backups."""
-        return self.metadata["backups"]
-    
-    def restore_backup(self, version: str, target_dir: Path = None, dry_run: bool = False) -> bool:
-        """
-        Restore a backup version.
-        
-        Args:
-            version: Version to restore (e.g., "1.0.5")
-            target_dir: Target directory (default: project root)
-            dry_run: If True, only show what would be restored
-        
-        Returns:
-            True if successful
-        """
-        # Find backup info
-        backup_info = None
+            return 1
+        nums = []
         for b in self.metadata["backups"]:
-            if b["version"] == version:
-                backup_info = b
-                break
-        
+            try:
+                nums.append(int(b["version"]))
+            except (ValueError, KeyError, TypeError):
+                nums.append(0)
+        return max(nums) + 1
+
+    def _resolve_version(self, version_arg: str) -> Optional[int]:
+        """Parse a version argument; handle both "5" and legacy "1.0.5"."""
+        s = str(version_arg)
+        if "." in s:
+            try:
+                return int(s.split(".")[-1])
+            except ValueError:
+                pass
+        try:
+            return int(s)
+        except ValueError:
+            return None
+
+    # ── Name helpers ──────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _sanitize(text: str, maxlen: int = 40) -> str:
+        s = re.sub(r"[^a-zA-Z0-9_\-]", "_", text)
+        s = re.sub(r"_+", "_", s).strip("_")
+        return s[:maxlen]
+
+    def _unique_path(self, path: Path) -> Path:
+        if not path.exists():
+            return path
+        stem, suffix, parent = path.stem, path.suffix, path.parent
+        for i in range(1, 9999):
+            candidate = parent / f"{stem}_{i}{suffix}"
+            if not candidate.exists():
+                return candidate
+        raise RuntimeError(f"Cannot find unique path for {path}")
+
+    def _make_name(self, version: int, description: str, ext: str = "") -> str:
+        parts = [self.project_name, "backup", f"v{version}"]
+        desc_sfx = self._sanitize(description) if description else ""
+        if desc_sfx:
+            parts.append(desc_sfx)
+        parts.append(datetime.now().strftime("%Y%m%d_%H%M%S"))
+        return "_".join(parts) + ext
+
+    # ── Public API ────────────────────────────────────────────────────────────
+
+    def create_backup(self, description: str = "") -> Dict:
+        """
+        Create a versioned folder backup. Returns the backup info dict.
+        Checksums are computed and verified after copying.
+        """
+        version     = self._next_version()
+        ts          = datetime.now()
+        backup_path = self._unique_path(self.backup_base / self._make_name(version, description))
+        backup_path.mkdir(parents=True)
+
+        print(f"\n📦 Creating folder backup v{version}: {backup_path.name}")
+
+        src_files, checksums, file_count, copy_errors = self._project_files(), {}, 0, []
+
+        for src in src_files:
+            rel = src.relative_to(self.project_root)
+            dst = backup_path / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                shutil.copy2(src, dst)
+                checksums[str(rel)] = self._sha256(dst)
+                file_count += 1
+                if file_count % 25 == 0:
+                    print(f"   … {file_count}/{len(src_files)} files")
+            except OSError as exc:
+                copy_errors.append(f"{rel}: {exc}")
+
+        failures = self._verify_checksums(backup_path, checksums)
+
+        if copy_errors:
+            print(f"   ⚠ {len(copy_errors)} copy error(s):")
+            for e in copy_errors:
+                print(f"     {e}")
+        if failures:
+            print(f"   ⚠ {len(failures)} integrity failure(s):")
+            for f in failures[:5]:
+                print(f"     {f}")
+
+        info = {
+            "version":      version,
+            "timestamp":    ts.isoformat(),
+            "description":  description,
+            "rel_path":     backup_path.name,
+            "file_count":   file_count,
+            "copy_errors":  len(copy_errors),
+            "integrity_ok": len(failures) == 0,
+            "project_name": self.project_name,
+            "checksums":    checksums,
+        }
+
+        with open(backup_path / "backup_info.json", "w", encoding="utf-8") as f:
+            json.dump(info, f, indent=2)
+
+        # Metadata omits checksums (kept only inside the backup folder)
+        meta_entry = {k: v for k, v in info.items() if k != "checksums"}
+        self.metadata["backups"].append(meta_entry)
+        self.metadata["last_backup"] = ts.isoformat()
+        self._save_metadata()
+
+        print(f"✅ Backup v{version} — {file_count} files, integrity {'OK' if not failures else 'WARN'}")
+        return info
+
+    def create_zip_backup(self, description: str = "") -> Path:
+        """
+        Create a compressed ZIP backup written directly to backup_base.
+        No intermediate folder copy — avoids double disk usage.
+        Checksums of source files are stored inside the ZIP.
+        Returns path to the ZIP file.
+        """
+        version  = self._next_version()
+        ts       = datetime.now()
+        zip_path = self._unique_path(self.backup_base / self._make_name(version, description, ".zip"))
+
+        print(f"\n📦 Creating ZIP backup v{version}: {zip_path.name}")
+
+        src_files, checksums, file_count, copy_errors = self._project_files(), {}, 0, []
+
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+            for src in src_files:
+                rel = src.relative_to(self.project_root)
+                try:
+                    zf.write(src, arcname=rel)
+                    checksums[str(rel)] = self._sha256(src)
+                    file_count += 1
+                    if file_count % 25 == 0:
+                        print(f"   … {file_count}/{len(src_files)} files")
+                except OSError as exc:
+                    copy_errors.append(f"{rel}: {exc}")
+
+            info = {
+                "version":      version,
+                "timestamp":    ts.isoformat(),
+                "description":  description,
+                "file_count":   file_count,
+                "copy_errors":  len(copy_errors),
+                "project_name": self.project_name,
+                "checksums":    checksums,
+            }
+            zf.writestr("backup_info.json", json.dumps(info, indent=2))
+
+        size_mb = zip_path.stat().st_size / (1024 * 1024)
+
+        if copy_errors:
+            print(f"   ⚠ {len(copy_errors)} file(s) skipped:")
+            for e in copy_errors:
+                print(f"     {e}")
+
+        self.metadata["backups"].append({
+            "version":      version,
+            "timestamp":    ts.isoformat(),
+            "description":  description,
+            "rel_path":     zip_path.name,
+            "file_count":   file_count,
+            "copy_errors":  len(copy_errors),
+            "zip":          True,
+        })
+        self.metadata["last_backup"] = ts.isoformat()
+        self._save_metadata()
+
+        print(f"✅ ZIP backup v{version} — {file_count} files, {size_mb:.2f} MB")
+        return zip_path
+
+    def list_backups(self) -> List[Dict]:
+        return self.metadata["backups"]
+
+    def restore_backup(
+        self,
+        version,
+        target_dir: Path = None,
+        dry_run: bool = False,
+    ) -> bool:
+        """
+        Restore a folder backup file-by-file.
+
+        Steps:
+          1. Verify stored checksums against the backup copy.
+          2. Report stale files (in project now, absent from backup).
+          3. In dry_run mode: print what would change, return True.
+          4. Create a safety backup of the current state.
+          5. Copy every file from backup to project.
+
+        ZIP backups cannot be restored directly — unzip them first.
+        """
+        resolved = self._resolve_version(str(version))
+        backup_info = next(
+            (b for b in self.metadata["backups"] if b["version"] == resolved),
+            None,
+        )
         if not backup_info:
-            print(f"❌ Backup version {version} not found")
-            print(f"   Available versions: {[b['version'] for b in self.metadata['backups']]}")
+            available = [b["version"] for b in self.metadata["backups"]]
+            print(f"❌ Version {version!r} not found. Available: {available}")
             return False
-        
-        backup_path = Path(backup_info["path"])
+
+        if backup_info.get("zip"):
+            print("❌ Cannot restore from a ZIP backup directly — unzip it first.")
+            return False
+
+        backup_path = self.backup_base / backup_info["rel_path"]
         if not backup_path.exists():
-            print(f"❌ Backup directory not found: {backup_path}")
+            print(f"❌ Backup directory missing: {backup_path}")
             return False
-        
-        if target_dir is None:
-            target_dir = self.project_root
-        
-        print(f"\n🔄 Restoring backup v{version}")
-        print(f"   From: {backup_path}")
-        print(f"   To: {target_dir}")
-        
+
+        target_dir = Path(target_dir).resolve() if target_dir else self.project_root
+
+        # Load checksums from the backup's info file
+        checksums: Dict[str, str] = {}
+        info_file = backup_path / "backup_info.json"
+        if info_file.exists():
+            try:
+                with open(info_file, encoding="utf-8") as f:
+                    stored = json.load(f)
+                checksums = stored.get("checksums", {})
+            except Exception:
+                pass
+
+        backup_files = sorted(
+            f for f in backup_path.rglob("*")
+            if f.is_file() and f.name != "backup_info.json"
+        )
+
+        print(f"\n🔄 Restore v{resolved}")
+        print(f"   From : {backup_path.name}")
+        print(f"   To   : {target_dir}")
+        print(f"   Files: {len(backup_files)}")
+
+        # Integrity check
+        if checksums:
+            failures = self._verify_checksums(backup_path, checksums)
+            if failures:
+                print(f"\n❌ Integrity check failed ({len(failures)} file(s)) — restore aborted:")
+                for line in failures[:10]:
+                    print(f"     {line}")
+                return False
+            print(f"   ✓ Integrity OK ({len(checksums)} files verified)")
+
+        # Stale file report
+        if checksums:
+            stale = [
+                str(pf.relative_to(self.project_root))
+                for pf in self._project_files()
+                if str(pf.relative_to(self.project_root)) not in checksums
+            ]
+            if stale:
+                print(f"\n   ⚠ {len(stale)} project file(s) not in this backup (will be left as-is):")
+                for s in stale[:15]:
+                    print(f"     + {s}")
+                if len(stale) > 15:
+                    print(f"     … and {len(stale) - 15} more")
+
         if dry_run:
-            print("\n📋 Files that would be restored:")
-            for item in backup_path.rglob("*"):
-                if item.is_file() and item.name != "backup_info.json":
-                    rel = item.relative_to(backup_path)
-                    print(f"   - {rel}")
-            print(f"\n   Total: {backup_info['file_count']} files")
+            print("\n📋 Dry-run — files that would be restored:")
+            for bf in backup_files:
+                rel    = bf.relative_to(backup_path)
+                dst    = target_dir / rel
+                status = "UPDATE" if dst.exists() else "NEW   "
+                print(f"   {status}  {rel}")
             return True
-        
-        # Create a pre-restore backup for safety
-        pre_restore_backup = self.create_backup(f"Pre-restore before restoring v{version}")
-        print(f"📦 Created safety backup: v{pre_restore_backup['version']}")
-        
-        # Restore files
-        restored_count = 0
-        for item in backup_path.iterdir():
-            if item.name == "backup_info.json":
-                continue
-            
-            dst = target_dir / item.name
-            if item.is_dir():
-                if dst.exists():
-                    shutil.rmtree(dst)
-                shutil.copytree(item, dst, ignore_dangling_symlinks=True)
-            else:
-                shutil.copy2(item, dst)
-            restored_count += 1
-        
-        print(f"✅ Restored version {version} ({restored_count} items)")
-        return True
-    
+
+        # Safety backup first
+        safety = self.create_backup(f"pre-restore_before_v{resolved}")
+        print(f"📦 Safety backup created: v{safety['version']}")
+
+        # File-by-file restore
+        ok = fail = 0
+        for bf in backup_files:
+            rel = bf.relative_to(backup_path)
+            dst = target_dir / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                shutil.copy2(bf, dst)
+                ok += 1
+            except OSError as exc:
+                print(f"   ✗ {rel}: {exc}")
+                fail += 1
+
+        print(f"✅ Restored v{resolved}: {ok} files OK, {fail} failed")
+        return fail == 0
+
     def cleanup_old_backups(self, keep_count: int = 10) -> int:
-        """
-        Delete old backups, keeping only the most recent N.
-        
-        Args:
-            keep_count: Number of backups to keep
-        
-        Returns:
-            Number of backups deleted
-        """
-        if len(self.metadata["backups"]) <= keep_count:
-            print(f"ℹ️ Only {len(self.metadata['backups'])} backups, nothing to clean (keep={keep_count})")
+        """Delete old backups, keeping the most recent keep_count."""
+        total = len(self.metadata["backups"])
+        if total <= keep_count:
+            print(f"ℹ️  {total} backup(s) — nothing to delete (keep={keep_count})")
             return 0
-        
+
         to_delete = self.metadata["backups"][:-keep_count]
-        deleted_count = 0
-        
-        for backup in to_delete:
-            backup_path = Path(backup["path"])
-            if backup_path.exists():
-                shutil.rmtree(backup_path)
-                deleted_count += 1
-                print(f"🗑️ Deleted old backup: v{backup['version']} ({backup['timestamp'][:19]})")
-        
-        # Keep only the most recent backups
+        deleted = 0
+        for b in to_delete:
+            p = self.backup_base / b["rel_path"]
+            try:
+                if p.is_dir():
+                    shutil.rmtree(p)
+                elif p.is_file():
+                    p.unlink()
+                deleted += 1
+                print(f"🗑️  Deleted v{b['version']} ({b['timestamp'][:19]})")
+            except OSError as exc:
+                print(f"   ✗ Could not delete v{b['version']}: {exc}")
+
         self.metadata["backups"] = self.metadata["backups"][-keep_count:]
         self._save_metadata()
-        
-        print(f"✅ Cleanup complete. Kept {keep_count} backups, deleted {deleted_count}")
-        return deleted_count
-    
-    def get_backup_size(self, version: str = None) -> float:
-        """Get size of backup(s) in MB."""
-        if version:
-            for backup in self.metadata["backups"]:
-                if backup["version"] == version:
-                    backup_path = Path(backup["path"])
-                    if backup_path.exists():
-                        total_size = sum(f.stat().st_size for f in backup_path.rglob("*") if f.is_file())
-                        return total_size / (1024 * 1024)
-                    return 0
-            return 0
-        else:
-            total_size = 0
-            for backup in self.metadata["backups"]:
-                backup_path = Path(backup["path"])
-                if backup_path.exists():
-                    total_size += sum(f.stat().st_size for f in backup_path.rglob("*") if f.is_file())
-            return total_size / (1024 * 1024)
-    
-    def export_manifest(self, version: str = None) -> Dict:
-        """Export detailed manifest of backed up files."""
-        if version:
-            backups = [b for b in self.metadata["backups"] if b["version"] == version]
-        else:
-            backups = self.metadata["backups"]
-        
-        manifest = {
-            "exported_at": datetime.now().isoformat(),
-            "project_name": self.PROJECT_NAME,
-            "backups": []
-        }
-        
-        for backup in backups:
-            backup_path = Path(backup["path"])
-            if not backup_path.exists():
-                continue
-            
-            files = []
-            for file_path in backup_path.rglob("*"):
-                if file_path.is_file() and file_path.name != "backup_info.json":
-                    rel = file_path.relative_to(backup_path)
-                    files.append({
-                        "path": str(rel),
-                        "size_bytes": file_path.stat().st_size,
-                        "modified": datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
-                    })
-            
-            manifest["backups"].append({
-                "version": backup["version"],
-                "timestamp": backup["timestamp"],
-                "description": backup["description"],
-                "file_count": len(files),
-                "total_size_mb": sum(f["size_bytes"] for f in files) / (1024 * 1024),
-                "files": files
-            })
-        
-        return manifest
+        print(f"✅ Cleanup done: kept {keep_count}, deleted {deleted}")
+        return deleted
 
+    def get_backup_size(self, version=None) -> float:
+        """Return size in MB for one version or all backups combined."""
+        def _size(rel: str) -> float:
+            p = self.backup_base / rel
+            if not p.exists():
+                return 0.0
+            if p.is_file():
+                return p.stat().st_size / (1024 * 1024)
+            return sum(f.stat().st_size for f in p.rglob("*") if f.is_file()) / (1024 * 1024)
+
+        if version is not None:
+            resolved = self._resolve_version(str(version))
+            b = next((x for x in self.metadata["backups"] if x["version"] == resolved), None)
+            return _size(b["rel_path"]) if b else 0.0
+
+        return sum(_size(b["rel_path"]) for b in self.metadata["backups"])
+
+    def export_manifest(self, version=None) -> Dict:
+        """Return a detailed manifest dict (pass to json.dump if needed)."""
+        target_backups = (
+            [b for b in self.metadata["backups"]
+             if b["version"] == self._resolve_version(str(version))]
+            if version else self.metadata["backups"]
+        )
+        result: Dict = {
+            "exported_at":  datetime.now().isoformat(),
+            "project_name": self.project_name,
+            "backups":      [],
+        }
+        for b in target_backups:
+            p = self.backup_base / b["rel_path"]
+            if not p.exists():
+                continue
+            candidates = p.rglob("*") if p.is_dir() else []
+            files = []
+            for fp in candidates:
+                if fp.is_file() and fp.name != "backup_info.json":
+                    rel = fp.relative_to(p)
+                    files.append({
+                        "path":       str(rel),
+                        "size_bytes": fp.stat().st_size,
+                        "modified":   datetime.fromtimestamp(fp.stat().st_mtime).isoformat(),
+                    })
+            result["backups"].append({
+                "version":       b["version"],
+                "timestamp":     b["timestamp"],
+                "description":   b.get("description", ""),
+                "zip":           b.get("zip", False),
+                "file_count":    len(files),
+                "total_size_mb": sum(f["size_bytes"] for f in files) / (1024 * 1024),
+                "files":         files,
+            })
+        return result
+
+
+# ── CLI ───────────────────────────────────────────────────────────────────────
 
 def main():
-    """CLI interface for backup management."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(
-        description=f"{BackupManager.PROJECT_NAME} - Backup Manager",
+        description="Versioned project backup manager",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -493,65 +558,72 @@ Examples:
   python backup_manager.py --create --description "Before major update"
   python backup_manager.py --create-zip --description "Release v2.0"
   python backup_manager.py --list
-  python backup_manager.py --restore 1.0.5
-  python backup_manager.py --restore 1.0.5 --dry-run
+  python backup_manager.py --restore 5
+  python backup_manager.py --restore 5 --dry-run
   python backup_manager.py --cleanup --keep 5
   python backup_manager.py --size
-        """
+  python backup_manager.py --manifest backup_manifest.json
+        """,
     )
-    
-    parser.add_argument("--create", "-c", action="store_true", help="Create a new backup folder")
-    parser.add_argument("--create-zip", "-z", action="store_true", help="Create a zip backup inside the backup folder")
-    parser.add_argument("--list", "-l", action="store_true", help="List all backups")
-    parser.add_argument("--restore", "-r", type=str, help="Restore a specific version")
-    parser.add_argument("--dry-run", action="store_true", help="Preview restore without copying files")
-    parser.add_argument("--cleanup", action="store_true", help="Clean old backups")
-    parser.add_argument("--keep", type=int, default=10, help="Number of backups to keep (default: 10)")
+
+    parser.add_argument("--create",      "-c", action="store_true", help="Create a folder backup")
+    parser.add_argument("--create-zip",  "-z", action="store_true", help="Create a ZIP backup")
+    parser.add_argument("--list",        "-l", action="store_true", help="List all backups")
+    parser.add_argument("--restore",     "-r", type=str,            help="Restore version N")
+    parser.add_argument("--dry-run",           action="store_true", help="Preview restore, no changes")
+    parser.add_argument("--cleanup",           action="store_true", help="Delete old backups")
+    parser.add_argument("--keep",              type=int, default=10, help="Backups to keep (default: 10)")
     parser.add_argument("--description", "-d", type=str, default="", help="Backup description")
-    parser.add_argument("--no-data", action="store_true", help="Exclude data files from backup")
-    parser.add_argument("--size", "-s", action="store_true", help="Show backup sizes")
-    parser.add_argument("--manifest", "-m", type=str, help="Export manifest to JSON file")
-    
+    parser.add_argument("--size",        "-s", action="store_true", help="Show total backup size")
+    parser.add_argument("--manifest",    "-m", type=str,            help="Export manifest to JSON file")
+    parser.add_argument("--name",              type=str, default=None,
+                        help="Override project name (default: auto-detected)")
+
     args = parser.parse_args()
-    
-    manager = BackupManager()
-    
+    manager = BackupManager(project_name=args.name)
+
     if args.create:
-        manager.create_backup(args.description, not args.no_data)
-    
+        manager.create_backup(args.description)
+
     elif args.create_zip:
-        manager.create_zip_backup(args.description, not args.no_data)
-    
+        manager.create_zip_backup(args.description)
+
     elif args.list:
         backups = manager.list_backups()
         if not backups:
             print("\n📦 No backups found.")
         else:
-            print("\n📦 Available Backups:")
-            print("-" * 90)
+            print(f"\n{'Ver':<5} {'Timestamp':<20} {'Description':<32} {'Files':>6} {'Size MB':>8}  Type")
+            print("-" * 82)
             for b in backups:
                 size = manager.get_backup_size(b["version"])
-                print(f"  v{b['version']:<8} | {b['timestamp'][:19]} | {b['description'] or 'No description':<30} | {b['file_count']:>6} files | {size:.2f} MB")
-    
+                kind = "ZIP" if b.get("zip") else "dir"
+                desc = (b.get("description") or "")[:31]
+                print(
+                    f"  {b['version']:<3}  {b['timestamp'][:19]}  {desc:<32} "
+                    f"{b['file_count']:>6}  {size:>7.2f}   {kind}"
+                )
+
     elif args.restore:
         manager.restore_backup(args.restore, dry_run=args.dry_run)
-    
+
     elif args.cleanup:
         manager.cleanup_old_backups(args.keep)
-    
+
     elif args.size:
-        total_size = manager.get_backup_size()
-        print(f"\n📊 Backup Statistics for {BackupManager.PROJECT_NAME}:")
-        print(f"   Total backups: {len(manager.list_backups())}")
-        print(f"   Total size: {total_size:.2f} MB")
-        print(f"   Backup location: {manager.backup_base}")
-    
+        total = manager.get_backup_size()
+        backups = manager.list_backups()
+        print(f"\n📊 Backup statistics — {manager.project_name}")
+        print(f"   Backups       : {len(backups)}")
+        print(f"   Total size    : {total:.2f} MB")
+        print(f"   Backup folder : {manager.backup_base}")
+
     elif args.manifest:
         manifest = manager.export_manifest()
-        with open(args.manifest, 'w', encoding='utf-8') as f:
+        with open(args.manifest, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2, default=str)
         print(f"✅ Manifest exported to: {args.manifest}")
-    
+
     else:
         parser.print_help()
 

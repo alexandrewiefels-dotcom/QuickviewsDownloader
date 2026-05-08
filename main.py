@@ -1,4 +1,6 @@
 # File: main.py
+import hashlib
+import json
 import logging
 import uuid
 from pathlib import Path
@@ -134,15 +136,25 @@ logger.debug(
     f"search_clicked={sidebar_params.get('search_clicked')}"
 )
 
-# ── Resolve AOI: drawn polygon > sidebar file upload > sidebar bbox ───────────
-polygon_geojson = st.session_state.polygon_geojson or sidebar_params["polygon_geojson"]
-aoi_filename    = st.session_state.aoi_filename    or sidebar_params["aoi_filename"]
+# ── Resolve AOI: drawn polygon > sidebar file upload ─────────────────────────
+polygon_geojson = st.session_state.get("polygon_geojson") or sidebar_params["polygon_geojson"]
+aoi_filename    = st.session_state.get("aoi_filename")    or sidebar_params["aoi_filename"]
+
+# ── Auto-zoom: reset stored map position whenever the AOI changes ─────────────
+_aoi_hash = (
+    hashlib.md5(json.dumps(polygon_geojson, sort_keys=True).encode()).hexdigest()
+    if polygon_geojson else ""
+)
+if st.session_state.get("_aoi_hash") != _aoi_hash:
+    st.session_state["_aoi_hash"] = _aoi_hash
+    st.session_state.pop("map_center", None)
+    st.session_state.pop("map_zoom", None)
 
 # ── Search (runs BEFORE the map so footprints are in session_state when the
 #    map renders, making them visible without needing a second rerun) ──────────
 if sidebar_params["search_clicked"]:
     if not polygon_geojson:
-        st.error("Please provide an AOI (draw on map, use bounding box, or upload a file).")
+        st.error("Please provide an AOI — upload a file or draw a polygon on the map.")
         logger.warning("Search attempted without AOI")
     elif not sidebar_params["selected_satellites"]:
         st.warning("No satellites selected. Please choose at least one.")
@@ -177,13 +189,13 @@ with right_col:
     features_for_map      = st.session_state.get("features_for_map")
     features_for_download = st.session_state.get("features_for_download") or []
 
-    # Resolve which scene (if any) the eye button is pointing at
-    pidx          = st.session_state.get("preview_idx")
-    preview_scene = (
-        features_for_download[pidx]
-        if pidx is not None and 0 <= pidx < len(features_for_download)
-        else None
-    )
+    # Resolve which scenes the eye buttons are pointing at (set of indices)
+    preview_indices = st.session_state.get("preview_indices") or set()
+    preview_scenes = [
+        features_for_download[i]
+        for i in sorted(preview_indices)
+        if 0 <= i < len(features_for_download)
+    ]
 
     stored_center = st.session_state.get("map_center")
     stored_zoom   = st.session_state.get("map_zoom")
@@ -191,13 +203,13 @@ with right_col:
     logger.debug(
         f"Rendering map | AOI={'set' if polygon_geojson else 'none'} | "
         f"footprints={len(features_for_map) if features_for_map else 0} | "
-        f"preview={'yes' if preview_scene else 'no'}"
+        f"previews={len(preview_scenes)}"
     )
 
     map_data = render_main_map(
         polygon_geojson=polygon_geojson,
         features_for_map=features_for_map,
-        preview_scene=preview_scene,
+        preview_scenes=preview_scenes,
         stored_center=stored_center,
         stored_zoom=stored_zoom,
     )

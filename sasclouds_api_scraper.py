@@ -692,6 +692,22 @@ def convert_uploaded_file_to_geojson(uploaded_file) -> dict:
     raise ValueError(f"Unsupported file type: {filename}")
 
 
+def _order_corners_for_download(footprint_geojson):
+    """Return (UL, UR, LL) as [lon, lat] for 6-parameter affine world file."""
+    try:
+        coords = footprint_geojson["coordinates"][0]
+        pts = list(coords[:-1]) if (len(coords) > 1 and coords[0] == coords[-1]) else list(coords)
+        if len(pts) < 3:
+            return None
+        by_lat = sorted(pts, key=lambda c: c[1], reverse=True)
+        half = len(pts) // 2 + len(pts) % 2
+        top = sorted(by_lat[:half], key=lambda c: c[0])
+        bot = sorted(by_lat[half:], key=lambda c: c[0])
+        return top[0], top[-1], bot[0]   # UL (NW), UR (NE), LL (SW)
+    except Exception:
+        return None
+
+
 # ── API client ─────────────────────────────────────────────────────────────────
 class SASCloudsAPIClient:
     """
@@ -1321,18 +1337,30 @@ class SASCloudsAPIClient:
             width, height = img.size
             img.close()
 
-            coords = footprint_geojson["coordinates"][0]
-            lons = [c[0] for c in coords]
-            lats = [c[1] for c in coords]
-            left, right = min(lons), max(lons)
-            top, bottom  = max(lats), min(lats)
-            x_res = (right - left) / width
-            y_res = (bottom - top) / height
+            corners = _order_corners_for_download(footprint_geojson)
+            if corners is not None:
+                ul, ur, ll = corners
+                A = (ur[0] - ul[0]) / max(width - 1, 1)
+                D = (ur[1] - ul[1]) / max(width - 1, 1)
+                B = (ll[0] - ul[0]) / max(height - 1, 1)
+                E = (ll[1] - ul[1]) / max(height - 1, 1)
+                C, F = ul[0], ul[1]
+            else:
+                coords = footprint_geojson["coordinates"][0]
+                lons = [c[0] for c in coords]
+                lats = [c[1] for c in coords]
+                left, right = min(lons), max(lons)
+                top_lat, bot_lat = max(lats), min(lats)
+                A = (right - left) / max(width - 1, 1)
+                D = 0.0
+                B = 0.0
+                E = (bot_lat - top_lat) / max(height - 1, 1)
+                C, F = left, top_lat
 
             output_path.with_suffix(".jgw").write_text(
                 "\n".join([
-                    f"{x_res:.10f}", "0.0", "0.0",
-                    f"{y_res:.10f}", f"{left:.10f}", f"{top:.10f}",
+                    f"{A:.10f}", f"{D:.10f}", f"{B:.10f}",
+                    f"{E:.10f}", f"{C:.10f}", f"{F:.10f}",
                 ])
             )
             output_path.with_suffix(".prj").write_text(

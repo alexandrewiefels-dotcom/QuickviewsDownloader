@@ -56,7 +56,7 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
         if key.startswith("chk_") or key.startswith("eye_"):
             del st.session_state[key]
     st.session_state.pop("results_page", None)
-    st.session_state.pop("preview_idx", None)
+    st.session_state.pop("preview_indices", None)
 
     with st.status("Searching…", expanded=True) as status:
         try:
@@ -323,16 +323,19 @@ def render_results_table():
         cld   = scene.get("cloudPercent", 0)
 
         row = st.columns(W)
-        row[0].checkbox("", key=f"chk_{idx}", label_visibility="collapsed")
+        row[0].checkbox("Select", key=f"chk_{idx}", label_visibility="collapsed")
         row[1].write(sat)
         row[2].write(sen)
         row[3].write(dt)
         row[4].write(f"{cld:.1f}")
 
-        preview_active = st.session_state.get("preview_idx") == idx
+        preview_indices = st.session_state.get("preview_indices") or set()
+        preview_active = idx in preview_indices
         eye_label = "🔍" if preview_active else "👁️"
         if row[5].button(eye_label, key=f"eye_{idx}", help="Show quickview on map"):
-            st.session_state.preview_idx = None if preview_active else idx
+            pset = set(st.session_state.get("preview_indices") or set())
+            pset.discard(idx) if idx in pset else pset.add(idx)
+            st.session_state["preview_indices"] = pset
             st.rerun()
 
     # ── Action buttons ────────────────────────────────────────────────────────

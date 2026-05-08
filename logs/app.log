@@ -4615,3 +4615,661 @@ requests.exceptions.SSLError: HTTPSConnectionPool(host='quickview.sasclouds.com'
 2026-05-08 10:16:59 [DEBUG   ] map_utils – Map centre on AOI: [40.0, 116.5]
 2026-05-08 10:17:00 [DEBUG   ] map_utils – AOI layer added to map
 2026-05-08 10:17:00 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | centre=[40.0, 116.5] zoom=7
+2026-05-08 10:44:46 [INFO    ] sasclouds_api_scraper – Playwright Chromium ready
+2026-05-08 10:44:58 [INFO    ] __main__ – User authenticated successfully
+2026-05-08 10:44:58 [INFO    ] __main__ – New session started: 7c72df72…
+2026-05-08 10:44:58 [INFO    ] __main__ – _get_token: no token configured — using anonymous v5 API
+2026-05-08 10:44:58 [INFO    ] __main__ – Token status: none — anonymous v5 API
+2026-05-08 10:44:58 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:44:58 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:44:58 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[40.0, 116.5] zoom=7
+2026-05-08 10:45:04 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:45:04 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:45:04 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[40.0, 116.5] zoom=7
+2026-05-08 10:45:05 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:45:05 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:45:05 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[40, 116.5] zoom=7
+2026-05-08 10:45:46 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:45:46 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:45:46 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[40.002371935876475, 116.50451660156251] zoom=7
+2026-05-08 10:45:47 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:45:47 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:45:47 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[40.002371935876475, 116.50451660156251] zoom=7
+2026-05-08 10:45:55 [INFO    ] aoi_handler – [AOIHandler] load_from_filepath: C:\Users\Raquel\AppData\Local\Temp\tmp15tchv4p.zip
+2026-05-08 10:45:55 [INFO    ] aoi_handler – ZIP file detected, looking for Shapefile...
+2026-05-08 10:45:55 [INFO    ] aoi_handler – Shapefile loaded: 1 features
+2026-05-08 10:45:55 [INFO    ] aoi_handler – Unified geometry: type=Polygon, valid=True
+2026-05-08 10:45:55 [INFO    ] aoi_handler – Final polygon bounds: (-78.8138209434795, 0.238681407368272, -76.8106153322171, 1.86103410000734)
+2026-05-08 10:45:55 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:45:55 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:45:55 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[40.002371935876475, 116.50451660156251] zoom=7
+2026-05-08 10:45:58 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:45:58 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:45:58 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[40.002371935876475, 116.50451660156251] zoom=7
+2026-05-08 10:46:06 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:06 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:46:06 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[40.002371935876475, 116.50451660156251] zoom=7
+2026-05-08 10:46:11 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:11 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:46:11 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[40.002371935876475, 116.50451660156251] zoom=7
+2026-05-08 10:46:14 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=True
+2026-05-08 10:46:14 [INFO    ] __main__ – Search requested | AOI='AOI-buf-Dis-TransAn-Generalized OTA_Orito_Tumaco.zip' | 2022-01-06 → 2026-04-11 | cloud≤20% | satellites=['ZY1-02D', 'ZY1-02E', 'GF5', 'GF5A', 'GF5B', 'GF5', 'LJ3-2', 'OHS-2/3']
+2026-05-08 10:46:14 [INFO    ] search_logic – ▶ [1/4] Building and uploading AOI shapefile…
+2026-05-08 10:46:14 [INFO    ] sasclouds_api_scraper – No auth token — proceeding anonymously (API is public)
+2026-05-08 10:46:14 [INFO    ] sasclouds_api_scraper – API client ready | version=v5 | base=https://www.sasclouds.com/api/normal/v5
+2026-05-08 10:46:14 [INFO    ] sasclouds_api_scraper – Uploading AOI → https://www.sasclouds.com/api/normal/v5/normalmeta/upload/shp
+2026-05-08 10:46:14 [DEBUG   ] sasclouds_api_scraper – Building shapefile | GeoJSON type=Polygon
+2026-05-08 10:46:14 [INFO    ] sasclouds_api_scraper – AOI simplified: 623 → 174 vertices (tolerance=0.003245°)
+2026-05-08 10:46:14 [INFO    ] sasclouds_api_scraper – AOI | vertices=174 | W=-78.8138 S=0.2387 E=-76.8106 N=1.8610
+2026-05-08 10:46:14 [DEBUG   ] sasclouds_api_scraper – POST multipart upload | shp=2940B | cookies=[]
+2026-05-08 10:46:15 [DEBUG   ] sasclouds_api_scraper – POST https://www.sasclouds.com/api/normal/v5/normalmeta/upload/shp → HTTP 200 (933ms, 6641B)
+2026-05-08 10:46:15 [DEBUG   ] sasclouds_api_scraper – Upload response | HTTP 200 | 955ms | body={"code":0,"message":null,"data":{"uploadId":"5fd58fc0-4aba-11f1-b6fd-dbb95f2ae3c5","geojson":"{\"type\":\"Polygon\",\"coordinates\":[[[-76.8850329160592,0.652106987850361],[-76.922062171145,0.636056770884039],[-76.9814447536131,0.625875921050102],[-77.031579680185,0.627190632214256],[-77.0640399080928,0.622612833669401],[-77.095278015678,0.633352396746214],[-77.1402434791198,0.637388957069395],[-7
+2026-05-08 10:46:15 [INFO    ] sasclouds_api_scraper – Server AOI geometry: type=Polygon coords_len=1
+2026-05-08 10:46:15 [INFO    ] sasclouds_api_scraper – AOI uploaded | uploadId=5fd58fc0-4aba-11f1-b6fd-dbb95f2ae3c5 | 955ms
+2026-05-08 10:46:15 [INFO    ] search_logic –   ✓ Uploaded in 0.96s  →  uploadId=5fd58fc0-4aba-11f1-b6fd-dbb95f2ae3c5
+2026-05-08 10:46:15 [INFO    ] search_logic – ▶ [2/4] Search parameters:
+2026-05-08 10:46:15 [INFO    ] search_logic –   Date range : 2022-01-06  →  2026-04-11
+2026-05-08 10:46:15 [INFO    ] search_logic –   Cloud cover: ≤ 20%
+2026-05-08 10:46:15 [INFO    ] search_logic –   Satellites : 8  —  ZY1-02D, ZY1-02E, GF5, GF5A, GF5B, GF5, LJ3-2, OHS-2/3
+2026-05-08 10:46:15 [INFO    ] search_logic – Search | uploadId=5fd58fc0-4aba-11f1-b6fd-dbb95f2ae3c5 | 2022-01-06→2026-04-11 | cloud≤20% | sats=['ZY1-02D', 'ZY1-02E', 'GF5', 'GF5A', 'GF5B', 'GF5', 'LJ3-2', 'OHS-2/3']
+2026-05-08 10:46:15 [INFO    ] search_logic – ▶ [3/4] Fetching scenes (paginated)…
+2026-05-08 10:46:15 [INFO    ] search_logic –   → Requesting page 1  (have 0 scenes so far)…
+2026-05-08 10:46:15 [INFO    ] sasclouds_api_scraper – POST normalmeta | page=1 size=50 | uploadId=5fd58fc0-4aba-11f1-b6fd-dbb95f2ae3c5 | cloud≤20% | satellites(8)=['ZY1-02D', 'ZY1-02E', 'GF5', 'GF5A', 'GF5B', 'GF5', 'LJ3-2', 'OHS-2/3']
+2026-05-08 10:46:15 [DEBUG   ] sasclouds_api_scraper – Search payload: {"acquisitionTime": [{"Start": 1641423600000, "End": 1775858400000}], "tarInputTimeStart": null, "tarInputTimeEnd": null, "inputTimeStart": null, "inputTimeEnd": null, "cloudPercentMin": 0, "cloudPercentMax": 20, "satellites": [{"satelliteId": "ZY1-02D", "sensorIds": ["AHSI"]}, {"satelliteId": "ZY1-02E", "sensorIds": ["AHSI"]}, {"satelliteId": "GF5", "sensorIds": ["AHSI"]}, {"satelliteId": "GF5A", "sensorIds": ["AHSI"]}, {"satelliteId": "GF5B", "sensorIds": ["AHSI"]}, {"satelliteId": "GF5", "sensorIds": ["VIMS"]}, {"satelliteId": "LJ3-2", "sensorIds": ["HSI"]}, {"satelliteId": "OHS-2/3", "sensorIds": ["MSS"]}], "shpUploadId": "5fd58fc0-4aba-11f1-b6fd-dbb95f2ae3c5", "pageNum": 1, "pageSize": 50}
+2026-05-08 10:46:16 [DEBUG   ] sasclouds_api_scraper – POST https://www.sasclouds.com/api/normal/v5/normalmeta → HTTP 200 (1016ms, 2736B)
+2026-05-08 10:46:16 [INFO    ] sasclouds_api_scraper – Search page 1 | code=0 | scenes=4/4 | 1017ms
+2026-05-08 10:46:16 [INFO    ] search_logic –   Total scenes reported by API: 4
+2026-05-08 10:46:16 [INFO    ] search_logic –   ✓ Page 1: 4 scenes  |  cumulative 4/4  |  1.02s
+2026-05-08 10:46:16 [INFO    ] search_logic – Page 1: 4 scenes | cumulative 4/4 | 1.02s
+2026-05-08 10:46:16 [INFO    ] search_logic –   Stopping pagination — all 4 scenes fetched (page 1)
+2026-05-08 10:46:16 [INFO    ] search_logic – ▶ Pagination done: 4 scenes  |  1 page(s)  |  2.1s total
+2026-05-08 10:46:16 [INFO    ] search_logic – Search complete | 4 scenes | 1 pages | 2.06s
+2026-05-08 10:46:16 [INFO    ] search_logic – ▶ [4/4] Processing 4 scenes…
+2026-05-08 10:46:16 [INFO    ] search_logic –   map features: 4  |  parse errors: 0
+2026-05-08 10:46:16 [INFO    ] search_logic – Results built | features=4 | parse_errors=0
+2026-05-08 10:46:16 [INFO    ] search_logic – ✅ Complete. 4 scenes ready. Footprints visible on the map below.
+2026-05-08 10:46:16 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:16 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:16 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[40.002371935876475, 116.50451660156251] zoom=7
+2026-05-08 10:46:18 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:19 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:19 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:19 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[40.002371935876475, 116.50451660156251] zoom=7
+2026-05-08 10:46:19 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:19 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:19 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:19 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[40.002371935876475, 116.50451660156251] zoom=7
+2026-05-08 10:46:23 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:23 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:23 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:23 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[40.002371935876475, 116.50451660156251] zoom=7
+2026-05-08 10:46:23 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:23 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:24 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:24 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[39.80009595634841, 110.56217408439102] zoom=5
+2026-05-08 10:46:24 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:24 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:24 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:24 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[39.80009595634841, 110.56217408439102] zoom=5
+2026-05-08 10:46:25 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:25 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:25 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:25 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[39.80009595634841, 110.56217408439102] zoom=5
+2026-05-08 10:46:26 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:26 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:26 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:26 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[34.88593094075317, 131.37451171875003] zoom=5
+2026-05-08 10:46:27 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:27 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:27 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:27 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[34.88593094075317, 131.37451171875003] zoom=5
+2026-05-08 10:46:28 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:29 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:29 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:29 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[34.88593094075317, 131.37451171875003] zoom=5
+2026-05-08 10:46:29 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:29 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:29 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:29 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[33.137551192346145, 164.77269860047485] zoom=5
+2026-05-08 10:46:30 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:30 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:30 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:30 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[33.137551192346145, 164.77269860047485] zoom=5
+2026-05-08 10:46:31 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:31 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:31 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:31 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[33.137551192346145, 164.77269860047485] zoom=5
+2026-05-08 10:46:32 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:32 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:32 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:32 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[25.20494115356912, 180.19188943861093] zoom=5
+2026-05-08 10:46:32 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:32 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:32 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:32 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[25.20494115356912, 180.19188943861093] zoom=5
+2026-05-08 10:46:34 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:34 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:34 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:34 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[25.20494115356912, 180.19188943861093] zoom=5
+2026-05-08 10:46:35 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:35 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:35 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:35 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[26.352497858154024, 197.8131243568603] zoom=5
+2026-05-08 10:46:36 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:36 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:36 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:36 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[26.352497858154024, 197.8131243568603] zoom=5
+2026-05-08 10:46:37 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:37 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:37 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:37 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[26.352497858154024, 197.8131243568603] zoom=5
+2026-05-08 10:46:39 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:39 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:39 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:39 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[33.760882000869195, 190.78725250837456] zoom=3
+2026-05-08 10:46:39 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:40 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:40 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:40 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[33.760882000869195, 190.78725250837456] zoom=3
+2026-05-08 10:46:41 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:41 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:41 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:41 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[33.760882000869195, 190.78725250837456] zoom=3
+2026-05-08 10:46:44 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:44 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:44 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:44 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[27.994401411046148, 187.471972924261] zoom=3
+2026-05-08 10:46:45 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:45 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:45 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:45 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[27.994401411046148, 187.471972924261] zoom=3
+2026-05-08 10:46:46 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:47 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:47 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:47 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[27.994401411046148, 187.471972924261] zoom=3
+2026-05-08 10:46:47 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:47 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:47 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:47 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-10.31491928581316, 171.88809665923222] zoom=5
+2026-05-08 10:46:48 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:48 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:48 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:48 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-10.31491928581316, 171.88809665923222] zoom=5
+2026-05-08 10:46:49 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:49 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:49 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:49 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-10.31491928581316, 171.88809665923222] zoom=5
+2026-05-08 10:46:50 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:50 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:50 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:50 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-16.804541076383455, 169.11061071346364] zoom=6
+2026-05-08 10:46:51 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:51 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:51 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:51 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-16.804541076383455, 169.11061071346364] zoom=6
+2026-05-08 10:46:52 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:52 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:52 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:52 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-16.804541076383455, 169.11061071346364] zoom=6
+2026-05-08 10:46:53 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:53 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:53 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:53 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-3.1405161039832357, 170.89233398437503] zoom=6
+2026-05-08 10:46:55 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:55 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:55 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:55 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-3.1405161039832357, 170.89233398437503] zoom=6
+2026-05-08 10:46:57 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:46:57 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:46:58 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:46:58 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-3.1405161039832357, 170.89233398437503] zoom=6
+2026-05-08 10:47:02 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:47:02 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:47:02 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:47:02 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-1.537901237431487, 169.85202451315746] zoom=5
+2026-05-08 10:47:04 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:47:05 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:47:05 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:47:05 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-1.537901237431487, 169.85202451315746] zoom=5
+2026-05-08 10:47:07 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:47:07 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:47:07 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:47:07 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[-1.537901237431487, 169.85202451315746] zoom=5
+2026-05-08 10:47:09 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:47:09 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:47:09 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:47:09 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[11.781325296112277, 160.24658203125003] zoom=5
+2026-05-08 10:47:10 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:47:10 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:47:10 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:47:10 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[11.781325296112277, 160.24658203125003] zoom=5
+2026-05-08 10:47:15 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:47:15 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:47:16 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 10:47:18 [DEBUG   ] map_utils – Quickview fetched and cached (168KB): https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/177
+2026-05-08 10:47:18 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 10:47:18 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:47:18 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[11.781325296112277, 160.24658203125003] zoom=5
+2026-05-08 10:47:18 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:47:18 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 10:47:18 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 10:47:18 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:47:18 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[11.781325296112277, 160.24658203125003] zoom=5
+2026-05-08 10:47:21 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:47:21 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 10:47:21 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 10:47:21 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:47:21 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[11.781325296112277, 160.24658203125003] zoom=5
+2026-05-08 10:49:34 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:49:34 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 10:49:35 [DEBUG   ] map_utils – Quickview fetched and cached (168KB): https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/177
+2026-05-08 10:49:35 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 10:49:36 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:49:36 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[20.715015145512098, 147.7708583205934] zoom=5
+2026-05-08 10:49:36 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:49:37 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 10:49:37 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 10:49:37 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:49:37 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[20.715015145512098, 147.7708583205934] zoom=5
+2026-05-08 10:50:40 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:50:40 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 10:50:40 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 10:50:40 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:50:40 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[20.715015145512098, 147.7708583205934] zoom=5
+2026-05-08 10:50:41 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:50:41 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 10:50:41 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 10:50:41 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:50:41 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[20.715015145512098, 147.7708583205934] zoom=5
+2026-05-08 10:50:43 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:50:43 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=4 | preview=yes
+2026-05-08 10:50:43 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 10:50:43 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:50:43 [INFO    ] map_utils – Map rendered | AOI=no | footprints=4 | preview=yes | centre=[20.715015145512098, 147.7708583205934] zoom=5
+2026-05-08 10:50:44 [DEBUG   ] __main__ – Sidebar | satellites=8 | cloud≤20% | search_clicked=False
+2026-05-08 10:50:44 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=4 | preview=yes
+2026-05-08 10:50:44 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 10:50:44 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:50:44 [INFO    ] map_utils – Map rendered | AOI=no | footprints=4 | preview=yes | centre=[20.715015145512098, 147.7708583205934] zoom=5
+2026-05-08 10:53:37 [INFO    ] __main__ – User authenticated successfully
+2026-05-08 10:53:37 [INFO    ] __main__ – New session started: 18417aff…
+2026-05-08 10:53:37 [INFO    ] __main__ – Token status: none — anonymous v5 API
+2026-05-08 10:53:37 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:53:37 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:53:37 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[20.0, 0.0] zoom=3
+2026-05-08 10:53:37 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:53:37 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:53:37 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[20.0, 0.0] zoom=3
+2026-05-08 10:53:38 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:53:38 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:53:38 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[20, 0] zoom=3
+2026-05-08 10:54:04 [INFO    ] aoi_handler – [AOIHandler] load_from_filepath: C:\Users\Raquel\AppData\Local\Temp\tmpqv130rhd.geojson
+2026-05-08 10:54:04 [INFO    ] aoi_handler – GeoJSON file detected
+2026-05-08 10:54:04 [INFO    ] aoi_handler – GeoDataFrame read: 1 features
+2026-05-08 10:54:04 [INFO    ] aoi_handler – Unified geometry: type=Polygon, valid=True
+2026-05-08 10:54:04 [INFO    ] aoi_handler – Final polygon bounds: (-78.8138209434795, 0.238681407368272, -76.8106153322171, 1.86103410000734)
+2026-05-08 10:54:04 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:55:47 [INFO    ] __main__ – User authenticated successfully
+2026-05-08 10:55:47 [INFO    ] __main__ – New session started: ef20f0cb…
+2026-05-08 10:55:47 [INFO    ] __main__ – Token status: none — anonymous v5 API
+2026-05-08 10:55:47 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:55:47 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:55:47 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[20.0, 0.0] zoom=3
+2026-05-08 10:55:47 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:55:47 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:55:47 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[20.0, 0.0] zoom=3
+2026-05-08 10:55:48 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:55:48 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:55:48 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[20, 0] zoom=3
+2026-05-08 10:55:54 [INFO    ] aoi_handler – [AOIHandler] load_from_filepath: C:\Users\Raquel\AppData\Local\Temp\tmp5tv_aebn.geojson
+2026-05-08 10:55:54 [INFO    ] aoi_handler – GeoJSON file detected
+2026-05-08 10:55:54 [INFO    ] aoi_handler – GeoDataFrame read: 1 features
+2026-05-08 10:55:54 [INFO    ] aoi_handler – Unified geometry: type=Polygon, valid=True
+2026-05-08 10:55:54 [INFO    ] aoi_handler – Final polygon bounds: (-78.8138209434795, 0.238681407368272, -76.8106153322171, 1.86103410000734)
+2026-05-08 10:55:55 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:20 [INFO    ] __main__ – User authenticated successfully
+2026-05-08 10:58:20 [INFO    ] __main__ – New session started: a7300646…
+2026-05-08 10:58:20 [INFO    ] __main__ – Token status: none — anonymous v5 API
+2026-05-08 10:58:20 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:20 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:58:20 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[20.0, 0.0] zoom=3
+2026-05-08 10:58:21 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:21 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:58:21 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[20.0, 0.0] zoom=3
+2026-05-08 10:58:21 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:21 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | preview=no
+2026-05-08 10:58:21 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | preview=no | centre=[20, 0] zoom=3
+2026-05-08 10:58:28 [INFO    ] aoi_handler – [AOIHandler] load_from_filepath: C:\Users\Raquel\AppData\Local\Temp\tmp_wdedrbj.geojson
+2026-05-08 10:58:28 [INFO    ] aoi_handler – GeoJSON file detected
+2026-05-08 10:58:28 [INFO    ] aoi_handler – GeoDataFrame read: 1 features
+2026-05-08 10:58:28 [INFO    ] aoi_handler – Unified geometry: type=Polygon, valid=True
+2026-05-08 10:58:28 [INFO    ] aoi_handler – Final polygon bounds: (-78.8138209434795, 0.238681407368272, -76.8106153322171, 1.86103410000734)
+2026-05-08 10:58:28 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:28 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:28 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.049857753687806, -77.8122181378483] zoom=7
+2026-05-08 10:58:29 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:29 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:29 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.049857753687806, -77.8122181378483] zoom=7
+2026-05-08 10:58:30 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:30 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:30 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.049857753687806, -77.8122181378483] zoom=7
+2026-05-08 10:58:32 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:32 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:32 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.0546279422758869, -77.81066894531251] zoom=7
+2026-05-08 10:58:33 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:33 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:33 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.0546279422758869, -77.81066894531251] zoom=7
+2026-05-08 10:58:34 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:34 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:34 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.0546279422758869, -77.81066894531251] zoom=7
+2026-05-08 10:58:34 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:34 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:34 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.4335662226731178, -78.50054765230723] zoom=8
+2026-05-08 10:58:35 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:35 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:35 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.4335662226731178, -78.50054765230723] zoom=8
+2026-05-08 10:58:36 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:36 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:36 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.4335662226731178, -78.50054765230723] zoom=8
+2026-05-08 10:58:36 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:36 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:37 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.4335662226731178, -78.50006103515626] zoom=8
+2026-05-08 10:58:37 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:37 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:37 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.4335662226731178, -78.50006103515626] zoom=8
+2026-05-08 10:58:38 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:58:38 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:58:38 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.4335662226731178, -78.50006103515626] zoom=8
+2026-05-08 10:59:39 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:39 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:59:39 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.2386120110295982, -78.28216514202408] zoom=9
+2026-05-08 10:59:40 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:40 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:59:40 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.2386120110295982, -78.28216514202408] zoom=9
+2026-05-08 10:59:41 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:41 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:59:41 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.2386120110295982, -78.28216514202408] zoom=9
+2026-05-08 10:59:43 [DEBUG   ] __main__ – Sidebar | satellites=1 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:43 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:59:43 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 10:59:44 [DEBUG   ] __main__ – Sidebar | satellites=1 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:44 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:59:44 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 10:59:44 [DEBUG   ] __main__ – Sidebar | satellites=2 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:44 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:59:44 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 10:59:45 [DEBUG   ] __main__ – Sidebar | satellites=3 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:45 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:59:45 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 10:59:46 [DEBUG   ] __main__ – Sidebar | satellites=4 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:46 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:59:46 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 10:59:46 [DEBUG   ] __main__ – Sidebar | satellites=5 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:46 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:59:46 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 10:59:47 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:47 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=0 | preview=no
+2026-05-08 10:59:47 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=0 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 10:59:50 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=True
+2026-05-08 10:59:50 [INFO    ] __main__ – Search requested | AOI='AOI_JSON.geojson' | 2022-01-06 → 2026-04-11 | cloud≤20% | satellites=['ZY1-02D', 'GF5', 'ZY1-02E', 'GF5A', 'GF5B', 'GF5']
+2026-05-08 10:59:50 [INFO    ] search_logic – ▶ [1/4] Building and uploading AOI shapefile…
+2026-05-08 10:59:50 [INFO    ] sasclouds_api_scraper – No auth token — proceeding anonymously (API is public)
+2026-05-08 10:59:50 [INFO    ] sasclouds_api_scraper – API client ready | version=v5 | base=https://www.sasclouds.com/api/normal/v5
+2026-05-08 10:59:50 [INFO    ] sasclouds_api_scraper – Uploading AOI → https://www.sasclouds.com/api/normal/v5/normalmeta/upload/shp
+2026-05-08 10:59:50 [DEBUG   ] sasclouds_api_scraper – Building shapefile | GeoJSON type=Polygon
+2026-05-08 10:59:50 [INFO    ] sasclouds_api_scraper – AOI simplified: 623 → 174 vertices (tolerance=0.003245°)
+2026-05-08 10:59:50 [INFO    ] sasclouds_api_scraper – AOI | vertices=174 | W=-78.8138 S=0.2387 E=-76.8106 N=1.8610
+2026-05-08 10:59:50 [DEBUG   ] sasclouds_api_scraper – POST multipart upload | shp=2940B | cookies=[]
+2026-05-08 10:59:51 [DEBUG   ] sasclouds_api_scraper – POST https://www.sasclouds.com/api/normal/v5/normalmeta/upload/shp → HTTP 200 (1010ms, 6641B)
+2026-05-08 10:59:51 [DEBUG   ] sasclouds_api_scraper – Upload response | HTTP 200 | 1031ms | body={"code":0,"message":null,"data":{"uploadId":"46672d30-4abc-11f1-b6fd-dbb95f2ae3c5","geojson":"{\"type\":\"Polygon\",\"coordinates\":[[[-76.8850329160592,0.652106987850361],[-76.922062171145,0.636056770884039],[-76.9814447536131,0.625875921050102],[-77.031579680185,0.627190632214256],[-77.0640399080928,0.622612833669401],[-77.095278015678,0.633352396746214],[-77.1402434791198,0.637388957069395],[-7
+2026-05-08 10:59:51 [INFO    ] sasclouds_api_scraper – Server AOI geometry: type=Polygon coords_len=1
+2026-05-08 10:59:51 [INFO    ] sasclouds_api_scraper – AOI uploaded | uploadId=46672d30-4abc-11f1-b6fd-dbb95f2ae3c5 | 1031ms
+2026-05-08 10:59:51 [INFO    ] search_logic –   ✓ Uploaded in 1.05s  →  uploadId=46672d30-4abc-11f1-b6fd-dbb95f2ae3c5
+2026-05-08 10:59:51 [INFO    ] search_logic – ▶ [2/4] Search parameters:
+2026-05-08 10:59:51 [INFO    ] search_logic –   Date range : 2022-01-06  →  2026-04-11
+2026-05-08 10:59:51 [INFO    ] search_logic –   Cloud cover: ≤ 20%
+2026-05-08 10:59:51 [INFO    ] search_logic –   Satellites : 6  —  ZY1-02D, GF5, ZY1-02E, GF5A, GF5B, GF5
+2026-05-08 10:59:51 [INFO    ] search_logic – Search | uploadId=46672d30-4abc-11f1-b6fd-dbb95f2ae3c5 | 2022-01-06→2026-04-11 | cloud≤20% | sats=['ZY1-02D', 'GF5', 'ZY1-02E', 'GF5A', 'GF5B', 'GF5']
+2026-05-08 10:59:51 [INFO    ] search_logic – ▶ [3/4] Fetching scenes (paginated)…
+2026-05-08 10:59:51 [INFO    ] search_logic –   → Requesting page 1  (have 0 scenes so far)…
+2026-05-08 10:59:51 [INFO    ] sasclouds_api_scraper – POST normalmeta | page=1 size=50 | uploadId=46672d30-4abc-11f1-b6fd-dbb95f2ae3c5 | cloud≤20% | satellites(6)=['ZY1-02D', 'GF5', 'ZY1-02E', 'GF5A', 'GF5B', 'GF5']
+2026-05-08 10:59:51 [DEBUG   ] sasclouds_api_scraper – Search payload: {"acquisitionTime": [{"Start": 1641423600000, "End": 1775858400000}], "tarInputTimeStart": null, "tarInputTimeEnd": null, "inputTimeStart": null, "inputTimeEnd": null, "cloudPercentMin": 0, "cloudPercentMax": 20, "satellites": [{"satelliteId": "ZY1-02D", "sensorIds": ["AHSI"]}, {"satelliteId": "GF5", "sensorIds": ["AHSI"]}, {"satelliteId": "ZY1-02E", "sensorIds": ["AHSI"]}, {"satelliteId": "GF5A", "sensorIds": ["AHSI"]}, {"satelliteId": "GF5B", "sensorIds": ["AHSI"]}, {"satelliteId": "GF5", "sensorIds": ["VIMS"]}], "shpUploadId": "46672d30-4abc-11f1-b6fd-dbb95f2ae3c5", "pageNum": 1, "pageSize": 50}
+2026-05-08 10:59:52 [DEBUG   ] sasclouds_api_scraper – POST https://www.sasclouds.com/api/normal/v5/normalmeta → HTTP 200 (933ms, 2736B)
+2026-05-08 10:59:52 [INFO    ] sasclouds_api_scraper – Search page 1 | code=0 | scenes=4/4 | 935ms
+2026-05-08 10:59:52 [INFO    ] search_logic –   Total scenes reported by API: 4
+2026-05-08 10:59:52 [INFO    ] search_logic –   ✓ Page 1: 4 scenes  |  cumulative 4/4  |  0.94s
+2026-05-08 10:59:52 [INFO    ] search_logic – Page 1: 4 scenes | cumulative 4/4 | 0.94s
+2026-05-08 10:59:52 [INFO    ] search_logic –   Stopping pagination — all 4 scenes fetched (page 1)
+2026-05-08 10:59:52 [INFO    ] search_logic – ▶ Pagination done: 4 scenes  |  1 page(s)  |  2.1s total
+2026-05-08 10:59:52 [INFO    ] search_logic – Search complete | 4 scenes | 1 pages | 2.14s
+2026-05-08 10:59:52 [INFO    ] search_logic – ▶ [4/4] Processing 4 scenes…
+2026-05-08 10:59:52 [INFO    ] search_logic –   map features: 4  |  parse errors: 0
+2026-05-08 10:59:52 [INFO    ] search_logic – Results built | features=4 | parse_errors=0
+2026-05-08 10:59:52 [INFO    ] search_logic – ✅ Complete. 4 scenes ready. Footprints visible on the map below.
+2026-05-08 10:59:52 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:59:52 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:59:52 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 10:59:53 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:53 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:59:53 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:59:53 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 10:59:54 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 10:59:54 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 10:59:54 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 10:59:54 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:02 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:03 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:05 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:00:08 [DEBUG   ] map_utils – Quickview fetched and cached (168KB): https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/177
+2026-05-08 11:00:08 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:08 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 11:00:08 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:08 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:10 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:10 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:10 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:00:12 [DEBUG   ] map_utils – Quickview fetched and cached (194KB): https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/158
+2026-05-08 11:00:12 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[-0.334134, -77.145527], [0.332984, -76.495889]] | scene=GF5A
+2026-05-08 11:00:12 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:12 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:13 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:13 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:00:13 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[-0.334134, -77.145527], [0.332984, -76.495889]] | scene=GF5A
+2026-05-08 11:00:13 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:13 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:16 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:17 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:17 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:00:17 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:17 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:17 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:17 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:00:17 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:17 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:20 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:20 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:00:20 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:20 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:20 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:20 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:00:20 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:20 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:24 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:24 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:00:24 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:24 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:25 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:25 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:00:25 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:25 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:26 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:26 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:00:26 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:26 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:00:26 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:00:26 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:00:26 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:00:26 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:01:01 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:01:01 [INFO    ] search_logic – Download package: 4 scenes → C:\Users\Raquel\AppData\Local\Temp\sasclouds_x86d3d48
+2026-05-08 11:01:01 [INFO    ] sasclouds_api_scraper – No auth token — proceeding anonymously (API is public)
+2026-05-08 11:01:01 [INFO    ] sasclouds_api_scraper – API client ready | version=v5 | base=https://www.sasclouds.com/api/normal/v5
+2026-05-08 11:01:01 [INFO    ] search_logic – [1/4] Downloading GF5A_AHSI_2026-04-10_434897.jpg
+2026-05-08 11:01:01 [INFO    ] sasclouds_api_scraper – Downloading quickview: https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/17760/731/544/GF5A_AHSI_W78.6_N2.0_20260410_017760_L10000434897.jpg
+2026-05-08 11:01:03 [DEBUG   ] sasclouds_api_scraper – GET https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/17760/731/544/GF5A_AHSI_W78.6_N2.0_20260410_017760_L10000434897.jpg → HTTP 200 (1695ms, 172154B)
+2026-05-08 11:01:03 [DEBUG   ] PIL.Image – Importing JpegImagePlugin
+2026-05-08 11:01:03 [INFO    ] sasclouds_api_scraper – Georeferenced | GF5A_AHSI_2026-04-10_434897.jpg | 1003×1024px | 168.1KB | 1698ms
+2026-05-08 11:01:03 [INFO    ] search_logic – [2/4] Downloading GF5A_AHSI_2026-03-20_423474.jpg
+2026-05-08 11:01:03 [INFO    ] sasclouds_api_scraper – Downloading quickview: https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/17454/727/541/GF5A_AHSI_W76.7_N0.5_20260320_017454_L10000423474.jpg
+2026-05-08 11:01:03 [DEBUG   ] sasclouds_api_scraper – GET https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/17454/727/541/GF5A_AHSI_W76.7_N0.5_20260320_017454_L10000423474.jpg → HTTP 200 (553ms, 243337B)
+2026-05-08 11:01:03 [INFO    ] sasclouds_api_scraper – Georeferenced | GF5A_AHSI_2026-03-20_423474.jpg | 1003×1024px | 237.6KB | 555ms
+2026-05-08 11:01:03 [INFO    ] search_logic – [3/4] Downloading GF5A_AHSI_2025-12-22_378215.jpg
+2026-05-08 11:01:03 [INFO    ] sasclouds_api_scraper – Downloading quickview: https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/16173/731/543/GF5A_AHSI_W78.8_N1.5_20251222_016173_L10000378215.jpg
+2026-05-08 11:01:04 [DEBUG   ] sasclouds_api_scraper – GET https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/16173/731/543/GF5A_AHSI_W78.8_N1.5_20251222_016173_L10000378215.jpg → HTTP 200 (316ms, 132548B)
+2026-05-08 11:01:04 [INFO    ] sasclouds_api_scraper – Georeferenced | GF5A_AHSI_2025-12-22_378215.jpg | 1003×1024px | 129.4KB | 318ms
+2026-05-08 11:01:04 [INFO    ] search_logic – [4/4] Downloading GF5A_AHSI_2025-12-01_367264.jpg
+2026-05-08 11:01:04 [INFO    ] sasclouds_api_scraper – Downloading quickview: https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/15867/728/540/GF5A_AHSI_W76.8_N0.0_20251201_015867_L10000367264.jpg
+2026-05-08 11:01:04 [DEBUG   ] sasclouds_api_scraper – GET https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/15867/728/540/GF5A_AHSI_W76.8_N0.0_20251201_015867_L10000367264.jpg → HTTP 200 (345ms, 199082B)
+2026-05-08 11:01:04 [INFO    ] sasclouds_api_scraper – Georeferenced | GF5A_AHSI_2025-12-01_367264.jpg | 1002×1024px | 194.4KB | 347ms
+2026-05-08 11:01:04 [INFO    ] search_logic – Downloads complete: 4 ok, 0 failed
+2026-05-08 11:01:04 [INFO    ] search_logic – ZIP ready for download
+2026-05-08 11:01:04 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:01:04 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:01:04 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:01:12 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:01:12 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:01:12 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:01:12 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:14:15 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:14:19 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:14:19 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:14:19 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.2386120110295982, -78.28170776367189] zoom=9
+2026-05-08 11:14:28 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:14:31 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:14:32 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:14:32 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.78224425656603, -78.39427481299779] zoom=9
+2026-05-08 11:14:43 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:14:44 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:14:45 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:14:45 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.78224425656603, -78.39427481299779] zoom=9
+2026-05-08 11:16:13 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:16:17 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:16:18 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:16:19 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.78224425656603, -78.39427481299779] zoom=9
+2026-05-08 11:21:04 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:21:06 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:21:07 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:21:07 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.4061088354351594, -77.60697194496848] zoom=7
+2026-05-08 11:21:09 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:21:09 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:21:10 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:21:10 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.4061088354351594, -77.60697194496848] zoom=7
+2026-05-08 11:23:34 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:34 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:34 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:23:35 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:35 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:35 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=no
+2026-05-08 11:23:35 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:35 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=no | centre=[1.4061088354351594, -77.60697194496848] zoom=7
+2026-05-08 11:23:36 [DEBUG   ] map_utils – Quickview fetched and cached (168KB): https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/177
+2026-05-08 11:23:36 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 11:23:36 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:36 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.4061088354351594, -77.60697194496848] zoom=7
+2026-05-08 11:23:37 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:37 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:37 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:23:37 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 11:23:37 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:37 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.4061088354351594, -77.60697194496848] zoom=7
+2026-05-08 11:23:38 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:38 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:23:38 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 11:23:38 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:38 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.4061088354351594, -77.60697194496848] zoom=7
+2026-05-08 11:23:41 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:41 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:23:41 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 11:23:41 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:41 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.4061088354351594, -77.60697194496848] zoom=7
+2026-05-08 11:23:43 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:43 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:23:44 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 11:23:44 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:44 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.5765955163793373, -77.74872249302923] zoom=7.5
+2026-05-08 11:23:46 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:46 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:23:46 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.658893, -78.906667], [2.325635, -78.256385]] | scene=GF5A
+2026-05-08 11:23:46 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:46 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.5765955163793373, -77.74872249302923] zoom=7.5
+2026-05-08 11:23:50 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:50 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:50 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:23:52 [DEBUG   ] map_utils – Quickview fetched and cached (129KB): https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/161
+2026-05-08 11:23:52 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.160996, -79.168355], [1.827924, -78.51893]] | scene=GF5A
+2026-05-08 11:23:52 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:52 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.5765955163793373, -77.74872249302923] zoom=7.5
+2026-05-08 11:23:53 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:53 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:23:53 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[1.160996, -79.168355], [1.827924, -78.51893]] | scene=GF5A
+2026-05-08 11:23:53 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:53 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.5765955163793373, -77.74872249302923] zoom=7.5
+2026-05-08 11:23:56 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:56 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:56 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:23:57 [DEBUG   ] map_utils – Quickview fetched and cached (237KB): https://quickview.obs.cn-north-10.myhuaweicloud.com/GF5A/174
+2026-05-08 11:23:57 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:23:57 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:57 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.5765955163793373, -77.74872249302923] zoom=7.5
+2026-05-08 11:23:59 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:23:59 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:23:59 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:23:59 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:23:59 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.5765955163793373, -77.74872249302923] zoom=7.5
+2026-05-08 11:39:05 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:39:05 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:39:05 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:39:05 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:39:05 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.5765955163793373, -77.74872249302923] zoom=7.5
+2026-05-08 11:39:06 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:39:06 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:39:06 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:39:06 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:39:06 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.6814462194362279, -77.74702506553788] zoom=7.5
+2026-05-08 11:39:07 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:39:07 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:39:07 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:39:07 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:39:07 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.6814462194362279, -77.74702506553788] zoom=7.5
+2026-05-08 11:39:09 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:39:09 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:39:09 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:39:09 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:39:09 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[1.6814462194362279, -77.74702506553788] zoom=7.5
+2026-05-08 11:39:09 [DEBUG   ] map_utils – Drawing captured: Polygon with 5 vertices
+2026-05-08 11:39:09 [INFO    ] __main__ – New AOI drawn on map: 5 vertices
+2026-05-08 11:39:09 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:39:09 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:39:09 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:39:09 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:39:09 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[0.4977935, -76.7056265] zoom=9
+2026-05-08 11:39:10 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:39:11 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:39:11 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:39:11 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:39:11 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[0.4977935, -76.7056265] zoom=9
+2026-05-08 11:39:14 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:39:14 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:39:14 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:39:14 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:39:14 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[0.4977935, -76.7056265] zoom=9
+2026-05-08 11:39:15 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:39:15 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:39:15 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:39:15 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:39:15 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[0.5476832052793882, -76.44565795581944] zoom=8.25
+2026-05-08 11:39:16 [DEBUG   ] __main__ – Sidebar | satellites=6 | cloud≤20% | search_clicked=False
+2026-05-08 11:39:16 [DEBUG   ] __main__ – Rendering map | AOI=set | footprints=4 | preview=yes
+2026-05-08 11:39:16 [DEBUG   ] map_utils – ImageOverlay added | bounds=[[0.164421, -77.02999], [0.831166, -76.381263]] | scene=GF5A
+2026-05-08 11:39:16 [DEBUG   ] map_utils – Footprints layer: 4 scenes
+2026-05-08 11:39:16 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | preview=yes | centre=[0.5476832052793882, -76.44565795581944] zoom=8.25
