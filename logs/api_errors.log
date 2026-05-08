@@ -2232,3 +2232,36 @@ Traceback (most recent call last):
     x_res_deg=round(x_res, 8),
                     ^^^^^
 NameError: name 'x_res' is not defined
+2026-05-08 17:55:26 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 17:55:26 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-08 17:55:26 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-08 17:55:26 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-08 17:55:26 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1281, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-08 17:55:27 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-08 17:55:27 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-08 17:58:00 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 17:58:00 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-08 17:58:00 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-08 17:58:00 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-08 17:58:00 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1281, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-08 17:58:01 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | http://x.com/missing.jpg
+2026-05-08 17:58:01 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-08 18:04:46 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 18:04:46 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Invalid polygon' | full_body={"code":1,"message":"Invalid polygon"}
+2026-05-08 18:04:46 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code":1,"message":"region out-of-range detected"}
+2026-05-08 18:04:46 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Invalid parameters' | full_body=
+2026-05-08 18:04:46 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Invalid parameters (code 2)
+Traceback (most recent call last):
+  File "c:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1281, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Invalid parameters (code 2)
+2026-05-08 18:04:47 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 5ms | http://x.com/missing.jpg
+2026-05-08 18:04:47 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']

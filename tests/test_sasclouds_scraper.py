@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from aoi_handler import AOIHandler
 from map_utils import (
+    _order_corners,
     handle_drawing,
     normalize_longitude,
     render_main_map,
@@ -908,9 +909,8 @@ class TestSearchLogic:
 
     # ── create_download_zip ───────────────────────────────────────────────────
 
-    @patch("search_logic.SASCloudsAPIClient")
-    def test_create_download_zip_preserves_features_for_map(self, MockClient, tmp_path):
-        """features_for_map must NOT be cleared so footprints stay on the map."""
+    def test_create_download_zip_is_noop_preserves_all_session_state(self):
+        """create_download_zip() is a legacy stub (pass). It must not touch session_state."""
         features = [
             {
                 "geometry": {"type": "Polygon",
@@ -918,31 +918,17 @@ class TestSearchLogic:
                 "properties": {"quickview": "https://example.com/img.jpg"},
             }
         ]
-        td = tmp_path / "td"
-        td.mkdir()
         st.session_state.clear()
         st.session_state["temp_dir_ready"]        = True
         st.session_state["scenes_for_download"]   = [_make_scene()]
         st.session_state["features_for_download"] = features
         st.session_state["features_for_map"]      = features
 
-        MockClient.return_value.download_and_georeference.return_value = True
+        create_download_zip()   # no-op — must not raise and must not alter state
 
-        status_ctx = MagicMock()
-        status_ctx.__enter__ = MagicMock(return_value=status_ctx)
-        status_ctx.__exit__ = MagicMock(return_value=False)
-        with patch("streamlit.button", return_value=True), \
-             patch("streamlit.download_button"), \
-             patch("streamlit.status", return_value=status_ctx), \
-             patch("tempfile.mkdtemp", return_value=str(td)):
-            create_download_zip()
-
-        # Download state cleared …
-        assert st.session_state.get("temp_dir_ready") is False
-        assert st.session_state.get("scenes_for_download") is None
-        assert st.session_state.get("features_for_download") is None
-        # … but map footprints preserved
-        assert st.session_state.get("features_for_map") == features
+        assert st.session_state["temp_dir_ready"] is True
+        assert st.session_state["features_for_map"] == features
+        assert st.session_state["scenes_for_download"] is not None
 
     @patch("search_logic.SASCloudsAPIClient")
     def test_create_download_zip_skips_when_button_not_clicked(self, MockClient):
@@ -960,6 +946,266 @@ class TestSearchLogic:
         with patch("streamlit.button", return_value=True):
             create_download_zip()  # should return silently, no crash
         MockClient.assert_not_called()
+
+
+# =============================================================================
+# map_utils – scroll-zoom throttle options
+# =============================================================================
+# The Folium map is built with zoom_snap=0.25, zoom_delta=0.5, and
+# wheel_px_per_zoom_level=80.  These Leaflet options appear as camelCase keys
+# in the rendered HTML (zoomSnap / zoomDelta / wheelPxPerZoomLevel).
+# Tests verify that each option is present so a future change that removes
+# or resets them is caught immediately.
+
+class TestMapScrollZoomControl:
+
+    def _rendered_html(self, **kwargs) -> str:
+        """Render the Folium map to HTML without invoking st_folium."""
+        with patch("map_utils.st_folium") as mock_stf:
+            mock_stf.return_value = {}
+            render_main_map(**kwargs)
+            m = mock_stf.call_args.args[0]
+            return m.get_root().render()
+
+    def test_wheel_px_per_zoom_level_present(self):
+        """wheelPxPerZoomLevel must appear in the Leaflet init block."""
+        html = self._rendered_html()
+        assert "wheelPxPerZoomLevel" in html
+
+    def test_wheel_px_per_zoom_level_value_is_80(self):
+        """Value 80 (above Leaflet default of 60) slows scroll zoom intentionally."""
+        html = self._rendered_html()
+        # The serialised JS object contains the value directly.
+        assert '"wheelPxPerZoomLevel": 80' in html or "'wheelPxPerZoomLevel': 80" in html or "wheelPxPerZoomLevel: 80" in html or '"wheelPxPerZoomLevel":80' in html
+
+    def test_zoom_snap_present(self):
+        """zoomSnap must appear in the Leaflet init block for sub-integer zoom steps."""
+        html = self._rendered_html()
+        assert "zoomSnap" in html
+
+    def test_zoom_snap_is_fractional(self):
+        """zoomSnap must be 0.25 — a value < 1 so scroll produces fine-grained zoom."""
+        html = self._rendered_html()
+        assert "0.25" in html
+
+    def test_zoom_delta_present(self):
+        """zoomDelta must appear in the Leaflet init block to control per-scroll magnitude."""
+        html = self._rendered_html()
+        assert "zoomDelta" in html
+
+    def test_zoom_delta_is_half_step(self):
+        """zoomDelta must be 0.5 — each scroll event moves half a zoom level."""
+        html = self._rendered_html()
+        assert "0.5" in html
+
+    def test_scroll_zoom_options_survive_with_aoi(self, sample_polygon_geojson):
+        """Zoom throttle options must be present even when an AOI layer is added."""
+        html = self._rendered_html(polygon_geojson=sample_polygon_geojson)
+        assert "wheelPxPerZoomLevel" in html
+        assert "zoomSnap" in html
+        assert "zoomDelta" in html
+
+    def test_scroll_zoom_options_survive_with_footprints(self, sample_features):
+        """Zoom throttle options must be present even when footprint features are rendered."""
+        html = self._rendered_html(features_for_map=sample_features)
+        assert "wheelPxPerZoomLevel" in html
+        assert "zoomSnap" in html
+
+
+# =============================================================================
+# map_utils – _order_corners
+# =============================================================================
+
+class TestOrderCorners:
+
+    def _fp(self, coords):
+        """Wrap a coordinate list in a minimal GeoJSON Polygon."""
+        return {"type": "Polygon", "coordinates": [coords]}
+
+    def test_returns_four_latlon_pairs(self):
+        fp = self._fp([[10.0, 20.0], [11.0, 20.0], [11.0, 21.0], [10.0, 21.0], [10.0, 20.0]])
+        corners = _order_corners(fp)
+        assert corners is not None
+        assert len(corners) == 4
+        for pt in corners:
+            assert len(pt) == 2
+
+    def test_nw_corner_is_first(self):
+        """TL (NW) must be the first element: highest lat, lowest lon of the top half."""
+        # Axis-aligned unit square lon=[0..1] lat=[0..1]
+        fp = self._fp([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]])
+        corners = _order_corners(fp)
+        nw, ne, _se, sw = corners
+        # NW must have higher lat than SW
+        assert nw[0] > sw[0]
+        # NW must have lower lon than NE
+        assert nw[1] < ne[1]
+
+    def test_ne_corner_is_second(self):
+        """TR (NE) must be second: highest lat, highest lon of the top half."""
+        fp = self._fp([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]])
+        corners = _order_corners(fp)
+        _nw, ne, _se, _sw = corners
+        assert ne[0] > 0      # lat is positive (top half)
+        assert ne[1] > 0.5    # lon is on the right side
+
+    def test_coordinates_are_lat_lon_not_lon_lat(self):
+        """Return format is [[lat, lon], ...] — NOT [[lon, lat], ...]."""
+        # Square at lon=116..117, lat=39..40 (China)
+        fp = self._fp([[116.0, 39.0], [117.0, 39.0], [117.0, 40.0], [116.0, 40.0], [116.0, 39.0]])
+        corners = _order_corners(fp)
+        assert corners is not None
+        # All lats must be around 39–40, all lons around 116–117
+        for lat, lon in corners:
+            assert 38 < lat < 41, f"Expected lat ≈ 39–40, got {lat}"
+            assert 115 < lon < 118, f"Expected lon ≈ 116–117, got {lon}"
+
+    def test_returns_none_for_too_few_points(self):
+        """A footprint with only 2 points cannot produce 4 corners."""
+        fp = self._fp([[0.0, 0.0], [1.0, 1.0]])
+        assert _order_corners(fp) is None
+
+    def test_returns_none_on_empty_coordinates(self):
+        assert _order_corners({"type": "Polygon", "coordinates": []}) is None
+
+    def test_returns_none_on_missing_key(self):
+        assert _order_corners({}) is None
+
+    def test_closed_ring_treated_same_as_open(self):
+        """GeoJSON rings close by repeating the first point — must not affect result."""
+        open_fp   = self._fp([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
+        closed_fp = self._fp([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]])
+        assert _order_corners(open_fp) == _order_corners(closed_fp)
+
+
+# =============================================================================
+# map_utils – quickview injection (L.ImageWarpLayer)
+# =============================================================================
+
+class TestQuickviewInjection:
+
+    def _scene(self, qv_url="https://example.com/thumb.jpg"):
+        return {
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [[116.0, 39.0], [117.0, 39.0], [117.0, 40.0], [116.0, 40.0], [116.0, 39.0]]
+                ],
+            },
+            "properties": {
+                "satellite": "GF5",
+                "sensor": "AHSI",
+                "date": "2025-01-01",
+                "cloud": 5,
+                "product_id": "p1",
+                "quickview": qv_url,
+            },
+        }
+
+    def _html(self, preview_scenes, extra_kwargs=None):
+        with patch("map_utils.st_folium") as mock_stf, \
+             patch("map_utils._fetch_image_b64", return_value="data:image/jpeg;base64,FAKE"):
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=preview_scenes, **(extra_kwargs or {}))
+            m = mock_stf.call_args.args[0]
+            return m.get_root().render()
+
+    # ── class definition injection ────────────────────────────────────────────
+
+    def test_warp_layer_class_injected_when_preview_scenes_given(self):
+        """_WARP_LAYER_JS (L.ImageWarpLayer class) must be in the <head> when scenes exist."""
+        html = self._html([self._scene()])
+        assert "_ImageWarpLayerDefined" in html
+        assert "L.ImageWarpLayer" in html
+
+    def test_warp_layer_class_absent_when_no_preview_scenes(self):
+        """_WARP_LAYER_JS must NOT appear when preview_scenes is empty or None."""
+        with patch("map_utils.st_folium") as mock_stf:
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=None)
+            m = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+        assert "_ImageWarpLayerDefined" not in html
+        assert "L.ImageWarpLayer" not in html
+
+    def test_warp_layer_class_absent_when_preview_scenes_empty_list(self):
+        with patch("map_utils.st_folium") as mock_stf:
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=[])
+            m = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+        assert "_ImageWarpLayerDefined" not in html
+
+    # ── per-scene instantiation ───────────────────────────────────────────────
+
+    def test_instantiation_present_for_valid_scene(self):
+        """A scene with a fetchable image must produce new L.ImageWarpLayer(...).addTo(...)."""
+        html = self._html([self._scene()])
+        assert "new L.ImageWarpLayer" in html
+        assert ".addTo(" in html
+
+    def test_base64_image_data_embedded_in_script(self):
+        """The base64 data-URI must be embedded verbatim in the injected <script>."""
+        html = self._html([self._scene()])
+        assert "data:image/jpeg;base64,FAKE" in html
+
+    def test_instantiation_absent_when_fetch_fails(self):
+        """When _fetch_image_b64 returns empty string, no warp layer is instantiated."""
+        with patch("map_utils.st_folium") as mock_stf, \
+             patch("map_utils._fetch_image_b64", return_value=""):
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=[self._scene()])
+            m = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+        assert "new L.ImageWarpLayer" not in html
+
+    def test_instantiation_absent_when_quickview_url_empty(self):
+        """A scene with no quickview URL is silently skipped — no warp layer call."""
+        with patch("map_utils.st_folium") as mock_stf, \
+             patch("map_utils._fetch_image_b64") as mock_fetch:
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=[self._scene(qv_url="")])
+            m = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+            mock_fetch.assert_not_called()   # fetch must never be attempted
+        assert "new L.ImageWarpLayer" not in html
+
+    def test_multiple_scenes_produce_multiple_instantiations(self):
+        """Three valid preview scenes must each produce exactly one warp layer call."""
+        scenes = [self._scene(f"https://example.com/t{i}.jpg") for i in range(3)]
+        html = self._html(scenes)
+        assert html.count("new L.ImageWarpLayer") == 3
+
+    def test_corners_array_has_four_latlon_pairs(self):
+        """The JSON corners array embedded in the JS must contain exactly 4 [lat, lon] pairs."""
+        import re
+        html = self._html([self._scene()])
+        # Match the corners argument: new L.ImageWarpLayer("...", [[...]], ...)
+        match = re.search(
+            r'new L\.ImageWarpLayer\("[^"]*",\s*(\[\[.*?\]\])',
+            html,
+            re.DOTALL,
+        )
+        assert match, "Could not find corners array in rendered quickview JS"
+        corners = json.loads(match.group(1))
+        assert len(corners) == 4
+        for pt in corners:
+            assert len(pt) == 2
+
+    def test_quickview_visible_with_aoi_and_footprints(self, sample_polygon_geojson, sample_features):
+        """Quickview injection must work correctly when AOI and footprint layers are also present."""
+        with patch("map_utils.st_folium") as mock_stf, \
+             patch("map_utils._fetch_image_b64", return_value="data:image/jpeg;base64,OK"):
+            mock_stf.return_value = {}
+            render_main_map(
+                polygon_geojson=sample_polygon_geojson,
+                features_for_map=sample_features,
+                preview_scenes=[self._scene()],
+            )
+            m = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+        assert "new L.ImageWarpLayer" in html
+        assert "data:image/jpeg;base64,OK" in html
 
 
 # =============================================================================

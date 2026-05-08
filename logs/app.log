@@ -5615,3 +5615,17 @@ NameError: name 'x_res' is not defined
 2026-05-08 12:04:51 [DEBUG   ] map_utils – Footprints layer: 4 scenes
 2026-05-08 12:04:51 [INFO    ] map_utils – Map rendered | AOI=yes | footprints=4 | previews=4 | centre=[1.0546279422758869, -77.81066894531251] zoom=7
 2026-05-08 12:07:43 [INFO    ] sasclouds_api_scraper – Playwright Chromium ready
+2026-05-08 13:56:56 [INFO    ] sasclouds_api_scraper – Playwright Chromium ready
+2026-05-08 13:57:15 [INFO    ] __main__ – User authenticated successfully
+2026-05-08 13:57:15 [INFO    ] __main__ – New session started: 9fad853a…
+2026-05-08 13:57:15 [INFO    ] __main__ – _get_token: no token configured — using anonymous v5 API
+2026-05-08 13:57:15 [INFO    ] __main__ – Token status: none — anonymous v5 API
+2026-05-08 13:57:15 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 13:57:15 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | previews=0
+2026-05-08 13:57:15 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | previews=0 | centre=[20.0, 0.0] zoom=3
+2026-05-08 13:57:20 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 13:57:20 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | previews=0
+2026-05-08 13:57:20 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | previews=0 | centre=[20.0, 0.0] zoom=3
+2026-05-08 13:57:21 [DEBUG   ] __main__ – Sidebar | satellites=0 | cloud≤20% | search_clicked=False
+2026-05-08 13:57:21 [DEBUG   ] __main__ – Rendering map | AOI=none | footprints=0 | previews=0
+2026-05-08 13:57:21 [INFO    ] map_utils – Map rendered | AOI=no | footprints=0 | previews=0 | centre=[20, 0] zoom=3
