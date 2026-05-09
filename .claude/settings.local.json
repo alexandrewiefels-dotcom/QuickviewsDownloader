@@ -17,7 +17,10 @@
       "Bash(Out-String)",
       "Bash(ls \"C:\\\\Users\\\\Raquel\\\\logs\\\\\" 2>/dev/null || echo \"no logs dir there\"; ls \"C:\\\\Alexandre\\\\OMEOSpace\\\\Python\\\\App_SASCloud_Scraping\\\\logs\\\\\")",
       "Read(//c/Users/Raquel/logs\" 2>/dev/**)",
-      "Bash(python tests/run_tests.py)"
+      "Bash(python tests/run_tests.py)",
+      "Bash(dir \"C:\\\\Users\\\\Raquel\\\\AppData\\\\Roaming\\\\Python\\\\\" 2>&1 && dir \"C:\\\\Users\\\\Raquel\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\\")",
+      "Read(//c/Users/Raquel/AppData/Roaming/Python/**)",
+      "Read(//c/Users/Raquel/AppData/Local/Programs/**)"
     ]
   }
 }

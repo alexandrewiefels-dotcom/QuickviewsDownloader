@@ -1,8 +1,13 @@
 # File: map_utils.py
 import base64
+import hashlib
 import json as _json
 import logging
+import math
+import time
+from datetime import datetime, timezone
 from functools import lru_cache
+from pathlib import Path
 
 import folium
 import requests as _requests
@@ -15,6 +20,38 @@ from shapely.validation import make_valid
 from streamlit_folium import st_folium
 
 logger = logging.getLogger(__name__)
+
+_LOG_DIR = Path(__file__).parent / "logs"
+_SESSION_TS = datetime.now().strftime("%Y%m%d%H%M")
+
+
+def _log_quickview_fetch(
+    url: str,
+    status: str,
+    http_code: int,
+    size_bytes: int,
+    elapsed_ms: int,
+    error: str = "",
+    headers_rx: dict = None,
+) -> None:
+    """Append one JSONL record to logs/quickview_ops.jsonl for diagnostic analysis."""
+    try:
+        _LOG_DIR.mkdir(exist_ok=True)
+        record = {
+            "ts":          datetime.now(timezone.utc).isoformat(),
+            "url":         url[:140],
+            "status":      status,
+            "http_code":   http_code,
+            "size_bytes":  size_bytes,
+            "elapsed_ms":  elapsed_ms,
+            "error":       error,
+            "content_type": (headers_rx or {}).get("Content-Type", ""),
+            "cors_header":  (headers_rx or {}).get("Access-Control-Allow-Origin", ""),
+        }
+        with open(_LOG_DIR / f"{_SESSION_TS}_quickview_ops.jsonl", "a", encoding="utf-8") as f:
+            f.write(_json.dumps(record) + "\n")
+    except Exception:
+        pass
 
 
 # ── Satellite colour palette ──────────────────────────────────────────────────
@@ -51,22 +88,83 @@ def _sat_color(satellite_id: str) -> str:
 
 # ── Image fetch (module-level cache, persists across Streamlit reruns) ────────
 
+_QV_HEADERS = {
+    "Referer":    "https://www.sasclouds.com/",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+}
+
+
 @lru_cache(maxsize=60)
 def _fetch_image_b64(url: str) -> str:
     """
     Fetch quickview image and return a base64 data-URI for embedding in Folium.
-    Results are cached so repeated eye-button clicks are instant.
+    Results are cached in-process so repeated eye-button clicks are instant.
+    Logs every attempt (success or failure) to logs/quickview_ops.jsonl.
     Returns empty string on failure.
     """
+    t0 = time.monotonic()
     try:
-        resp = _requests.get(url, timeout=25)
+        resp = _requests.get(url, timeout=25, headers=_QV_HEADERS)
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+
         if resp.status_code == 200:
-            mime = "image/jpeg" if url.lower().split("?")[0].endswith((".jpg", ".jpeg")) else "image/png"
+            size_bytes = len(resp.content)
+            # Derive MIME from Content-Type header first; fall back to URL extension.
+            # URL-based detection is unreliable — many CDN URLs end with "." or have no
+            # extension, causing image/png to be declared for JPEG content, which breaks
+            # rendering in Firefox and Safari.
+            _ct_hdr  = resp.headers.get("Content-Type", "").split(";")[0].strip()
+            _url_ext = url.lower().split("?")[0].rsplit(".", 1)[-1] if "." in url else ""
+            if _ct_hdr in ("image/jpeg", "image/png", "image/webp", "image/gif"):
+                mime = _ct_hdr
+            elif _url_ext in ("jpg", "jpeg"):
+                mime = "image/jpeg"
+            else:
+                mime = "image/png"
+            if _ct_hdr and _ct_hdr != mime:
+                logger.warning(
+                    f"Quickview MIME mismatch | using={mime!r} | "
+                    f"Content-Type={_ct_hdr!r} | url_ext='.{_url_ext}' | {url[:60]}"
+                )
+            else:
+                logger.debug(
+                    f"Quickview MIME={mime!r} | Content-Type={_ct_hdr!r} | "
+                    f"url_ext='.{_url_ext}'"
+                )
             b64 = base64.b64encode(resp.content).decode()
-            logger.debug(f"Quickview fetched and cached ({len(resp.content)//1024}KB): {url[:60]}")
+            logger.info(
+                f"Quickview OK | {size_bytes // 1024}KB | {elapsed_ms}ms | {url[:80]}"
+            )
+            _log_quickview_fetch(
+                url, "ok", 200, size_bytes, elapsed_ms,
+                headers_rx=dict(resp.headers),
+            )
             return f"data:{mime};base64,{b64}"
+
+        # Non-200 — log status + response headers for diagnosis
+        logger.warning(
+            f"Quickview HTTP {resp.status_code} | {elapsed_ms}ms | {url[:80]}\n"
+            f"  Content-Type : {resp.headers.get('Content-Type', 'n/a')}\n"
+            f"  CORS         : {resp.headers.get('Access-Control-Allow-Origin', 'n/a')}\n"
+            f"  Body snippet : {resp.text[:120]!r}"
+        )
+        _log_quickview_fetch(
+            url, f"http_{resp.status_code}", resp.status_code, 0, elapsed_ms,
+            headers_rx=dict(resp.headers),
+        )
+
     except Exception as exc:
-        logger.warning(f"Could not fetch quickview image: {exc}")
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+        logger.warning(
+            f"Quickview EXCEPTION | {type(exc).__name__}: {exc} | {elapsed_ms}ms | {url[:80]}"
+        )
+        _log_quickview_fetch(url, f"exception", 0, 0, elapsed_ms, error=str(exc))
+
     return ""
 
 
@@ -178,18 +276,28 @@ _WARP_LAYER_JS = """<script>
 (function(){
   if (window._ImageWarpLayerDefined) return;
   window._ImageWarpLayerDefined = true;
+  console.log('[QV] Defining L.ImageWarpLayer class');
   L.ImageWarpLayer = L.Layer.extend({
     initialize: function(src, corners, options) {
       this._corners = corners;
       this._opacity = (options && options.opacity != null) ? options.opacity : 1.0;
       this._img = new Image();
       this._ready = false;
+      this._drawLogged = false;
       var self = this;
-      this._img.onload = function() { self._ready = true; if (self._map) self._draw(); };
+      this._img.onload = function() {
+        self._ready = true;
+        console.log('[QV] Image decoded OK | ' + self._img.naturalWidth + 'x' + self._img.naturalHeight + 'px | corners=' + JSON.stringify(self._corners));
+        if (self._map) self._draw();
+      };
+      this._img.onerror = function() {
+        console.error('[QV] Image decode FAILED | src prefix=' + src.substring(0, 80));
+      };
       this._img.src = src;
     },
     onAdd: function(map) {
       this._map = map;
+      console.log('[QV] onAdd | map=' + map.getContainer().id + ' | corners=' + JSON.stringify(this._corners));
       if (!this._canvas) {
         this._canvas = document.createElement('canvas');
         this._canvas.style.cssText = 'position:absolute;pointer-events:none';
@@ -206,7 +314,14 @@ _WARP_LAYER_JS = """<script>
     },
     _draw: function() {
       var map = this._map;
-      if (!map || !this._ready) return;
+      if (!map || !this._ready) {
+        if (!this._drawLogged) {
+          console.log('[QV] _draw waiting | ready=' + this._ready + ' map=' + !!map);
+          this._drawLogged = true;
+        }
+        return;
+      }
+      this._drawLogged = false;
       var size = map.getSize();
       var c = this._canvas;
       c.width = size.x; c.height = size.y;
@@ -220,7 +335,10 @@ _WARP_LAYER_JS = """<script>
         return [p.x - tl.x, p.y - tl.y];
       });
       var iw = this._img.naturalWidth, ih = this._img.naturalHeight;
-      if (!iw || !ih) return;
+      if (!iw || !ih) {
+        console.warn('[QV] _draw skipped | naturalWidth/Height=0');
+        return;
+      }
       ctx.save();
       ctx.transform(
         (pts[1][0] - pts[0][0]) / iw, (pts[1][1] - pts[0][1]) / iw,
@@ -229,6 +347,7 @@ _WARP_LAYER_JS = """<script>
       );
       ctx.drawImage(this._img, 0, 0);
       ctx.restore();
+      console.log('[QV] _draw OK | tl=(' + tl.x.toFixed(0) + ',' + tl.y.toFixed(0) + ') pts[0]=(' + pts[0][0].toFixed(0) + ',' + pts[0][1].toFixed(0) + ')');
     }
   });
 })();
@@ -255,24 +374,28 @@ def render_main_map(
     # ── Default centre / zoom ─────────────────────────────────────────────────
     center, zoom = stored_center or [20.0, 0.0], stored_zoom or 3
 
-    if preview_scenes and not stored_center:
+    if stored_center:
+        logger.debug(f"Zoom rule: stored | centre={stored_center} zoom={stored_zoom}")
+    elif preview_scenes:
         try:
             geom = shapely_shape(preview_scenes[0]["geometry"])
             w, s, e, n = geom.bounds
             center = [(s + n) / 2, (w + e) / 2]
             zoom = 9
-        except Exception:
-            pass
-    elif features_for_map and not stored_center:
+            logger.debug(f"Zoom rule: preview_scenes (n={len(preview_scenes)}) | centre={center} zoom={zoom}")
+        except Exception as exc:
+            logger.warning(f"Zoom rule: preview_scenes bounds failed: {exc}")
+    elif features_for_map:
         try:
             first_coords = features_for_map[0]["geometry"]["coordinates"][0]
             lats = [c[1] for c in first_coords]
             lons = [c[0] for c in first_coords]
             center = [sum(lats) / len(lats), sum(lons) / len(lons)]
             zoom = 7
-        except Exception:
-            pass
-    elif polygon_geojson and not stored_center:
+            logger.debug(f"Zoom rule: footprints (n={len(features_for_map)}) | centre={center} zoom={zoom}")
+        except Exception as exc:
+            logger.warning(f"Zoom rule: footprints centroid failed: {exc}")
+    elif polygon_geojson:
         try:
             geom = polygon_geojson
             if geom.get("type") == "FeatureCollection":
@@ -285,8 +408,11 @@ def render_main_map(
             lons = [c[0] for c in coords]
             center = [(min(lats) + max(lats)) / 2, (min(lons) + max(lons)) / 2]
             zoom = 7
-        except Exception:
-            pass
+            logger.debug(f"Zoom rule: AOI | centre={center} zoom={zoom}")
+        except Exception as exc:
+            logger.warning(f"Zoom rule: AOI centroid failed: {exc}")
+    else:
+        logger.debug(f"Zoom rule: default | centre={center} zoom={zoom}")
 
     m = folium.Map(
         location=center,
@@ -295,67 +421,137 @@ def render_main_map(
         zoom_delta=0.5,
         wheel_px_per_zoom_level=80,
     )
+    # Stable ID prevents st_folium from reloading the iframe on every rerun.
+    # MUST be a pure lowercase hex string (no underscores) — st_folium's
+    # _replace_folium_vars regex `_[a-z0-9]+(?!_)` strips the ID from variable
+    # names by matching a single `_<hex>` suffix; any underscore inside the ID
+    # would split the match and the map_div replacement would never fire.
+    m._id = hashlib.md5(b"sasclouds_main_map").hexdigest()
+    logger.debug(
+        f"Folium map | centre={center} zoom_start={zoom} | "
+        f"zoom_snap=0.25 zoom_delta=0.5 wheelPxPerZoomLevel=80"
+    )
 
-    # Drawing tools
-    Draw(
+    # Drawing tools — fixed ID so the Draw plugin JS variable is always the same
+    _draw = Draw(
         draw_options={
             "polygon": True, "rectangle": True,
             "circle": False, "marker": False,
             "polyline": False, "circlemarker": False,
         },
         edit_options={"edit": True, "remove": True},
-    ).add_to(m)
+    )
+    _draw._id = hashlib.md5(b"sasclouds_draw").hexdigest()
+    _draw.add_to(m)
 
     # ── AOI layer ─────────────────────────────────────────────────────────────
     if polygon_geojson:
-        folium.GeoJson(
+        _aoi_layer = folium.GeoJson(
             polygon_geojson,
             name="AOI",
             style_function=lambda _: {"color": "#0055cc", "weight": 3, "fillOpacity": 0.15},
             popup=None,
-        ).add_to(m)
+        )
+        _aoi_layer._id = hashlib.md5(
+            _json.dumps(polygon_geojson, sort_keys=True).encode()
+        ).hexdigest()
+        _aoi_layer.add_to(m)
 
     # ── Georeferenced quickviews via Canvas warp ──────────────────────────────
     # Each preview scene is drawn onto a Canvas using an affine transform that
     # maps the image to its exact 4 footprint corners (TL, TR, BR, BL).
     # The layer class is defined inline — no external plugin required.
     if preview_scenes:
-        m.get_root().header.add_child(Element(_WARP_LAYER_JS))
+        logger.info(
+            f"Quickview pipeline START | {len(preview_scenes)} scenes | "
+            f"injecting L.ImageWarpLayer class into map body"
+        )
+        # Inject class definition into the HTML body (not <head>) so that
+        # Leaflet is guaranteed to be loaded before L.Layer.extend() runs.
+        # Scripts in <head> execute at position ~148 in the rendered HTML;
+        # the Leaflet CDN link only appears at ~2260, so header injection
+        # left 'L' undefined and the class was silently never created.
+        m.get_root().html.add_child(Element(_WARP_LAYER_JS))
 
         map_var = m.get_name()
+        logger.debug(f"Quickview map JS variable: {map_var!r}")
         ok_count = 0
 
-        for feat in preview_scenes:
-            qv_url = feat["properties"].get("quickview", "")
+        for i, feat in enumerate(preview_scenes):
+            props  = feat.get("properties", {})
+            sat    = props.get("satellite", "?")
+            date   = props.get("date", "?")
+            qv_url = props.get("quickview", "")
+            label  = f"[{i}] {sat} {date}"
+
             if not qv_url:
+                logger.warning(f"Quickview SKIP (no URL) | {label}")
                 continue
+
+            logger.debug(f"Quickview processing | {label} | url={qv_url[:80]}")
+
             corners = _order_corners(feat["geometry"])
             if corners is None:
+                geom    = feat.get("geometry") or {}
+                n_coords = len((geom.get("coordinates") or [[]])[0])
+                logger.warning(
+                    f"Quickview SKIP (corners=None) | {label} | "
+                    f"geometry type={geom.get('type', 'n/a')} coords={n_coords}"
+                )
                 continue
+
+            logger.debug(f"Quickview corners | {label} | {corners}")
+
+            # Guard: NaN or Infinity in corners would produce an invalid affine
+            # transform in the browser — canvas draws nothing with no JS error.
+            _bad_coords = [
+                (ci, vi, v)
+                for ci, c in enumerate(corners)
+                for vi, v in enumerate(c)
+                if not math.isfinite(v)
+            ]
+            if _bad_coords:
+                logger.error(
+                    f"Quickview SKIP (NaN/Inf in corners) | {label} | "
+                    f"bad at (corner,axis)={[(ci, vi) for ci, vi, _ in _bad_coords]} "
+                    f"vals={[v for _, _, v in _bad_coords]}"
+                )
+                continue
+
             img_data = _fetch_image_b64(qv_url)
             if not img_data:
-                logger.warning(f"Quickview fetch failed: {qv_url[:60]}")
+                logger.warning(f"Quickview SKIP (fetch failed) | {label} | url={qv_url[:80]}")
                 continue
 
-            props = feat["properties"]
-            corners_js = _json.dumps(corners)
+            logger.debug(
+                f"Quickview fetch OK | {label} | data-URI len={len(img_data)} chars"
+            )
 
-            # L.ImageWarpLayer is defined inline in <head>, so it is guaranteed
-            # to exist by the time this body script runs.
+            corners_js = _json.dumps(corners)
+            _label_js  = label.replace("'", "\\'")
             js = f"""
 <script>
 (function(){{
-  new L.ImageWarpLayer("{img_data}", {corners_js}, {{opacity: 0.85}}).addTo({map_var});
+  try {{
+    if (typeof L === 'undefined')               {{ throw new Error('Leaflet (L) not defined'); }}
+    if (typeof L.ImageWarpLayer === 'undefined') {{ throw new Error('L.ImageWarpLayer not defined — class script failed'); }}
+    if (typeof {map_var} === 'undefined')        {{ throw new Error('map variable {map_var} not defined'); }}
+    console.log('[QV] Instantiating | {_label_js}');
+    new L.ImageWarpLayer("{img_data}", {corners_js}, {{opacity: 0.85}}).addTo({map_var});
+    console.log('[QV] addTo OK | {_label_js}');
+  }} catch(e) {{
+    console.error('[QV] FAILED | {_label_js} |', e.message || String(e));
+  }}
 }})();
 </script>"""
             m.get_root().html.add_child(Element(js))
             ok_count += 1
-            logger.debug(
-                f"Quickview warp queued | {props.get('satellite')} "
-                f"{props.get('date')} | corners={corners}"
+            logger.info(
+                f"Quickview INJECTED | {label} | "
+                f"img={len(img_data) // 1024}KB | corners={corners}"
             )
 
-        logger.info(f"Quickview layers: {ok_count}/{len(preview_scenes)} added")
+        logger.info(f"Quickview pipeline END | {ok_count}/{len(preview_scenes)} injected")
 
     # ── Footprints layer ───────────────────────────────────────────────────────
     if features_for_map:
@@ -389,7 +585,27 @@ def render_main_map(
         if all_geojson_features:
             fc = {"type": "FeatureCollection", "features": all_geojson_features}
 
-            folium.GeoJson(
+            # Stable ID based on scene count + first feature so the JS variable
+            # name stays the same across reruns when data hasn't changed.
+            _fp_hash = hashlib.md5(
+                f"{len(all_geojson_features)}|{_json.dumps(all_geojson_features[0], sort_keys=True)}".encode()
+            ).hexdigest()[:16]
+            _fp_tooltip = folium.GeoJsonTooltip(
+                fields=["satellite", "sensor", "date", "cloud"],
+                aliases=["Satellite", "Sensor", "Date", "Cloud"],
+                sticky=True,
+                labels=True,
+                style=(
+                    "background-color:white;"
+                    "border:1px solid #ccc;"
+                    "border-radius:4px;"
+                    "font-size:12px;"
+                    "padding:6px 8px;"
+                    "box-shadow:2px 2px 4px rgba(0,0,0,0.15);"
+                ),
+            )
+            _fp_tooltip._id = hashlib.md5(b"sasclouds_fp_tooltip").hexdigest()
+            _fp_layer = folium.GeoJson(
                 fc,
                 name=f"Footprints ({len(features_for_map)} scenes)",
                 style_function=lambda f: {
@@ -404,29 +620,20 @@ def render_main_map(
                     "weight":      3,
                     "fillOpacity": 0.35,
                 },
-                tooltip=folium.GeoJsonTooltip(
-                    fields=["satellite", "sensor", "date", "cloud"],
-                    aliases=["Satellite", "Sensor", "Date", "Cloud"],
-                    sticky=True,
-                    labels=True,
-                    style=(
-                        "background-color:white;"
-                        "border:1px solid #ccc;"
-                        "border-radius:4px;"
-                        "font-size:12px;"
-                        "padding:6px 8px;"
-                        "box-shadow:2px 2px 4px rgba(0,0,0,0.15);"
-                    ),
-                ),
+                tooltip=_fp_tooltip,
                 popup=None,
-            ).add_to(m)
+            )
+            _fp_layer._id = _fp_hash
+            _fp_layer.add_to(m)
 
         if split_errors:
             logger.warning(f"{split_errors} footprints skipped (antimeridian split error)")
         logger.debug(f"Footprints layer: {len(features_for_map)} scenes")
 
     if polygon_geojson or features_for_map or preview_scenes:
-        folium.LayerControl(collapsed=False).add_to(m)
+        _lc = folium.LayerControl(collapsed=False)
+        _lc._id = hashlib.md5(b"sasclouds_lc").hexdigest()
+        _lc.add_to(m)
 
     logger.info(
         f"Map rendered | AOI={'yes' if polygon_geojson else 'no'} | "

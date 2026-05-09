@@ -221,6 +221,13 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
 
             if parse_errors:
                 add_log(f"  ⚠ {parse_errors} scene(s) skipped — invalid boundary JSON", "warning")
+                logger.warning(
+                    f"INDEX ALIGNMENT RISK: {parse_errors} scene(s) were skipped due to "
+                    f"bad boundary JSON. The results table iterates all_scenes "
+                    f"({len(all_scenes)} rows) but features_for_download has only "
+                    f"{len(features_for_map)} entries. Eye-button index i in the table "
+                    f"will point to the wrong feature for any row after a skipped scene."
+                )
 
             add_log(
                 f"  map features: {len(features_for_map)}  |  parse errors: {parse_errors}"

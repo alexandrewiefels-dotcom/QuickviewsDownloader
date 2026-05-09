@@ -1,18 +1,84 @@
-# Python cache
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*$py.class
 
 # Virtual environments
 venv/
 env/
+ENV/
 .venv
 
-# Secrets
+# Python distribution / packaging
+*.egg-info/
+*.egg
+dist/
+build/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/cache/
 .streamlit/secrets.toml
+.streamlit/config.toml   # if you keep secrets locally, ignore; otherwise keep
 
-# Temporary output (zipped files are deleted anyway)
+# TLE cache and data files
+data/tle_cache.csv
+data/tle_cache_backup/
+data/prefetch_progress.json
+data/cache_initialized.json
+data/export_tles.csv
+data/failed_norads.json
+data/last_refresh.json
+data/last_space_track_download.json
+data/supplier_stats.json
+data/tle_update_log.json
+data/missing_norads.json
+data/tle_backup.json
+data/tle_history.json
+data/tle_cache/                # old individual cache (if any)
+
+
+# User sessions, admin logs, AOI history, messages
+admin_data/
+aoi_history/
+messages/
+navigation_logs.json
+
+# Backup directories and zip files
+OrbitShow_backup_v*.zip
+*_backups/
+backups/
 *.zip
-temp_scrape_*/
 
-# Admin stats (optional, but keep)
-admin_stats.json
+# Export files (user-generated)
+*.kml
+*.csv
+*.pdf
+test_map.png
+
+# Log files (if any)
+*.log
+
+# Environment variables
+.env
+.secrets.toml
+secrets.toml
+
+# Streamlit runtime files
+.streamlit/credentials.toml
+.streamlit/state/               # if streamlit creates state files
+
+# System specific
+Desktop.ini
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+

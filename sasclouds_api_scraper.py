@@ -31,75 +31,90 @@ from pykml import parser
 
 
 # ── Satellite and sensor definitions ──────────────────────────────────────────
-# ZY1F is the API identifier confirmed from a live HAR capture (2026-05-06).
-# ZY1-02D / ZY1-02E are per-satellite names; both are kept because the API
-# may accept either form — test and remove whichever returns no results.
+# satelliteId  = value sent in the API payload (confirmed from HAR 2026-05-06
+#                where noted; best-guess otherwise).
+# displayName  = label shown in the website UI (used in the sidebar).
+# sensorIds    = sensor/mode codes as used on the website.
 SATELLITE_GROUPS = {
     "Optical": {
         "2-meter": [
-            {"satelliteId": "ZY3-1",    "sensorIds": ["MUX"]},
-            {"satelliteId": "ZY3-2",    "sensorIds": ["MUX"]},
-            {"satelliteId": "ZY3-3",    "sensorIds": ["MUX"]},
-            {"satelliteId": "ZY02C",    "sensorIds": ["HRC"]},
-            {"satelliteId": "ZY1F",     "sensorIds": ["VNIC"]},
-            {"satelliteId": "ZY1-02D",  "sensorIds": ["VNIC"]},
-            {"satelliteId": "ZY1-02E",  "sensorIds": ["VNIC"]},
-            {"satelliteId": "2m8m",     "sensorIds": ["PMS"]},
-            {"satelliteId": "GF1",      "sensorIds": ["PMS"]},
-            {"satelliteId": "GF6",      "sensorIds": ["PMS"]},
-            {"satelliteId": "CBERS-04A","sensorIds": ["WPM"]},
-            {"satelliteId": "CM1",      "sensorIds": ["DMC"]},
-            {"satelliteId": "TH01",     "sensorIds": ["GFB", "DGP"]},
-            {"satelliteId": "SPOT6/7",  "sensorIds": ["PMS"]},
+            # HAR-confirmed: ZY3-1, ZY3-2, ZY3-3, ZY02C, ZY1E, ZY1F, GF1, GF6, CB04A
+            {"satelliteId": "ZY3-1",   "displayName": "ZY3-01",   "sensorIds": ["MUX", "NAD", "DLC"]},
+            {"satelliteId": "ZY3-2",   "displayName": "ZY3-02",   "sensorIds": ["MUX", "NAD", "DLC"]},
+            {"satelliteId": "ZY3-3",   "displayName": "ZY3-03",   "sensorIds": ["MUX", "NAD", "DLC"]},
+            {"satelliteId": "ZY02C",   "displayName": "ZY1-02C",  "sensorIds": ["HRC", "PMS"]},
+            {"satelliteId": "ZY1-02D", "displayName": "ZY1-02D",  "sensorIds": ["VNIC"]},
+            {"satelliteId": "ZY1-02E", "displayName": "ZY1-02E",  "sensorIds": ["VNIC"]},
+            {"satelliteId": "2m8m",    "displayName": "2m/8m",    "sensorIds": ["PMS"]},
+            {"satelliteId": "GF1",     "displayName": "GF-1",     "sensorIds": ["PMS"]},
+            {"satelliteId": "GF6",     "displayName": "GF-6",     "sensorIds": ["PMS"]},
+            {"satelliteId": "CB04A",   "displayName": "CBERS-04A","sensorIds": ["WPM"]},
+            {"satelliteId": "CM1",     "displayName": "CM1",      "sensorIds": ["DMC"]},
+            {"satelliteId": "TH01",    "displayName": "TH01",     "sensorIds": ["GFB", "DGP"]},
+            {"satelliteId": "SPOT6/7", "displayName": "SPOT-6/7", "sensorIds": ["PMS"]},
         ],
         "Sub-meter": [
-            {"satelliteId": "GF2",         "sensorIds": ["PMS"]},
-            {"satelliteId": "GF7",         "sensorIds": ["MUX", "BWD", "FWD"]},
-            {"satelliteId": "GFDM01",      "sensorIds": ["PMS"]},
-            {"satelliteId": "JL1",         "sensorIds": ["PMS"]},
-            {"satelliteId": "BJ2",         "sensorIds": ["PMS"]},
-            {"satelliteId": "BJ3",         "sensorIds": ["PMS"]},
-            {"satelliteId": "SV1",         "sensorIds": ["PMS"]},
-            {"satelliteId": "SV2",         "sensorIds": ["PMS"]},
-            {"satelliteId": "LJ3-2",       "sensorIds": ["PMS"]},
-            {"satelliteId": "GeoEye-1",    "sensorIds": ["PMS"]},
-            {"satelliteId": "WorldView-2", "sensorIds": ["PMS"]},
-            {"satelliteId": "WorldView-3", "sensorIds": ["PMS"]},
-            {"satelliteId": "WorldView-4", "sensorIds": ["PMS"]},
-            {"satelliteId": "Pleiades",    "sensorIds": ["PMS"]},
-            {"satelliteId": "DEIMOS",      "sensorIds": ["PMS"]},
-            {"satelliteId": "KOMPSAT-2",   "sensorIds": ["PMS"]},
-            {"satelliteId": "KOMPSAT-3",   "sensorIds": ["PMS"]},
-            {"satelliteId": "KOMPSAT-3A",  "sensorIds": ["PMS"]},
+            {"satelliteId": "GF2",    "displayName": "GF-2",   "sensorIds": ["PMS"]},
+            {"satelliteId": "GF7",    "displayName": "GF-7",   "sensorIds": ["MUX", "BWD", "FWD"]},
+            {"satelliteId": "GFDM01", "displayName": "GFDM01", "sensorIds": ["PMS"]},
         ],
-        "Other (wide-angle)": [
-            {"satelliteId": "GF1", "sensorIds": ["WFV"]},
-            {"satelliteId": "GF6", "sensorIds": ["WFV"]},
-            {"satelliteId": "GF4", "sensorIds": ["PMI", "IRS"]},
+        "Other": [
+            # HAR-confirmed: BJ2, BJ3, SV1, SV2, JL1KF01B, JL1KF02B, JL1KF01C, JL1GF04A
+            {"satelliteId": "JL1KF01B",  "displayName": "JL-1(1m)",   "sensorIds": []},
+            {"satelliteId": "JL1KF01C",  "displayName": "JL-1(0.5m)", "sensorIds": []},
+            {"satelliteId": "BJ2",       "displayName": "BJ-2",       "sensorIds": []},
+            {"satelliteId": "BJ3",       "displayName": "BJ-3",       "sensorIds": []},
+            {"satelliteId": "SV1",       "displayName": "SV-1",       "sensorIds": []},
+            {"satelliteId": "SV2",       "displayName": "SV-2",       "sensorIds": []},
+            {"satelliteId": "LJ3-2",     "displayName": "LJ3-2",      "sensorIds": []},
+            {"satelliteId": "GeoEye-1",  "displayName": "GeoEye-1",   "sensorIds": []},
+            {"satelliteId": "WorldView-2","displayName": "WorldView-2","sensorIds": []},
+            {"satelliteId": "WorldView-3","displayName": "WorldView-3","sensorIds": []},
+            {"satelliteId": "WorldView-4","displayName": "WorldView-4","sensorIds": []},
+            {"satelliteId": "Pleiades",  "displayName": "Pleiades",   "sensorIds": []},
+            {"satelliteId": "DEIMOS",    "displayName": "DEIMOS",     "sensorIds": []},
+            {"satelliteId": "KOMPSAT-2", "displayName": "KOMPSAT-2",  "sensorIds": []},
+            {"satelliteId": "KOMPSAT-3", "displayName": "KOMPSAT-3",  "sensorIds": []},
+            {"satelliteId": "KOMPSAT-3A","displayName": "KOMPSAT-3A", "sensorIds": []},
+            # Wide-angle / other optical bands
+            {"satelliteId": "GF1",  "displayName": "GF-1",  "sensorIds": ["WFV"]},
+            {"satelliteId": "GF6",  "displayName": "GF-6",  "sensorIds": ["WFV"]},
+            {"satelliteId": "GF4",  "displayName": "GF-4",  "sensorIds": ["PMI", "IRS"]},
         ],
     },
     "Hyperspectral": {
         "Hyperspectral": [
-            {"satelliteId": "ZY1-02D", "sensorIds": ["AHSI"]},
-            {"satelliteId": "ZY1-02E", "sensorIds": ["AHSI"]},
-            {"satelliteId": "GF5",     "sensorIds": ["AHSI"]},
-            {"satelliteId": "GF5A",    "sensorIds": ["AHSI"]},
-            {"satelliteId": "GF5B",    "sensorIds": ["AHSI"]},
-            {"satelliteId": "GF5",     "sensorIds": ["VIMS"]},
-            {"satelliteId": "LJ3-2",   "sensorIds": ["HSI"]},
-            {"satelliteId": "OHS-2/3", "sensorIds": ["MSS"]},
+            {"satelliteId": "ZY1-02D", "displayName": "ZY1-02D", "sensorIds": ["AHSI"]},
+            {"satelliteId": "ZY1-02E", "displayName": "ZY1-02E", "sensorIds": ["AHSI"]},
+            {"satelliteId": "GF5",     "displayName": "GF-5",    "sensorIds": ["AHSI", "VIMS"]},
+            {"satelliteId": "GF5A",    "displayName": "GF-5A",   "sensorIds": ["AHSI"]},
+            {"satelliteId": "GF5B",    "displayName": "GF-5B",   "sensorIds": ["AHSI"]},
+            {"satelliteId": "JL-1GP",  "displayName": "JL-1GP",  "sensorIds": ["PMS"]},
+            {"satelliteId": "OHS-2/3", "displayName": "OHS-2/3", "sensorIds": ["MSS"]},
+            {"satelliteId": "LJ3-2",   "displayName": "LJ3-2",   "sensorIds": ["HSI"]},
         ],
     },
     "SAR": {
         "SAR": [
-            {"satelliteId": "GF3",  "sensorIds": []},
-            {"satelliteId": "CSAR", "sensorIds": []},
-            {"satelliteId": "LSAR", "sensorIds": []},
+            {"satelliteId": "LT-1A/B",    "displayName": "LT-1A/B",
+             "sensorIds": ["STRIP1", "STRIP2", "STRIP3", "STRIP4", "STRIP5", "SCAN"]},
+            {"satelliteId": "GF3",        "displayName": "GF-3",
+             "sensorIds": ["SL", "UFS", "FSI", "FSII", "SS",
+                           "QPSI", "QPSII", "NSC", "WSC", "GLO", "WAV", "EXT"]},
+            {"satelliteId": "CSAR",       "displayName": "1m C-SAR",
+             "sensorIds": ["SL", "UFS", "FSI", "FSII", "SS",
+                           "QPSI", "QPSII", "TOPN", "TOPW", "TOPG", "WAV", "EXT"]},
+            {"satelliteId": "TerraSAR-X", "displayName": "TerraSAR-X",
+             "sensorIds": ["ST", "HS", "SL", "SM", "SC", "WS"]},
         ],
     },
     "Other": {
         "Other sensors": [
-            {"satelliteId": "JL-1GP", "sensorIds": ["PMS"]},
+            {"satelliteId": "ZY3-3",   "displayName": "ZY3-03",  "sensorIds": ["SLA(scene)", "SLA(strip)"]},
+            {"satelliteId": "GF7",     "displayName": "GF-7",    "sensorIds": ["SLA(scene)", "SLA(strip)"]},
+            {"satelliteId": "CM1",     "displayName": "CM1",     "sensorIds": ["CASAL_A1"]},
+            {"satelliteId": "ZY1-02E", "displayName": "ZY1-02E", "sensorIds": ["IRS"]},
+            {"satelliteId": "OVS-2/3", "displayName": "OVS-2/3", "sensorIds": ["MSS"]},
         ],
     },
 }
@@ -112,7 +127,11 @@ _APP_DIR = Path(__file__).parent
 LOG_DIR = _APP_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
-_STRUCTURED_LOG = LOG_DIR / "api_interactions.jsonl"
+# One timestamp per process lifetime — all log files for this session share it.
+SESSION_TS = datetime.now().strftime("%Y%m%d%H%M")
+
+_STRUCTURED_LOG = LOG_DIR / f"{SESSION_TS}_api_interactions.jsonl"
+_ERRORS_LOG     = LOG_DIR / f"{SESSION_TS}_api_errors.log"
 
 
 # ── Loggers ───────────────────────────────────────────────────────────────────
@@ -122,10 +141,10 @@ logger = logging.getLogger(__name__)
 
 if not any(
     isinstance(h, logging.FileHandler) and
-    getattr(h, "baseFilename", None) == str((LOG_DIR / "api_errors.log").resolve())
+    getattr(h, "baseFilename", None) == str(_ERRORS_LOG.resolve())
     for h in logger.handlers
 ):
-    _err_handler = logging.FileHandler(LOG_DIR / "api_errors.log", encoding="utf-8")
+    _err_handler = logging.FileHandler(_ERRORS_LOG, encoding="utf-8")
     _err_handler.setLevel(logging.WARNING)
     _err_handler.setFormatter(logging.Formatter(
         "%(asctime)s [%(levelname)-8s] %(name)s – %(message)s",
@@ -372,13 +391,27 @@ def ensure_playwright_browser() -> None:
     """
     Install the Playwright Chromium browser binary if it is not already present.
     Safe to call repeatedly — Playwright is a no-op when the browser is current.
+
+    Skipped entirely if playwright is not importable in the current Python
+    environment (e.g. miniforge3 Streamlit env vs. the Python that has playwright).
+    --with-deps is omitted: that flag installs Linux system packages and hangs on
+    Windows, causing a 3-minute startup delay before the timeout fires.
     """
     import subprocess
     import sys
+
+    # Quick import check — if playwright isn't available here, skip the install.
+    # The API is anonymous so browser automation is never needed at runtime.
+    try:
+        import playwright  # noqa: F401
+    except ImportError:
+        logger.info("ensure_playwright_browser: playwright not installed in this env — skipping")
+        return
+
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"],
-            capture_output=True, text=True, timeout=180,
+            [sys.executable, "-m", "playwright", "install", "chromium"],
+            capture_output=True, text=True, timeout=60,
         )
         if result.returncode == 0:
             logger.info("Playwright Chromium ready")
@@ -601,7 +634,7 @@ def log_search(user_session_id: str, aoi_geojson: dict, filters: dict, num_scene
         "filters": filters,
         "num_scenes": num_scenes,
     }
-    with open(LOG_DIR / "search_history.jsonl", "a") as f:
+    with open(LOG_DIR / f"{SESSION_TS}_search_history.jsonl", "a") as f:
         f.write(json.dumps(record) + "\n")
 
 
@@ -613,7 +646,7 @@ def log_aoi_upload(user_session_id: str, filename: str, aoi_geojson: dict):
         "filename": filename,
         "geometry": aoi_geojson,
     }
-    with open(LOG_DIR / "aoi_history.jsonl", "a") as f:
+    with open(LOG_DIR / f"{SESSION_TS}_aoi_history.jsonl", "a") as f:
         f.write(json.dumps(record) + "\n")
 
 

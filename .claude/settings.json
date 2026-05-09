@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -X utf8 -c ' *)",
+      "Bash(dir logs *)",
+      "Bash(python test_quickview_visual.py)",
+      "Bash(python -m pip show playwright)",
+      "Bash(python -c \"from playwright.sync_api import sync_playwright; print\\('sync OK'\\)\")",
+      "Bash(python -c \"from sasclouds_api_scraper import ensure_playwright_browser; print\\('import ok'\\)\")",
+      "Bash(python -m pip list)",
+      "Bash(findstr /i \"play selenium\")",
+      "Bash(Select-String -Pattern \"play|selenium|chrome|browser\")",
+      "Bash(pip install *)",
+      "Bash(python -m playwright install chromium)",
+      "Read(//c/Program Files/Google/Chrome/Application/**)",
+      "Bash(python -c \"import websocket; print\\('websocket-client ok'\\)\")",
+      "Bash(python -c \"import websockets; print\\('websockets ok'\\)\")",
+      "Bash(python -c \"import streamlit_folium; print\\(streamlit_folium.__version__\\); import inspect, os; print\\(os.path.dirname\\(inspect.getfile\\(streamlit_folium\\)\\)\\)\")",
+      "Bash(python -c \"import inspect, streamlit_folium; f = inspect.getfile\\(streamlit_folium\\); print\\(f\\)\")",
+      "Bash(python -m pip show streamlit-folium)",
+      "Read(//c/Python312/Lib/site-packages/streamlit_folium/**)",
+      "Bash(python -c ' *)",
+      "Read(//c/Alexandre/OMEOSpace/Python/Modular OrbitShow/**)",
+      "Read(//c/Users/Raquel/AppData/Local/Temp/claude/c--Alexandre-OMEOSpace/Python/App_SASCloud_Scraping/f53e8f46-a8a2-401f-8f0f-e8f88df0371f/tasks/**)",
+      "Bash(python setup_integration.py)",
+      "Bash(python -m py_compile pages/3_SASClouds_Archive.py sasclouds_sidebar.py sasclouds_map_utils.py sasclouds_search_logic.py)",
+      "Bash(python -m pytest tests/test_full_suite.py -v --tb=short)",
+      "Bash(py -3.13 -m pip install skyfield shapely geopandas folium streamlit-folium pandas numpy plotly requests simplekml reportlab pyproj pytz fastkml lxml matplotlib psutil streamlit-autorefresh)",
+      "Bash(where streamlit *)",
+      "Bash(where python *)",
+      "Bash(ls \"C:/Users/Raquel/AppData/Local/Microsoft/WindowsApps/\" 2>&1 | grep -i python)",
+      "Read(//c/Users/Raquel/AppData/Local/Microsoft/WindowsApps/**)",
+      "PowerShell(& \"C:\\\\ProgramData\\\\miniforge3\\\\python.exe\" -c \"import geopandas; print\\('geopandas OK'\\)\" 2>&1)",
+      "PowerShell(& \"C:\\\\ProgramData\\\\miniforge3\\\\python.exe\" -W all -c \"import geopandas\" 2>&1)",
+      "PowerShell($LASTEXITCODE)",
+      "Bash(C:/ProgramData/miniforge3/python.exe -c ' *)",
+      "PowerShell(& \"C:/ProgramData/miniforge3/python.exe\" \"c:/Alexandre/OMEOSpace/Python/App_SASCloud_Scraping/_check_sats.py\")",
+      "Read(//c/Alexandre/OMEOSpace/Python/App_SASCloud_Scraping-Output/SASCloud Webpage/Natural Resources Satellite Remote Sensing Cloud Service Platform_files/**)",
+      "Read(//c/Alexandre/OMEOSpace/Python/App_SASCloud_Scraping-Output/SASCloud Webpage/**)"
+    ]
+  }
+}

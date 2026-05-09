@@ -59,8 +59,11 @@ st.session_state = {}  # type: ignore[assignment]
 # ── App-module imports ────────────────────────────────────────────────────────
 from aoi_handler import AOIHandler
 from map_utils import (
+    _fetch_image_b64,
+    _order_corners,
     handle_drawing,
     normalize_longitude,
+    render_main_map,
     split_polygon_at_antimeridian,
 )
 from sasclouds_api_scraper import (
@@ -1229,6 +1232,458 @@ def _reg_live_tests(r: Runner):
 
 
 # =============================================================================
+# CATEGORY 14 — Quickview Diagnostic  (requires --live flag + network)
+#
+# Each test probes one layer of the quickview pipeline:
+#   Phase 1 – Network reachability (bare, Referer, browser headers)
+#   Phase 2 – _fetch_image_b64() result validation
+#   Phase 3 – Folium map HTML analysis (JS injection, corners, variable name)
+#   Phase 4 – Client-side canvas math sanity checks
+#
+# Findings are written to  logs/quickview_diagnostic.log  for offline review.
+# =============================================================================
+
+def _reg_quickview_diagnostic(r: Runner):
+    import re as _re
+    import base64 as _b64
+    import requests as _req
+    from unittest.mock import patch as _patch
+
+    cat = "Quickview Diagnostic"
+
+    # ── Diagnostic log setup ─────────────────────────────────────────────────
+    _DIAG_LOG = _APP_DIR / "logs" / "quickview_diagnostic.log"
+    _DIAG_LOG.parent.mkdir(exist_ok=True)
+
+    def _dlog(msg: str):
+        """Append a timestamped line to the diagnostic log file."""
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        line = f"[{ts}] {msg}"
+        print(f"          {msg}")
+        with open(_DIAG_LOG, "a", encoding="utf-8") as _f:
+            _f.write(line + "\n")
+
+    _dlog("=" * 70)
+    _dlog("Quickview Diagnostic started")
+    _dlog("=" * 70)
+
+    # ── Shared state set by early tests and read by later ones ───────────────
+    _state = {
+        "qv_url":    None,   # rewritten CDN URL
+        "raw_url":   None,   # original URL from API
+        "scenes":    [],
+        "img_data":  "",     # base64 data-URI returned by _fetch_image_b64
+        "geometry":  None,   # footprint geometry dict of first scene
+    }
+
+    BEIJING = {
+        "type": "Polygon",
+        "coordinates": [[[116.0, 39.5], [117.0, 39.5],
+                         [117.0, 40.5], [116.0, 40.5], [116.0, 39.5]]],
+    }
+    SATS = [
+        {"satelliteId": "ZY3-1",  "sensorIds": ["MUX"]},
+        {"satelliteId": "ZY3-2",  "sensorIds": ["MUX"]},
+        {"satelliteId": "GF5",    "sensorIds": ["AHSI"]},
+        {"satelliteId": "GF5A",   "sensorIds": ["AHSI"]},
+        {"satelliteId": "GF5B",   "sensorIds": ["AHSI"]},
+    ]
+    START_MS = int(datetime(2021, 1, 1).timestamp() * 1000)
+    END_MS   = int(datetime(2026, 12, 31).timestamp() * 1000)
+
+    # ── PHASE 1 — Network reachability ────────────────────────────────────────
+
+    def phase1_get_real_quickview_url():
+        """Upload Beijing AOI, search for scenes, extract the first quickview URL."""
+        client = SASCloudsAPIClient()
+        uid    = client.upload_aoi(BEIJING)
+        result = client.search_scenes(uid, START_MS, END_MS, 30, SATS, 1, 10)
+        scenes = result.get("data", [])
+        assert scenes, "Live search returned 0 scenes — cannot test quickview pipeline"
+        _state["scenes"] = scenes
+
+        raw = scenes[0].get("quickViewUri", "")
+        cdn = raw.replace(
+            "http://quickview.sasclouds.com",
+            "https://quickview.obs.cn-north-10.myhuaweicloud.com",
+        )
+        assert cdn, "First scene has no quickViewUri — cannot continue diagnostic"
+        _state["raw_url"] = raw
+        _state["qv_url"]  = cdn
+
+        boundary_json = scenes[0].get("boundary", "{}")
+        try:
+            _state["geometry"] = json.loads(boundary_json)
+        except Exception:
+            _state["geometry"] = None
+
+        _dlog(f"Phase 1 | raw URL   : {raw[:100]}")
+        _dlog(f"Phase 1 | CDN URL   : {cdn[:100]}")
+        _dlog(f"Phase 1 | scenes    : {len(scenes)} returned")
+        _dlog(f"Phase 1 | geometry  : {boundary_json[:80]}")
+
+    def phase1_fetch_bare_no_headers():
+        """GET the quickview URL with NO custom headers (most restrictive test)."""
+        url = _state.get("qv_url")
+        if not url:
+            raise AssertionError("qv_url not set — phase1_get_real_quickview_url must pass first")
+        t0   = time.monotonic()
+        resp = _req.get(url, timeout=20)
+        ms   = int((time.monotonic() - t0) * 1000)
+        _dlog(f"Phase 1 | bare GET  : HTTP {resp.status_code} | {ms}ms "
+              f"| Content-Type={resp.headers.get('Content-Type','?')} "
+              f"| size={len(resp.content)}B")
+        assert resp.status_code == 200, (
+            f"Bare GET returned HTTP {resp.status_code}.\n"
+            f"  URL: {url}\n"
+            f"  Body: {resp.text[:200]!r}"
+        )
+
+    def phase1_fetch_with_referer():
+        """GET the quickview URL with Referer: https://www.sasclouds.com/ header."""
+        url = _state.get("qv_url")
+        if not url:
+            raise AssertionError("qv_url not set")
+        t0   = time.monotonic()
+        resp = _req.get(url, timeout=20,
+                        headers={"Referer": "https://www.sasclouds.com/"})
+        ms   = int((time.monotonic() - t0) * 1000)
+        _dlog(f"Phase 1 | +Referer  : HTTP {resp.status_code} | {ms}ms "
+              f"| Content-Type={resp.headers.get('Content-Type','?')} "
+              f"| size={len(resp.content)}B")
+        assert resp.status_code == 200, (
+            f"GET with Referer returned HTTP {resp.status_code}.\n"
+            f"  This may mean the CDN requires a valid session cookie.\n"
+            f"  Body: {resp.text[:200]!r}"
+        )
+
+    def phase1_fetch_with_browser_headers():
+        """GET the quickview URL with full browser headers (User-Agent + Referer + Accept)."""
+        url = _state.get("qv_url")
+        if not url:
+            raise AssertionError("qv_url not set")
+        from map_utils import _QV_HEADERS
+        t0   = time.monotonic()
+        resp = _req.get(url, timeout=20, headers=_QV_HEADERS)
+        ms   = int((time.monotonic() - t0) * 1000)
+        cors = resp.headers.get("Access-Control-Allow-Origin", "not set")
+        _dlog(f"Phase 1 | +UA+Ref   : HTTP {resp.status_code} | {ms}ms "
+              f"| size={len(resp.content)}B | CORS={cors}")
+        _dlog(f"Phase 1 | Response headers: {dict(resp.headers)}")
+        assert resp.status_code == 200, (
+            f"GET with browser headers returned HTTP {resp.status_code}.\n"
+            f"  Response headers: {dict(resp.headers)}\n"
+            f"  Body: {resp.text[:200]!r}"
+        )
+
+    # ── PHASE 2 — _fetch_image_b64() result validation ────────────────────────
+
+    def phase2_fetch_image_b64_returns_nonempty():
+        """Call _fetch_image_b64() directly — must return a non-empty data-URI."""
+        url = _state.get("qv_url")
+        if not url:
+            raise AssertionError("qv_url not set")
+        # Clear lru_cache to avoid stale data from previous test runs
+        _fetch_image_b64.cache_clear()
+        result = _fetch_image_b64(url)
+        _state["img_data"] = result
+        _dlog(f"Phase 2 | data-URI  : len={len(result)} chars "
+              f"({'OK' if result else 'EMPTY — this is the bug!'})")
+        assert result, (
+            "_fetch_image_b64() returned empty string.\n"
+            "This means the server-side Python fetch failed.\n"
+            "Check logs/quickview_ops.jsonl for the HTTP status code and error detail."
+        )
+
+    def phase2_data_uri_has_correct_prefix():
+        """The data-URI must start with 'data:image/jpeg;base64,' or 'data:image/png;base64,'."""
+        result = _state.get("img_data", "")
+        if not result:
+            raise AssertionError("img_data empty — phase2_fetch_image_b64_returns_nonempty must pass first")
+        assert result.startswith("data:image/"), (
+            f"data-URI prefix is wrong: {result[:60]!r}"
+        )
+        assert ";base64," in result, "data-URI missing ;base64, separator"
+        _dlog(f"Phase 2 | prefix    : {result[:40]}")
+
+    def phase2_image_content_is_valid_jpeg():
+        """The base64-decoded bytes must start with the JPEG magic bytes FF D8 FF."""
+        result = _state.get("img_data", "")
+        if not result:
+            raise AssertionError("img_data empty — phase2_fetch_image_b64_returns_nonempty must pass first")
+        raw = _b64.b64decode(result.split(",", 1)[1])
+        magic = raw[:3].hex().upper()
+        _dlog(f"Phase 2 | magic     : {magic} (expect FFD8FF for JPEG)")
+        assert raw[:2] == b"\xff\xd8", (
+            f"Content is not a valid JPEG — magic bytes: {magic!r}.\n"
+            "The URL may return an error HTML page instead of an image."
+        )
+
+    def phase2_image_size_is_reasonable():
+        """Image must be between 1KB and 10MB — guards against truncation or HTML error pages."""
+        result = _state.get("img_data", "")
+        if not result:
+            raise AssertionError("img_data empty")
+        raw = _b64.b64decode(result.split(",", 1)[1])
+        size_kb = len(raw) / 1024
+        _dlog(f"Phase 2 | size      : {size_kb:.1f} KB")
+        assert size_kb >= 1, f"Image too small ({size_kb:.1f} KB) — likely an error response"
+        assert size_kb <= 10240, f"Image very large ({size_kb:.1f} KB) — may exceed Streamlit iframe limit"
+
+    # ── PHASE 3 — Folium map HTML analysis ───────────────────────────────────
+
+    def _build_preview_scene_from_state() -> dict:
+        geom = _state.get("geometry") or {
+            "type": "Polygon",
+            "coordinates": [[[116.0, 39.5], [117.0, 39.5],
+                             [117.0, 40.5], [116.0, 40.5], [116.0, 39.5]]],
+        }
+        return {
+            "geometry": geom,
+            "properties": {
+                "satellite": "ZY3-1",
+                "sensor": "MUX",
+                "date": "2025-01-01",
+                "cloud": 5,
+                "product_id": "diag",
+                "quickview": _state.get("qv_url", "https://example.com/dummy.jpg"),
+            },
+        }
+
+    def phase3_warp_layer_class_in_header():
+        """_WARP_LAYER_JS (L.ImageWarpLayer class def) must appear in the rendered <head>."""
+        scene = _build_preview_scene_from_state()
+        img   = _state.get("img_data") or "data:image/jpeg;base64,FAKE"
+        with _patch("map_utils.st_folium") as mock_stf, \
+             _patch("map_utils._fetch_image_b64", return_value=img):
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=[scene])
+            m    = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+
+        _dlog(f"Phase 3 | HTML size : {len(html)} chars")
+        present = "_ImageWarpLayerDefined" in html
+        _dlog(f"Phase 3 | class def : {'FOUND' if present else 'MISSING — JS never defined'}")
+        assert present, "_ImageWarpLayerDefined not found — _WARP_LAYER_JS was not injected into <head>"
+
+    def phase3_instantiation_in_html():
+        """'new L.ImageWarpLayer' must appear in the rendered body when image fetch succeeds."""
+        scene = _build_preview_scene_from_state()
+        img   = _state.get("img_data") or "data:image/jpeg;base64,FAKE"
+        with _patch("map_utils.st_folium") as mock_stf, \
+             _patch("map_utils._fetch_image_b64", return_value=img):
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=[scene])
+            m    = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+
+        present = "new L.ImageWarpLayer" in html
+        _dlog(f"Phase 3 | addTo     : {'FOUND' if present else 'MISSING — no instantiation'}")
+        assert present, (
+            "'new L.ImageWarpLayer' not found in rendered HTML.\n"
+            "This means _fetch_image_b64() returned '' and the loop skipped the scene."
+        )
+
+    def phase3_image_data_embedded_in_html():
+        """The actual base64 bytes must be inside the rendered HTML script tag."""
+        img = _state.get("img_data", "")
+        if not img:
+            raise AssertionError("img_data empty — run phase 2 tests first")
+        scene = _build_preview_scene_from_state()
+        with _patch("map_utils.st_folium") as mock_stf, \
+             _patch("map_utils._fetch_image_b64", return_value=img):
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=[scene])
+            m    = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+
+        # Check only the first 30 chars of b64 payload (the full URI is huge)
+        snippet = img[len("data:image/jpeg;base64,"):len("data:image/jpeg;base64,")+30]
+        present = snippet in html
+        _dlog(f"Phase 3 | b64 embed : {'FOUND' if present else 'MISSING'} (snippet={snippet[:20]})")
+        assert present, "Base64 image payload not found in rendered HTML"
+
+    def phase3_corners_json_is_valid():
+        """Corners JSON embedded in the script must be a 4-element [[lat,lon],...] array."""
+        scene = _build_preview_scene_from_state()
+        img   = _state.get("img_data") or "data:image/jpeg;base64,FAKE"
+        with _patch("map_utils.st_folium") as mock_stf, \
+             _patch("map_utils._fetch_image_b64", return_value=img):
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=[scene])
+            m    = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+
+        match = _re.search(
+            r'new L\.ImageWarpLayer\("[^"]*",\s*(\[\[.*?\]\])',
+            html, _re.DOTALL
+        )
+        if not match:
+            _dlog("Phase 3 | corners   : PATTERN NOT FOUND in HTML")
+            raise AssertionError(
+                "Cannot locate corners array in rendered HTML — instantiation may be absent"
+            )
+        corners = json.loads(match.group(1))
+        _dlog(f"Phase 3 | corners   : {corners}")
+        assert len(corners) == 4, f"Expected 4 corners, got {len(corners)}"
+        for i, pt in enumerate(corners):
+            assert len(pt) == 2, f"Corner {i} has {len(pt)} coords, expected 2"
+            lat, lon = pt
+            assert -90 <= lat <= 90,   f"Corner {i} lat={lat} out of range"
+            assert -180 <= lon <= 180, f"Corner {i} lon={lon} out of range"
+
+    def phase3_map_variable_name_consistent():
+        """The map variable referenced in addTo() must match the Leaflet L.map() init."""
+        scene = _build_preview_scene_from_state()
+        img   = _state.get("img_data") or "data:image/jpeg;base64,FAKE"
+        with _patch("map_utils.st_folium") as mock_stf, \
+             _patch("map_utils._fetch_image_b64", return_value=img):
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=[scene])
+            m    = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+
+        # Find all `L.map("...", {...})` initialisations
+        init_names  = set(_re.findall(r'var\s+(map_\w+)\s*=\s*L\.map\(', html))
+        # Find all `.addTo(map_xxx)` calls
+        addto_names = set(_re.findall(r'\.addTo\((map_\w+)\)', html))
+
+        _dlog(f"Phase 3 | L.map inits : {init_names}")
+        _dlog(f"Phase 3 | addTo refs  : {addto_names}")
+
+        orphan = addto_names - init_names
+        assert not orphan, (
+            f"addTo() references map variable(s) that are never initialised: {orphan}\n"
+            "This means the quickview layer is added to an undefined variable."
+        )
+
+    def phase3_class_defined_before_instantiation():
+        """L.ImageWarpLayer definition must appear BEFORE `new L.ImageWarpLayer` in the HTML."""
+        scene = _build_preview_scene_from_state()
+        img   = _state.get("img_data") or "data:image/jpeg;base64,FAKE"
+        with _patch("map_utils.st_folium") as mock_stf, \
+             _patch("map_utils._fetch_image_b64", return_value=img):
+            mock_stf.return_value = {}
+            render_main_map(preview_scenes=[scene])
+            m    = mock_stf.call_args.args[0]
+            html = m.get_root().render()
+
+        leaflet_pos = html.find("leaflet.js")
+        def_pos     = html.find("_ImageWarpLayerDefined")
+        inst_pos    = html.find("new L.ImageWarpLayer")
+        _dlog(f"Phase 3 | leaflet.js : pos={leaflet_pos}")
+        _dlog(f"Phase 3 | def  pos   : {def_pos}  (must be > leaflet.js pos)")
+        _dlog(f"Phase 3 | inst pos   : {inst_pos} (must be > def pos)")
+        assert def_pos  != -1,  "Class definition not found in HTML"
+        assert inst_pos != -1,  "Instantiation not found in HTML"
+        assert leaflet_pos != -1, "Leaflet CDN link not found — cannot verify load order"
+        assert def_pos > leaflet_pos, (
+            f"CRITICAL BUG: L.ImageWarpLayer class definition (pos={def_pos}) appears "
+            f"BEFORE the Leaflet CDN <script> tag (pos={leaflet_pos}).\n"
+            f"'L' is undefined at that point — L.Layer.extend() will throw a "
+            f"ReferenceError and the class will never be defined.\n"
+            f"Fix: inject _WARP_LAYER_JS via m.get_root().html.add_child() not header."
+        )
+        assert def_pos < inst_pos, (
+            f"L.ImageWarpLayer class is defined AFTER it is instantiated "
+            f"(def@{def_pos} > inst@{inst_pos}) — ordering error"
+        )
+
+    # ── PHASE 4 — Canvas affine math sanity ───────────────────────────────────
+
+    def phase4_order_corners_returns_four_points():
+        """_order_corners() must return exactly 4 [lat,lon] pairs for the first scene's geometry."""
+        geom = _state.get("geometry")
+        if not geom:
+            raise AssertionError("geometry not captured — phase1 tests must pass first")
+        corners = _order_corners(geom)
+        _dlog(f"Phase 4 | corners   : {corners}")
+        assert corners is not None, (
+            "_order_corners() returned None.\n"
+            "This means the scene geometry has fewer than 3 points — "
+            "the quickview layer will be skipped silently."
+        )
+        assert len(corners) == 4, f"Expected 4 corners, got {len(corners)}"
+
+    def phase4_corners_span_nonzero_area():
+        """TL→TR and TL→BL vectors must be non-zero — zero vector → degenerate canvas transform."""
+        geom = _state.get("geometry")
+        if not geom:
+            raise AssertionError("geometry not captured")
+        corners = _order_corners(geom)
+        if corners is None:
+            raise AssertionError("_order_corners() returned None")
+
+        # corners = [TL, TR, BR, BL] as [lat, lon]
+        tl, tr, _br, bl = corners
+        dx_top  = abs(tr[1] - tl[1])   # horizontal span (lon)
+        dy_left = abs(bl[0] - tl[0])   # vertical span (lat)
+        _dlog(f"Phase 4 | lon span  : {dx_top:.6f}° (TL→TR)")
+        _dlog(f"Phase 4 | lat span  : {dy_left:.6f}° (TL→BL)")
+        assert dx_top > 1e-6, (
+            f"TL→TR longitude span is {dx_top:.8f}° — effectively zero.\n"
+            "Canvas ctx.transform() x-axis vector will be (0,0): image invisible."
+        )
+        assert dy_left > 1e-6, (
+            f"TL→BL latitude span is {dy_left:.8f}° — effectively zero.\n"
+            "Canvas ctx.transform() y-axis vector will be (0,0): image invisible."
+        )
+
+    def phase4_corners_are_geographic_latlon_not_lonlat():
+        """Sanity-check: first value of each corner must be a latitude (−90…90)."""
+        geom = _state.get("geometry")
+        if not geom:
+            raise AssertionError("geometry not captured")
+        corners = _order_corners(geom)
+        if corners is None:
+            raise AssertionError("_order_corners() returned None")
+        for i, (lat, lon) in enumerate(corners):
+            assert -90 <= lat <= 90, (
+                f"Corner {i} first value {lat} is not a latitude — "
+                "corners may be in [lon,lat] order instead of [lat,lon]"
+            )
+            assert -180 <= lon <= 180, (
+                f"Corner {i} second value {lon} is not a longitude"
+            )
+        _dlog(f"Phase 4 | lat/lon order check : PASS")
+
+    # ── Write diagnostic summary ──────────────────────────────────────────────
+    _dlog("")
+
+    # ── Register all tests ────────────────────────────────────────────────────
+    for name, fn in [
+        # Phase 1
+        ("p1_get_real_quickview_url",         phase1_get_real_quickview_url),
+        ("p1_fetch_bare_no_headers",           phase1_fetch_bare_no_headers),
+        ("p1_fetch_with_referer",              phase1_fetch_with_referer),
+        ("p1_fetch_with_browser_headers",      phase1_fetch_with_browser_headers),
+        # Phase 2
+        ("p2_fetch_image_b64_returns_nonempty",phase2_fetch_image_b64_returns_nonempty),
+        ("p2_data_uri_has_correct_prefix",     phase2_data_uri_has_correct_prefix),
+        ("p2_image_content_is_valid_jpeg",     phase2_image_content_is_valid_jpeg),
+        ("p2_image_size_is_reasonable",        phase2_image_size_is_reasonable),
+        # Phase 3
+        ("p3_warp_layer_class_in_header",      phase3_warp_layer_class_in_header),
+        ("p3_instantiation_in_html",           phase3_instantiation_in_html),
+        ("p3_image_data_embedded_in_html",     phase3_image_data_embedded_in_html),
+        ("p3_corners_json_is_valid",           phase3_corners_json_is_valid),
+        ("p3_map_variable_name_consistent",    phase3_map_variable_name_consistent),
+        ("p3_class_defined_before_instantiation", phase3_class_defined_before_instantiation),
+        # Phase 4
+        ("p4_order_corners_returns_four_points",  phase4_order_corners_returns_four_points),
+        ("p4_corners_span_nonzero_area",          phase4_corners_span_nonzero_area),
+        ("p4_corners_are_latlon_not_lonlat",      phase4_corners_are_geographic_latlon_not_lonlat),
+    ]:
+        r.run(name, cat, fn)
+
+    _dlog("")
+    _dlog("Quickview Diagnostic complete")
+    _dlog(f"Full structured fetch log : logs/quickview_ops.jsonl")
+    _dlog("=" * 70)
+    print(f"\n  Diagnostic log written → {_DIAG_LOG}")
+
+
+# =============================================================================
 # Report generation
 # =============================================================================
 
@@ -1381,6 +1836,10 @@ def main():
         _print_banner("Live API Tests  (hitting real sasclouds.com)")
         print()
         _reg_live_tests(runner)
+
+        _print_banner("Quickview Diagnostic  (live fetch + HTML analysis)")
+        print()
+        _reg_quickview_diagnostic(runner)
 
     # Print summary
     _print_banner("Results")

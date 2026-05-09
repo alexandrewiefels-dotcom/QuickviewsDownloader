@@ -2265,3 +2265,71 @@ Traceback (most recent call last):
 Exception: Search API error: Invalid parameters (code 2)
 2026-05-08 18:04:47 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 5ms | http://x.com/missing.jpg
 2026-05-08 18:04:47 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary'] | Fields present: ['satelliteId']
+2026-05-08 18:31:43 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 18:31:43 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 18:31:44 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 18:31:44 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 18:31:44 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 18:31:44 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 18:31:44 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1281, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 18:31:44 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 18:43:35 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 18:43:35 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 18:43:35 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 18:43:36 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 18:43:36 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 18:43:36 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 18:43:36 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1281, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 18:43:36 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 18:44:11 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 18:44:11 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 18:44:11 [WARNING ] sasclouds_api_scraper – Server parsed AOI but returned empty geometry — geojson=''. Search will return 0 scenes.
+2026-05-08 18:44:11 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='Bad polygon' | full_body={"code": 1, "message": "Bad polygon"}
+2026-05-08 18:44:11 [ERROR   ] sasclouds_api_scraper – AOI upload rejected by server | code=1 | message='region out-of-range detected' | full_body={"code": 1, "message": "region out-of-range detected"}
+2026-05-08 18:44:11 [ERROR   ] sasclouds_api_scraper – Search API error | code=2 | message='Upstream unavailable' | full_body={"code": 2, "message": "Upstream unavailable"}
+2026-05-08 18:44:11 [ERROR   ] sasclouds_api_scraper – search_scenes failed (page=1): Search API error: Upstream unavailable (code 2)
+Traceback (most recent call last):
+  File "C:\Alexandre\OMEOSpace\Python\App_SASCloud_Scraping\sasclouds_api_scraper.py", line 1281, in search_scenes
+    raise Exception(f"Search API error: {msg} (code {api_code})")
+Exception: Search API error: Upstream unavailable (code 2)
+2026-05-08 18:44:11 [WARNING ] sasclouds_api_scraper – Download failed | HTTP 404 | 0ms | https://example.com/missing.jpg
+2026-05-08 20:54:33 [WARNING ] sasclouds_api_scraper – Could not run playwright install: Command '['C:\\ProgramData\\miniforge3\\python.exe', '-m', 'playwright', 'install', 'chromium', '--with-deps']' timed out after 180 seconds
+2026-05-08 21:25:34 [WARNING ] sasclouds_api_scraper – Could not run playwright install: Command '['C:\\Python312\\python.exe', '-m', 'playwright', 'install', 'chromium']' timed out after 60 seconds
+2026-05-08 22:33:45 [WARNING ] sasclouds_api_scraper – MultiPolygon input: selected the largest polygon for upload
+2026-05-08 22:33:45 [WARNING ] sasclouds_api_scraper – Invalid polygon (Self-intersection[116.4 39.95]) — attempting buffer(0) repair
+2026-05-08 22:33:45 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['cloudPercent'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:33:45 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['satelliteId'] | Fields present: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:33:45 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId'] | Fields present: ['satelliteId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:33:45 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['acquisitionTime'] | Fields present: ['satelliteId', 'sensorId', 'cloudPercent', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:33:45 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['cloudPercent'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:33:45 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['quickViewUri'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'cloudPercent', 'boundary', 'productId']
+2026-05-08 22:33:45 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['boundary'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'productId']
+2026-05-08 22:33:45 [WARNING ] sasclouds_api_scraper – Could not run playwright install: Command 'cmd' timed out after 60 seconds
+2026-05-08 22:35:58 [WARNING ] sasclouds_api_scraper – MultiPolygon input: selected the largest polygon for upload
+2026-05-08 22:35:58 [WARNING ] sasclouds_api_scraper – Invalid polygon (Self-intersection[116.4 39.95]) — attempting buffer(0) repair
+2026-05-08 22:35:59 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['cloudPercent'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:35:59 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['satelliteId'] | Fields present: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:35:59 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId'] | Fields present: ['satelliteId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:35:59 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['acquisitionTime'] | Fields present: ['satelliteId', 'sensorId', 'cloudPercent', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:35:59 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['cloudPercent'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:35:59 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['quickViewUri'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'cloudPercent', 'boundary', 'productId']
+2026-05-08 22:35:59 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['boundary'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'productId']
+2026-05-08 22:35:59 [WARNING ] sasclouds_api_scraper – Could not run playwright install: Command 'cmd' timed out after 60 seconds
+2026-05-08 22:36:22 [WARNING ] sasclouds_api_scraper – MultiPolygon input: selected the largest polygon for upload
+2026-05-08 22:36:22 [WARNING ] sasclouds_api_scraper – Invalid polygon (Self-intersection[116.4 39.95]) — attempting buffer(0) repair
+2026-05-08 22:36:22 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['cloudPercent'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:36:22 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['satelliteId'] | Fields present: ['sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:36:22 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['sensorId'] | Fields present: ['satelliteId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:36:22 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['acquisitionTime'] | Fields present: ['satelliteId', 'sensorId', 'cloudPercent', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:36:22 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['cloudPercent'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'quickViewUri', 'boundary', 'productId']
+2026-05-08 22:36:22 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['quickViewUri'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'cloudPercent', 'boundary', 'productId']
+2026-05-08 22:36:22 [ERROR   ] sasclouds_api_scraper – API schema change detected! Missing fields: ['boundary'] | Fields present: ['satelliteId', 'sensorId', 'acquisitionTime', 'cloudPercent', 'quickViewUri', 'productId']
+2026-05-08 22:36:22 [WARNING ] sasclouds_api_scraper – Could not run playwright install: Command 'cmd' timed out after 60 seconds
