@@ -11,9 +11,31 @@ import time
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from update_tles import update_all_satellites, export_tles_to_config, get_cache_status, DEFAULT_NORADS
+from update_tles import update_all_satellites, get_cache_status
 from core.tle_scheduler import get_scheduler
 from admin_auth import authenticate_admin
+from config.satellites import SATELLITES
+
+# Helper: get all NORADs from config
+def _get_all_norads() -> list:
+    norads = []
+    for category in SATELLITES.values():
+        for sat_info in category.values():
+            norad = sat_info.get("norad")
+            if norad:
+                norads.append(norad)
+    return list(dict.fromkeys(norads))  # unique, preserve order
+
+DEFAULT_NORADS = _get_all_norads()
+
+def export_tles_to_config():
+    """Export current TLE cache to config (placeholder - TLEs are stored in CSV cache)."""
+    from data.tle_fetcher import CACHE_FILE
+    if CACHE_FILE.exists():
+        size_kb = CACHE_FILE.stat().st_size / 1024
+        print(f"[TLE Export] Cache file exists: {CACHE_FILE.name} ({size_kb:.1f} KB)")
+        return True
+    return False
 
 
 def render_tle_status_card():
@@ -196,6 +218,101 @@ def render_auto_update_settings():
     st.caption("Note: TLEs are fetched from Celestrak (free) and cached locally for 72 hours.")
 
 
+def render_freshness_dashboard():
+    """Render TLE freshness monitoring dashboard (3.27)."""
+    st.subheader("🕐 TLE Freshness Monitoring")
+    st.markdown("Monitor the age and freshness of TLE data for all satellites.")
+
+    status = get_cache_status()
+
+    if not status.get('satellites'):
+        st.info("No satellite TLE data available. Run an update first.")
+        return
+
+    satellites = status['satellites']
+
+    # Summary metrics
+    total = len(satellites)
+    fresh = sum(1 for s in satellites if s.get('age_hours', 999) <= 24)
+    aging = sum(1 for s in satellites if 24 < s.get('age_hours', 999) <= 48)
+    stale = sum(1 for s in satellites if s.get('age_hours', 999) > 48)
+    missing = sum(1 for s in satellites if not s.get('valid', False))
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("🟢 Fresh (≤24h)", fresh, delta=f"{fresh/total*100:.0f}%" if total else "0%")
+    with col2:
+        st.metric("🟡 Aging (24-48h)", aging)
+    with col3:
+        st.metric("🟠 Stale (>48h)", stale)
+    with col4:
+        st.metric("🔴 Missing", missing)
+
+    # Age distribution chart
+    st.markdown("#### Age Distribution")
+    ages = [s.get('age_hours', 0) for s in satellites if s.get('age_hours') is not None]
+    if ages:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(10, 4))
+        ax.hist(ages, bins=20, color='#2ecc71', edgecolor='white', alpha=0.7)
+        ax.axvline(x=24, color='orange', linestyle='--', label='24h threshold')
+        ax.axvline(x=48, color='red', linestyle='--', label='48h threshold')
+        ax.set_xlabel('Age (hours)')
+        ax.set_ylabel('Number of Satellites')
+        ax.set_title('TLE Age Distribution')
+        ax.legend()
+        st.pyplot(fig)
+        plt.close(fig)
+
+    # Per-satellite freshness table
+    st.markdown("#### Satellite Freshness Details")
+    df = pd.DataFrame(satellites)
+    if not df.empty and 'age_hours' in df.columns:
+        df = df.sort_values('age_hours', ascending=False)
+
+        def freshness_icon(age, valid):
+            if not valid:
+                return '🔴'
+            if age <= 24:
+                return '🟢'
+            elif age <= 48:
+                return '🟡'
+            else:
+                return '🟠'
+
+        df['Freshness'] = df.apply(
+            lambda x: freshness_icon(x.get('age_hours', 999), x.get('valid', False)),
+            axis=1
+        )
+        df['age_hours'] = df['age_hours'].apply(lambda x: f"{x:.1f}h" if x is not None else "N/A")
+
+        display_cols = ['Freshness', 'norad', 'age_hours', 'source', 'epoch']
+        display_df = df[[c for c in display_cols if c in df.columns]]
+        display_df.columns = ['Status', 'NORAD', 'Age', 'Source', 'Epoch']
+
+        st.dataframe(display_df, use_container_width=True, height=400)
+
+        # Export
+        csv = df.to_csv(index=False)
+        st.download_button(
+            label="📥 Export Freshness Report (CSV)",
+            data=csv,
+            file_name=f"tle_freshness_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv"
+        )
+
+    # Recommendations
+    st.markdown("#### Recommendations")
+    if stale > 0:
+        st.warning(f"⚠️ {stale} satellites have stale TLE data (>48h). Consider running an update.")
+    if missing > 0:
+        st.error(f"🔴 {missing} satellites have no TLE data. Run a full update to fetch missing data.")
+    if fresh == total:
+        st.success("✅ All TLE data is fresh (≤24h old). No update needed.")
+    elif fresh > total * 0.7:
+        st.info("ℹ️ Most TLE data is fresh. Consider updating if you need current orbital positions.")
+
+
 def main():
     # Check authentication
     if not authenticate_admin():
@@ -206,8 +323,8 @@ def main():
     st.markdown("---")
     
     # Create tabs
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 Status", "🔄 Update", "📋 Satellite Details", "⚙️ Settings"
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "📊 Status", "🔄 Update", "📋 Satellite Details", "⚙️ Settings", "🕐 Freshness"
     ])
     
     with tab1:
@@ -221,6 +338,9 @@ def main():
     
     with tab4:
         render_auto_update_settings()
+    
+    with tab5:
+        render_freshness_dashboard()
     
     st.markdown("---")
     st.caption("""

@@ -2,6 +2,7 @@
 import io
 import json
 import logging
+import re
 import shutil
 import tempfile
 import time
@@ -377,6 +378,38 @@ def render_results_table():
 
 # ── Download ──────────────────────────────────────────────────────────────────
 
+_FS_UNSAFE = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
+
+
+def _fs_safe(name: str) -> str:
+    """Replace filesystem-illegal characters with underscores."""
+    return _FS_UNSAFE.sub("_", name).strip("_") or "scene"
+
+
+def _scene_basename(sat: str, sensor: str, date_str: str,
+                    prod_id, qv_url: str, idx: int) -> str:
+    """
+    Build a clean, non-None base name (no extension) for a scene file.
+
+    Priority:
+      1. productId from the API response, if present and not 'None'
+      2. Filename extracted from the quickview URL path
+      3. Sequential fallback:  <sat>_<sensor>_<date>_<idx:04d>
+    """
+    pid = str(prod_id or "").strip()
+    if pid and pid.lower() != "none":
+        return _fs_safe(f"{sat}_{sensor}_{date_str}_{pid}")
+
+    if qv_url:
+        url_path = qv_url.split("?")[0].rstrip("/")
+        basename = url_path.rsplit("/", 1)[-1]
+        stem = basename.rsplit(".", 1)[0]
+        if len(stem) > 4:
+            return _fs_safe(stem)
+
+    return _fs_safe(f"{sat}_{sensor}_{date_str}_{idx:04d}")
+
+
 def _do_download_zip(scenes: list, features: list):
     """Download quickviews for the given scenes and serve a ZIP."""
     if not scenes:
@@ -399,7 +432,8 @@ def _do_download_zip(scenes: list, features: list):
                 prod_id  = scene["productId"]
                 footprint = feat["geometry"]
                 qv_url   = feat["properties"]["quickview"]
-                img_name = f"{sat}_{sensor}_{date_str}_{prod_id}.jpg"
+                # Use the same naming logic as sasclouds_search_logic.py
+                img_name = _scene_basename(sat, sensor, date_str, prod_id, qv_url, idx) + ".jpg"
                 img_path = temp_dir / img_name
 
                 status.write(f"[{idx + 1}/{len(scenes)}] {img_name}")

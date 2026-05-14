@@ -7,6 +7,7 @@ import time
 import json
 import threading
 import shutil
+import os
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -14,6 +15,22 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from data.tle_fetcher import TLEFetcher, get_tle_fetcher, save_last_refresh, CACHE_FILE, PREFETCH_REQUEST_DELAY
 from config.satellites import SATELLITES
+
+# Try to load Streamlit secrets for credentials, fall back to env vars
+SPACE_TRACK_USER = os.environ.get("SPACE_TRACK_USER")
+SPACE_TRACK_PASSWORD = os.environ.get("SPACE_TRACK_PASSWORD")
+N2YO_API_KEY = os.environ.get("N2YO_API_KEY")
+
+# Only try Streamlit secrets if running inside Streamlit runtime
+try:
+    import streamlit.runtime.scriptrunner as _sr
+    if _sr.get_script_run_ctx() is not None:
+        import streamlit as st
+        SPACE_TRACK_USER = SPACE_TRACK_USER or st.secrets.get("SPACE_TRACK_USER")
+        SPACE_TRACK_PASSWORD = SPACE_TRACK_PASSWORD or st.secrets.get("SPACE_TRACK_PASSWORD")
+        N2YO_API_KEY = N2YO_API_KEY or st.secrets.get("N2YO_API_KEY")
+except (ImportError, RuntimeError):
+    pass
 
 PROGRESS_FILE = Path("data/prefetch_progress.json")
 LAST_REFRESH_FILE = Path("data/last_refresh.json")
@@ -175,10 +192,10 @@ def prefetch_all_tles_silent(progress_callback=None, resume=True):
         fetcher = get_tle_fetcher()
         success_count = already_done
 
-        # Try Space-Track bulk download for all pending NORADs first (1 request)
-        if fetcher.space_track_available:
+        # Try Space-Track bulk download via SpaceTrackBulkFetcher (once-per-hour, off-peak)
+        if fetcher.space_track_available and fetcher.space_track_fetcher is not None:
             print(f"[Prefetch] Trying Space-Track bulk for {len(pending_norads)} NORADs...")
-            bulk_tles = fetcher.fetch_bulk_from_space_track(pending_norads)
+            bulk_tles = fetcher.space_track_fetcher.fetch(target_norads=pending_norads)
             if bulk_tles:
                 for norad in list(pending_norads):
                     if norad in bulk_tles:
@@ -189,6 +206,8 @@ def prefetch_all_tles_silent(progress_callback=None, resume=True):
                 pending_norads = [n for n in pending_norads if n not in fetcher.tles]
                 print(f"[Prefetch] Space-Track bulk: {success_count - already_done} fetched, "
                       f"{len(pending_norads)} still pending")
+            else:
+                print("[Prefetch] Space-Track bulk returned no TLEs (cooldown may be active).")
 
         saves_since_last_write = 0
         for idx, norad in enumerate(pending_norads, 1):

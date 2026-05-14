@@ -76,7 +76,8 @@ def render_live_tracking_sidebar(satellites_db):
                 norad = int(norad_live.strip())
                 name = name_live.strip() if name_live.strip() else f"Custom-{norad}"
                 from config.satellites import add_custom_satellite
-                add_custom_satellite(norad, name, swath_km=15.0, resolution=0.5)
+                cameras = {"User camera": {"swath_km": 15.0, "resolution_m": 0.5}}
+                add_custom_satellite(norad, name, cameras=cameras)
                 st.success(f"✅ Satellite {name} (NORAD {norad}) added. Please select it above.")
                 st.rerun()
             else:

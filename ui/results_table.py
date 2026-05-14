@@ -9,6 +9,40 @@ from detection.daylight_filter import get_local_time_str
 from detection.daylight_filter import get_local_time_political
 
 
+# Pagination constants
+_PASSES_PER_PAGE = 50
+
+
+def _get_pagination_state(passes_len):
+    """Get current page and total pages for pagination."""
+    total_pages = max(1, (passes_len + _PASSES_PER_PAGE - 1) // _PASSES_PER_PAGE)
+    current_page = st.session_state.get('_passes_page', 1)
+    if current_page > total_pages:
+        current_page = total_pages
+    return current_page, total_pages
+
+
+def _render_pagination_controls(current_page, total_pages, passes_len):
+    """Render pagination controls (prev/next + page info)."""
+    if total_pages <= 1:
+        return current_page
+    
+    col_prev, col_info, col_next = st.columns([1, 3, 1])
+    with col_prev:
+        if current_page > 1:
+            if st.button("◀ Previous", key="page_prev", use_container_width=True):
+                st.session_state._passes_page = current_page - 1
+                st.rerun()
+    with col_info:
+        st.markdown(f"<div style='text-align: center; padding-top: 6px;'>Page {current_page} of {total_pages} ({passes_len} passes)</div>", unsafe_allow_html=True)
+    with col_next:
+        if current_page < total_pages:
+            if st.button("Next ▶", key="page_next", use_container_width=True):
+                st.session_state._passes_page = current_page + 1
+                st.rerun()
+    return current_page
+
+
 def render_passes_table(passes, aoi, weather_exhausted=False):
     """
     Render the detected passes table with export buttons.
@@ -28,14 +62,24 @@ def render_passes_table(passes, aoi, weather_exhausted=False):
     st.markdown("### 📊 Detected Passes")
     st.caption(f"Showing {len(passes)} passes | ONA values shown are the actual footprint ONA (not the filter limit)")
 
+    # ── Pagination ──
+    current_page, total_pages = _get_pagination_state(len(passes))
+    start_idx = (current_page - 1) * _PASSES_PER_PAGE
+    end_idx = min(start_idx + _PASSES_PER_PAGE, len(passes))
+    page_passes = passes[start_idx:end_idx]
+    
+    # Pagination controls (top)
+    _render_pagination_controls(current_page, total_pages, len(passes))
+
     # Create columns for header
     cols = st.columns([0.5, 0.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5])
     headers = ["🔍", "#", "Satellite", "Camera", "Date (UTC)", "Time (UTC)", "Local Date", "Local Time", "ONA (°)", "Direction", "Clouds"]
     for i, header in enumerate(headers):
         cols[i].write(f"**{header}**")
 
-    # Display each pass
-    for idx, p in enumerate(passes, start=1):
+    # Display each pass (paginated)
+    for local_idx, p in enumerate(page_passes):
+        global_idx = start_idx + local_idx + 1
         cols = st.columns([0.5, 0.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5])
         
         with cols[0]:
@@ -44,7 +88,7 @@ def render_passes_table(passes, aoi, weather_exhausted=False):
                 st.rerun()
         
         with cols[1]:
-            st.write(idx)
+            st.write(global_idx)
         
         with cols[2]:
             st.write(p.satellite_name)
@@ -85,6 +129,9 @@ def render_passes_table(passes, aoi, weather_exhausted=False):
                     st.write(f"🔴 {cloud:.0f}%")
             else:
                 st.write("—")
+    
+    # Pagination controls (bottom)
+    _render_pagination_controls(current_page, total_pages, len(passes))
 
     # Export buttons row
     st.markdown("---")
@@ -194,6 +241,15 @@ def render_passes_summary(passes, aoi=None):
         st.metric("Ascending Passes", asc_count)
     with col7:
         st.metric("Descending Passes", desc_count)
+    
+    # ── Daylight filter stats ──
+    daylight_stats = st.session_state.get('_daylight_filter_stats')
+    if daylight_stats and daylight_stats.get('active', False):
+        kept = daylight_stats['kept']
+        filtered = daylight_stats['filtered']
+        total = daylight_stats['total']
+        if filtered > 0:
+            st.info(f"☀️ Daylight filter: kept **{kept}** of **{total}** passes (filtered **{filtered}** night passes)")
     
     # Show satellite breakdown
     if len(satellites) > 1:

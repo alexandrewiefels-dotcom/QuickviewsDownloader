@@ -16,7 +16,7 @@ from datetime import datetime
 import math
 import logging
 from geometry.calculations import calculate_bearing
-from geometry.utils import clip_geometry_to_bbox, split_polygon_at_antimeridian, split_line_at_antimeridian, normalize_longitude, expand_longitude_range
+from geometry.utils import clip_geometry_to_bbox, split_polygon_at_antimeridian, split_line_at_antimeridian, normalize_longitude, expand_longitude_range, shapely_coords_to_folium
 
 from geometry.footprint import clip_geometry_to_latitude_band
 
@@ -162,6 +162,128 @@ class MapRenderer:
         """
         m.get_root().html.add_child(folium.Element(legend_html))
 
+    def _get_responsive_height(self, default_height=700):
+        """Calculate responsive map height based on viewport."""
+        # Use session state to store the height (can be overridden by JS)
+        height = st.session_state.get('_map_height', default_height)
+        # Clamp between min and max
+        height = max(400, min(900, height))
+        return height
+
+    def _add_debounce_js(self, m):
+        """Add JavaScript debounce for drawing tool to prevent excessive re-renders."""
+        debounce_js = """
+        <script>
+        (function() {
+            var debounceTimer = null;
+            var originalOnDraw = null;
+            
+            // Wait for the map and draw control to be ready
+            var checkInterval = setInterval(function() {
+                var drawControl = document.querySelector('.leaflet-draw');
+                if (drawControl) {
+                    clearInterval(checkInterval);
+                    
+                    // Override the draw:created event with debounce
+                    var map = document.querySelector('.folium-map');
+                    if (map && map._leaflet_map) {
+                        var leafletMap = map._leaflet_map;
+                        leafletMap.on('draw:drawstart', function() {
+                            // Disable Streamlit auto-rendering during drawing
+                            window.streamlitAutoRender = false;
+                        });
+                        leafletMap.on('draw:drawstop', function() {
+                            // Re-enable after a short delay
+                            setTimeout(function() {
+                                window.streamlitAutoRender = true;
+                            }, 500);
+                        });
+                    }
+                }
+            }, 500);
+        })();
+        </script>
+        """
+        m.get_root().html.add_child(folium.Element(debounce_js))
+
+    def _add_responsive_height_js(self, m):
+        """Add JavaScript to report viewport height for responsive map sizing."""
+        height_js = """
+        <script>
+        (function() {
+            function reportHeight() {
+                var vh = window.innerHeight;
+                var header = document.querySelector('header') ? document.querySelector('header').offsetHeight : 0;
+                var footer = document.querySelector('footer') ? document.querySelector('footer').offsetHeight : 0;
+                var availableHeight = vh - header - footer - 100; // 100px padding
+                availableHeight = Math.max(400, Math.min(900, availableHeight));
+                
+                // Store in a data attribute for Streamlit to read
+                var container = document.querySelector('.folium-map');
+                if (container) {
+                    container.setAttribute('data-available-height', availableHeight);
+                }
+            }
+            reportHeight();
+            window.addEventListener('resize', reportHeight);
+        })();
+        </script>
+        """
+        m.get_root().html.add_child(folium.Element(height_js))
+
+    def _filter_passes_by_zoom(self, passes: list, zoom: int, aoi) -> list:
+        """
+        Server-side filtering: at low zoom levels, only render a representative
+        subset of passes to reduce map rendering overhead.
+        
+        - zoom < 4: show only 10 passes (closest to AOI center)
+        - zoom 4-5: show only 25 passes
+        - zoom 6-7: show only 50 passes
+        - zoom >= 8: show all passes
+        """
+        total = len(passes)
+        if total <= 50:
+            return passes  # No filtering needed for small sets
+        
+        if zoom is None:
+            zoom = 2
+        
+        if zoom >= 8:
+            return passes
+        
+        # Determine limit based on zoom level
+        if zoom < 4:
+            limit = 10
+        elif zoom < 6:
+            limit = 25
+        else:  # zoom 6-7
+            limit = 50
+        
+        # If we have aoi, sort passes by proximity to AOI center
+        if aoi is not None and not aoi.is_empty:
+            try:
+                center = aoi.centroid
+                aoi_lon, aoi_lat = center.x, center.y
+                
+                def _pass_distance(p):
+                    """Estimate distance from pass footprint center to AOI center."""
+                    fp = getattr(p, 'display_footprint', None) or p.footprint
+                    if fp is None or fp.is_empty:
+                        return float('inf')
+                    try:
+                        fp_center = fp.centroid
+                        return ((fp_center.x - aoi_lon) ** 2 + (fp_center.y - aoi_lat) ** 2) ** 0.5
+                    except Exception:
+                        return float('inf')
+                
+                sorted_passes = sorted(passes, key=_pass_distance)
+                return sorted_passes[:limit]
+            except Exception:
+                pass
+        
+        # Fallback: return first N passes
+        return passes[:limit]
+
     def render(self, center, zoom, aoi, passes, opportunities, map_key=0, height=700,
                live_satellites=None, show_tracks=True, highlighted_pass_id=None,
                filters=None, selected_satellites=None, apply_filter=None,
@@ -169,7 +291,19 @@ class MapRenderer:
         """
         Renders the map with AOI, clipped footprints, ground tracks, and live satellites.
         """
+        # Use responsive height if available
+        height = self._get_responsive_height(height)
+        
         m = folium.Map(location=center, zoom_start=zoom, tiles=MAP_TILES)
+        
+        # Add debounce JS for drawing tool
+        self._add_debounce_js(m)
+        
+        # Add responsive height JS
+        self._add_responsive_height_js(m)
+        
+        # Server-side lazy-load filtering for large pass sets (2.9)
+        passes = self._filter_passes_by_zoom(passes, zoom, aoi)
         MeasureControl(position='bottomleft', primary_length_unit='kilometers', secondary_length_unit='miles').add_to(m)
         
         # Custom CSS to fix measure control visibility
@@ -291,7 +425,7 @@ class MapRenderer:
                     if seg.is_empty or len(seg.coords) < 2:
                         continue
                     coords = list(seg.coords)
-                    coords_norm = [(lat, normalize_longitude(lon)) for lon, lat in coords]
+                    coords_norm = shapely_coords_to_folium(coords)
                     if is_central:
                         track_color = "#00FF00"
                         track_weight = 4
@@ -457,6 +591,20 @@ class MapRenderer:
                     ).add_to(m)
 
         # Return map data for drawing tool
+        # Show zoom-based filtering note for large pass sets (2.9)
+        if passes and len(passes) > 50:
+            _zoom_level = zoom if zoom else 2
+            if _zoom_level < 8:
+                _note_html = """
+                <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+                            background:rgba(0,0,0,0.7);color:white;padding:8px 16px;
+                            border-radius:8px;font-size:13px;z-index:1000;
+                            border:1px solid #2ecc71;">
+                    🔍 Showing %d of %d passes — zoom in for more
+                </div>
+                """ % (len(passes), len(passes))
+                m.get_root().html.add_child(_Elem(_note_html))
+        
         map_data = st_folium(m, key=f"map_{map_key}", width="100%", height=height,
                              returned_objects=["last_active_drawing"])
         return map_data

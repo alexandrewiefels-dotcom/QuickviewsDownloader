@@ -1,7 +1,39 @@
 # ============================================================================
-# FILE: backup_manager.py – Versioned backup system for any project
+# FILE: backup_manager.py - Versioned backup system for any project
 # UPDATED: Added collision protection, excludes dot-folders, editable project name
 # ============================================================================
+'''
+EXAMPLES:
+# 0. Best: 
+python backup_manager.py --create-zip --description "Release checkpoint"
+
+# 1. Create a simple backup (folder)
+python backup_manager.py --create
+
+# 2. Create a backup with description
+python backup_manager.py --create --description "Before adding tasking feature"
+
+# 3. Create a compressed zip backup
+python backup_manager.py --create-zip --description "Release v2.0"
+
+# 4. List all available backups
+python backup_manager.py --list
+
+# 5. Preview what would be restored (dry run)
+python backup_manager.py --restore 1.0.5 --dry-run
+
+# 6. Restore a specific version
+python backup_manager.py --restore 1.0.5
+
+# 7. Clean old backups, keep only the 5 most recent
+python backup_manager.py --cleanup --keep 5
+
+# 8. Show backup statistics
+python backup_manager.py --size
+
+# 9. Export detailed manifest to JSON
+python backup_manager.py --manifest backup_manifest.json
+'''
 
 import os
 import re
@@ -25,7 +57,7 @@ class BackupManager:
     # ================================================================
     # EDIT THIS VARIABLE TO MATCH YOUR PROJECT
     # ================================================================
-    PROJECT_NAME = "OrbitShow"  # ← Change this to your project name
+    PROJECT_NAME = "App_SASCloud_Scraping"  # <- Change this to your project name
     # ================================================================
     
     # Excluded directories (case insensitive for some)
@@ -94,8 +126,8 @@ class BackupManager:
         self.metadata_file = self.backup_base / "backup_metadata.json"
         self._load_metadata()
         
-        print(f"📁 Project root: {self.project_root}")
-        print(f"📁 Backup base: {self.backup_base}")
+        print(f"[FOLDER] Project root: {self.project_root}")
+        print(f"[FOLDER] Backup base: {self.backup_base}")
     
     def _is_dot_folder(self, path: Path) -> bool:
         """Check if any part of the path starts with a dot (.)"""
@@ -200,9 +232,16 @@ class BackupManager:
         versions = []
         for backup in self.metadata["backups"]:
             try:
-                parts = backup["version"].split('.')
-                versions.append(int(parts[-1]))
-            except (ValueError, KeyError, IndexError):
+                ver = backup["version"]
+                # Handle both string ("1.0.5") and integer (1) versions
+                if isinstance(ver, int):
+                    versions.append(ver)
+                elif isinstance(ver, str):
+                    parts = ver.split('.')
+                    versions.append(int(parts[-1]))
+                else:
+                    versions.append(0)
+            except (ValueError, KeyError, IndexError, AttributeError):
                 versions.append(0)
         
         if versions:
@@ -237,7 +276,7 @@ class BackupManager:
         backup_path = self._get_unique_path(self.backup_base / backup_name)
         backup_path.mkdir(parents=True, exist_ok=True)
         
-        print(f"\n📦 Creating backup: {backup_path.name}")
+        print(f"\n[PACKAGE] Creating backup: {backup_path.name}")
         
         # Copy all project files
         file_count = 0
@@ -273,7 +312,7 @@ class BackupManager:
         self.metadata["last_backup"] = timestamp.isoformat()
         self._save_metadata()
         
-        print(f"✅ Backup created: {backup_path.name}")
+        print(f"[OK] Backup created: {backup_path.name}")
         print(f"   Version: v{version}")
         print(f"   Files backed up: {file_count}")
         
@@ -306,7 +345,7 @@ class BackupManager:
         # Ensure unique zip filename
         zip_path = self._get_unique_path(backup_dir / zip_name)
         
-        print(f"\n📦 Creating zip archive: {zip_path.name}")
+        print(f"\n[ZIP] Creating zip archive: {zip_path.name}")
         
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for file_path in backup_dir.rglob("*"):
@@ -314,7 +353,7 @@ class BackupManager:
                     arcname = file_path.relative_to(backup_dir)
                     zipf.write(file_path, arcname)
         
-        print(f"✅ Zip backup created: {zip_path.name}")
+        print(f"[OK] Zip backup created: {zip_path.name}")
         print(f"   Size: {zip_path.stat().st_size / (1024*1024):.2f} MB")
         
         return zip_path
@@ -343,24 +382,24 @@ class BackupManager:
                 break
         
         if not backup_info:
-            print(f"❌ Backup version {version} not found")
+            print(f"[ERR] Backup version {version} not found")
             print(f"   Available versions: {[b['version'] for b in self.metadata['backups']]}")
             return False
         
         backup_path = Path(backup_info["path"])
         if not backup_path.exists():
-            print(f"❌ Backup directory not found: {backup_path}")
+            print(f"[ERR] Backup directory not found: {backup_path}")
             return False
         
         if target_dir is None:
             target_dir = self.project_root
         
-        print(f"\n🔄 Restoring backup v{version}")
+        print(f"\n[RESTORE] Restoring backup v{version}")
         print(f"   From: {backup_path}")
         print(f"   To: {target_dir}")
         
         if dry_run:
-            print("\n📋 Files that would be restored:")
+            print("\n[LIST] Files that would be restored:")
             for item in backup_path.rglob("*"):
                 if item.is_file() and item.name != "backup_info.json":
                     rel = item.relative_to(backup_path)
@@ -370,7 +409,7 @@ class BackupManager:
         
         # Create a pre-restore backup for safety
         pre_restore_backup = self.create_backup(f"Pre-restore before restoring v{version}")
-        print(f"📦 Created safety backup: v{pre_restore_backup['version']}")
+        print(f"[OK] Created safety backup: v{pre_restore_backup['version']}")
         
         # Restore files
         restored_count = 0
@@ -387,7 +426,7 @@ class BackupManager:
                 shutil.copy2(item, dst)
             restored_count += 1
         
-        print(f"✅ Restored version {version} ({restored_count} items)")
+        print(f"[OK] Restored version {version} ({restored_count} items)")
         return True
     
     def cleanup_old_backups(self, keep_count: int = 10) -> int:
@@ -401,7 +440,7 @@ class BackupManager:
             Number of backups deleted
         """
         if len(self.metadata["backups"]) <= keep_count:
-            print(f"ℹ️ Only {len(self.metadata['backups'])} backups, nothing to clean (keep={keep_count})")
+            print(f"[INFO] Only {len(self.metadata['backups'])} backups, nothing to clean (keep={keep_count})")
             return 0
         
         to_delete = self.metadata["backups"][:-keep_count]
@@ -412,13 +451,13 @@ class BackupManager:
             if backup_path.exists():
                 shutil.rmtree(backup_path)
                 deleted_count += 1
-                print(f"🗑️ Deleted old backup: v{backup['version']} ({backup['timestamp'][:19]})")
+                print(f"[DEL] Deleted old backup: v{backup['version']} ({backup['timestamp'][:19]})")
         
         # Keep only the most recent backups
         self.metadata["backups"] = self.metadata["backups"][-keep_count:]
         self._save_metadata()
         
-        print(f"✅ Cleanup complete. Kept {keep_count} backups, deleted {deleted_count}")
+        print(f"[OK] Cleanup complete. Kept {keep_count} backups, deleted {deleted_count}")
         return deleted_count
     
     def get_backup_size(self, version: str = None) -> float:
@@ -525,13 +564,25 @@ Examples:
     elif args.list:
         backups = manager.list_backups()
         if not backups:
-            print("\n📦 No backups found.")
+            print("\n[INFO] No backups found.")
         else:
-            print("\n📦 Available Backups:")
-            print("-" * 90)
+            print("\n[LIST] Available Backups:")
+            print("-" * 100)
             for b in backups:
-                size = manager.get_backup_size(b["version"])
-                print(f"  v{b['version']:<8} | {b['timestamp'][:19]} | {b['description'] or 'No description':<30} | {b['file_count']:>6} files | {size:.2f} MB")
+                ver = b.get("version", "?")
+                ts = b.get("timestamp", "?")[:19]
+                desc = b.get("description") or "No description"
+                fc = b.get("file_count", 0)
+                # Handle old schema (version as int, rel_path instead of path)
+                if "rel_path" in b:
+                    size_str = "N/A (old format)"
+                else:
+                    try:
+                        size = manager.get_backup_size(ver)
+                        size_str = f"{size:.2f} MB"
+                    except:
+                        size_str = "N/A"
+                print(f"  v{str(ver):<8} | {ts} | {desc:<30} | {fc:>6} files | {size_str}")
     
     elif args.restore:
         manager.restore_backup(args.restore, dry_run=args.dry_run)
@@ -541,7 +592,7 @@ Examples:
     
     elif args.size:
         total_size = manager.get_backup_size()
-        print(f"\n📊 Backup Statistics for {BackupManager.PROJECT_NAME}:")
+        print(f"\n[STATS] Backup Statistics for {BackupManager.PROJECT_NAME}:")
         print(f"   Total backups: {len(manager.list_backups())}")
         print(f"   Total size: {total_size:.2f} MB")
         print(f"   Backup location: {manager.backup_base}")
@@ -550,7 +601,7 @@ Examples:
         manifest = manager.export_manifest()
         with open(args.manifest, 'w', encoding='utf-8') as f:
             json.dump(manifest, f, indent=2, default=str)
-        print(f"✅ Manifest exported to: {args.manifest}")
+        print(f"[OK] Manifest exported to: {args.manifest}")
     
     else:
         parser.print_help()

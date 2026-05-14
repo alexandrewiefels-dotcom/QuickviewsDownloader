@@ -6,10 +6,11 @@ import hashlib
 import hmac
 from datetime import datetime, timedelta
 
-# Admin credentials (in production, use environment variables or database)
-# These are hashed for basic security - change these values!
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD_HASH = hashlib.sha256("OrbitShow2024!".encode()).hexdigest()
+# Admin credentials — loaded from environment variables ONLY
+# Set ORBITSHOW_ADMIN_USERNAME and ORBITSHOW_ADMIN_PASSWORD in your environment.
+# If not set, admin access is disabled by default.
+ADMIN_USERNAME = None
+ADMIN_PASSWORD_HASH = None
 
 # Session timeout in hours
 SESSION_TIMEOUT_HOURS = 8

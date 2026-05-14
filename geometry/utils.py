@@ -150,3 +150,17 @@ def clip_geometry_to_latitude_band(geom, min_lat, max_lat, margin_deg=1e-6):
     elif clipped.geom_type == 'MultiLineString':
         clipped = max(clipped.geoms, key=lambda ls: ls.length)
     return clipped
+
+
+def shapely_coords_to_folium(coords):
+    """
+    Convert shapely coordinate tuples (lon, lat) to Folium-compatible (lat, lon) tuples,
+    normalizing longitude to [-180, 180].
+    
+    Args:
+        coords: List of (lon, lat) tuples from shapely
+    
+    Returns:
+        List of (lat, normalized_lon) tuples for Folium
+    """
+    return [(lat, normalize_longitude(lon)) for lon, lat in coords]

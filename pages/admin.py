@@ -23,6 +23,8 @@ from pages.admin_dashboard import (
     render_log_streaming_tab,
     render_custom_satellites_tab,
     render_sasclouds_stats_tab,
+    render_tool_usage_tab,
+    render_per_user_activity_tab,
 )
 
 def safe_load_messages():
@@ -105,14 +107,16 @@ def main():
         "🛰️ TLE Stats",          # 5
         "📁 Logs Management",    # 6
         "🗄️ SASClouds",          # 7
-        "🖥️ System Health",      # 8
-        "🗄️ Cache Mgmt",         # 9
-        "👤 Session Mgmt",       # 10
-        "💾 Backup/Restore",     # 11
-        "🔑 API Status",         # 12
-        "📜 Log Stream",         # 13
-        "🛰️ Custom Sats",        # 14
-        "👥 Active Users"        # 15
+        "🔧 Tool Usage",         # 8
+        "👤 Per-User Activity",  # 9
+        "🖥️ System Health",      # 10
+        "🗄️ Cache Mgmt",         # 11
+        "👤 Session Mgmt",       # 12
+        "💾 Backup/Restore",     # 13
+        "🔑 API Status",         # 14
+        "📜 Log Stream",         # 15
+        "🛰️ Custom Sats",        # 16
+        "👥 Active Users"        # 17
     ])
 
     with tabs[0]:
@@ -132,20 +136,24 @@ def main():
     with tabs[7]:
         render_sasclouds_stats_tab()
     with tabs[8]:
-        render_system_health_tab()
+        render_tool_usage_tab()
     with tabs[9]:
-        render_cache_management_tab()
+        render_per_user_activity_tab()
     with tabs[10]:
-        render_session_management_tab()
+        render_system_health_tab()
     with tabs[11]:
-        render_backup_restore_tab()
+        render_cache_management_tab()
     with tabs[12]:
-        render_api_status_tab()
+        render_session_management_tab()
     with tabs[13]:
-        render_log_streaming_tab()
+        render_backup_restore_tab()
     with tabs[14]:
-        render_custom_satellites_tab()
+        render_api_status_tab()
     with tabs[15]:
+        render_log_streaming_tab()
+    with tabs[16]:
+        render_custom_satellites_tab()
+    with tabs[17]:
         render_active_users_tab()
 
 if __name__ == "__main__":

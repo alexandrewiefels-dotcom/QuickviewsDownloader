@@ -21,14 +21,28 @@ def _get_secret(key, default=None):
         return os.environ.get(key, default)
 
 
-OWM_API_KEY = _get_secret("OWM_API_KEY", "740a31e487b89273db699333535fd6df")
-
-if "weather_api_exhausted" not in st.session_state:
-    st.session_state.weather_api_exhausted = False
+# WARNING: Do NOT hardcode API keys. Set OWM_API_KEY in Streamlit secrets or env vars.
+OWM_API_KEY = _get_secret("OWM_API_KEY", None)
 
 # Cache for weather data (TTL 1 hour)
 _weather_cache = {}
 _CACHE_TTL_SECONDS = 3600
+_weather_session_initialized = False
+
+
+def _ensure_session_state():
+    """Lazy-initialize Streamlit session state for weather tracking.
+    Safe to call outside Streamlit runtime (no-op if session_state unavailable)."""
+    global _weather_session_initialized
+    if _weather_session_initialized:
+        return
+    try:
+        if "weather_api_exhausted" not in st.session_state:
+            st.session_state.weather_api_exhausted = False
+        _weather_session_initialized = True
+    except (AttributeError, KeyError):
+        # Not running inside Streamlit — session_state not available
+        pass
 
 
 def _get_cache_key(lat: float, lon: float, dt: datetime) -> str:
@@ -44,6 +58,8 @@ def get_cloud_cover_onecall(lat: float, lon: float, dt: datetime) -> float:
     Utilise l'API One Call 3.0 (endpoint /timemachine).
     Retourne None si la date est hors de la plage ou si l'API échoue.
     """
+    _ensure_session_state()
+
     if not OWM_API_KEY:
         logger.warning("OpenWeatherMap API key not set")
         return None

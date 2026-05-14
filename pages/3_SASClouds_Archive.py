@@ -17,6 +17,7 @@ from pathlib import Path
 
 import streamlit as st
 
+
 # ── Path bootstrap: ensure project root is importable ─────────────────────────
 _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
@@ -90,6 +91,23 @@ if f"{_SP}_session_id" not in st.session_state:
     st.session_state[f"{_SP}_session_id"] = str(uuid.uuid4())
 
 session_id = st.session_state[f"{_SP}_session_id"]
+
+# ── Handle footprint click / popup quickview toggle (from map) ──────────────
+try:
+    _qv_toggle = st.query_params.get("qv_toggle")
+    if _qv_toggle is not None:
+        try:
+            _toggle_idx = int(_qv_toggle)
+            _existing = set(st.session_state.get(f"{_SP}_preview_indices") or set())
+            _existing.discard(_toggle_idx) if _toggle_idx in _existing else _existing.add(_toggle_idx)
+            st.session_state[f"{_SP}_preview_indices"] = _existing
+        except (ValueError, TypeError):
+            pass
+        # Clear the query param to avoid re-triggering on rerun
+        st.query_params.clear()
+        st.rerun()
+except Exception:
+    pass
 
 # ── Page header ───────────────────────────────────────────────────────────────
 st.title("🛰️ SASClouds Archive")

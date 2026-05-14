@@ -147,18 +147,39 @@ def track_aoi_selection(aoi_type, source, geometry, country=None, area=None, ip=
 def handle_aoi_upload(uploaded_file, aoi_handler):
     from shapely.geometry import Polygon, MultiPolygon
     
+    # --- File size validation ---
+    file_bytes = uploaded_file.getvalue()
+    file_size_mb = len(file_bytes) / (1024 * 1024)
+    if file_size_mb > MAX_AOI_FILE_SIZE_MB:
+        st.error(
+            f"❌ File too large: {file_size_mb:.1f} MB. "
+            f"Maximum allowed: {MAX_AOI_FILE_SIZE_MB} MB."
+        )
+        logger.warning(f"[AOI Upload] Rejected oversized file: {uploaded_file.name} ({file_size_mb:.1f} MB)")
+        return False
+    
+    # --- Extension validation ---
+    allowed_extensions = {'.geojson', '.json', '.kml', '.kmz', '.gpkg', '.shp', '.zip'}
+    suffix = os.path.splitext(uploaded_file.name)[1].lower()
+    if suffix not in allowed_extensions:
+        st.error(
+            f"❌ Unsupported file format: '{suffix}'. "
+            f"Allowed: {', '.join(sorted(allowed_extensions))}"
+        )
+        logger.warning(f"[AOI Upload] Rejected unsupported format: {uploaded_file.name} ({suffix})")
+        return False
+    
     overlay = _show_upload_overlay("Processing AOI file, please wait...")
     
     try:
-        logger.info(f"[AOI Upload] Début pour {uploaded_file.name}")
-        file_hash = hashlib.md5(uploaded_file.getvalue()).hexdigest()
+        logger.info(f"[AOI Upload] Processing {uploaded_file.name} ({file_size_mb:.2f} MB)")
+        file_hash = hashlib.md5(file_bytes).hexdigest()
         if st.session_state.get('uploaded_file_hash') == file_hash:
             logger.info("[AOI Upload] Duplicate file, already loaded – consider success")
             return True
         st.session_state.uploaded_file_hash = file_hash
-        suffix = os.path.splitext(uploaded_file.name)[1].lower()
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            tmp.write(uploaded_file.getvalue())
+            tmp.write(file_bytes)
             tmp_path = tmp.name
         try:
             aoi = aoi_handler.load_from_filepath(tmp_path)
@@ -203,7 +224,8 @@ def _save_aoi(aoi, vertex_count, filename):
         area_value, area_unit = AOIHandler.calculate_area(aoi)
         st.success(f"✅ AOI loaded from {filename}")
         st.info(f"📐 Area: {area_value:,.2f} {area_unit} | Vertices: {vertex_count}")
-    except:
+    except Exception:
+        logger.warning(f"Could not calculate area for AOI from {filename}")
         st.success(f"✅ AOI loaded from {filename} ({vertex_count} vertices)")
     try:
         track_aoi_selection(

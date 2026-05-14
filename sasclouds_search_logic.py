@@ -144,12 +144,16 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
                     "http://quickview.sasclouds.com",
                     "https://quickview.obs.cn-north-10.myhuaweicloud.com",
                 )
+                # Build a meaningful scene name from productId or fallback
+                pid_str = (prod_id or "").strip()
+                scene_name = pid_str if pid_str and pid_str.lower() != "none" else f"{sat}_{sensor}_{date_str}"
                 features_for_map.append({
                     "geometry": footprint,
                     "properties": {
                         "satellite": sat, "sensor": sensor,
                         "date": date_str, "cloud": cloud,
                         "product_id": prod_id, "quickview": quickview_url,
+                        "scene_name": scene_name,
                     },
                 })
 
@@ -166,6 +170,23 @@ def run_search(polygon_geojson, aoi_filename, start_date, end_date,
             st.session_state[f"{state_prefix}_scenes"]              = all_scenes
             st.session_state[f"{state_prefix}_features_download"]   = features_for_map
             st.session_state[f"{state_prefix}_features_map"]        = features_for_map
+
+            # Show all quickviews by default when the map loads
+            st.session_state[f"{state_prefix}_preview_indices"] = set(range(len(features_for_map)))
+
+            # Track this SASClouds search in the unified navigation system
+            try:
+                from navigation.tracker import track_sasclouds_search
+                track_sasclouds_search(
+                    satellites=sat_names,
+                    cloud_max=max_cloud,
+                    date_from=str(start_date),
+                    date_to=str(end_date),
+                    scenes_found=len(all_scenes),
+                    aoi_filename=aoi_filename,
+                )
+            except Exception:
+                pass
 
             progress.progress(100, text=f"Done — {len(all_scenes)} scenes")
             add_log(f"✅ Complete. {len(all_scenes)} scenes ready.")
@@ -216,9 +237,9 @@ def render_results_table(state_prefix: str = "sc"):
             st.session_state[f"{state_prefix}_results_page"] = page + 1
             st.rerun()
 
-    W = [0.35, 1.4, 1.1, 1.5, 0.75, 0.55]
+    W = [0.35, 1.2, 1.0, 2.5, 1.2, 0.65, 0.55]
     hdr = st.columns(W)
-    for col, label in zip(hdr, ["", "Satellite", "Sensor", "Date", "Cloud %", ""]):
+    for col, label in zip(hdr, ["", "Satellite", "Sensor", "Scene Name", "Date", "Cloud %", ""]):
         col.markdown(f"**{label}**")
     st.divider()
 
@@ -231,25 +252,29 @@ def render_results_table(state_prefix: str = "sc"):
         sen = scene.get("sensorId", "")
         dt = datetime.fromtimestamp(scene.get("acquisitionTime", 0) / 1000).strftime("%Y-%m-%d")
         cld = scene.get("cloudPercent", 0)
+        prod_id = scene.get("productId", "") or ""
+        # Build a meaningful scene name from productId or fallback
+        scene_name = prod_id.strip() if prod_id.strip() and prod_id.strip().lower() != "none" else f"{sat}_{sen}_{dt}"
 
         row = st.columns(W)
         row[0].checkbox("Select", key=f"{state_prefix}_chk_{idx}", label_visibility="collapsed")
         row[1].write(sat)
         row[2].write(sen)
-        row[3].write(dt)
-        row[4].write(f"{cld:.1f}")
+        row[3].write(scene_name)
+        row[4].write(dt)
+        row[5].write(f"{cld:.1f}")
 
         preview_indices = st.session_state.get(f"{state_prefix}_preview_indices") or set()
         preview_active = idx in preview_indices
         eye_label = "🔍" if preview_active else "👁️"
-        if row[5].button(eye_label, key=f"{state_prefix}_eye_{idx}", help="Show quickview on map"):
+        if row[6].button(eye_label, key=f"{state_prefix}_eye_{idx}", help="Show quickview on map"):
             pset = set(st.session_state.get(f"{state_prefix}_preview_indices") or set())
             pset.discard(idx) if idx in pset else pset.add(idx)
             st.session_state[f"{state_prefix}_preview_indices"] = pset
             st.rerun()
 
     st.divider()
-    bc = st.columns(3)
+    bc = st.columns(4)
 
     with bc[0]:
         if st.button(
@@ -272,6 +297,19 @@ def render_results_table(state_prefix: str = "sc"):
             st.rerun()
 
     with bc[2]:
+        if st.button(
+            "👁️ Quickviews for Selected",
+            disabled=n_sel == 0,
+            use_container_width=True, key=f"{state_prefix}_qv_sel",
+            help="Show quickviews for all selected scenes on the map",
+        ):
+            pset = set(st.session_state.get(f"{state_prefix}_preview_indices") or set())
+            for i in sel_indices:
+                pset.add(i)
+            st.session_state[f"{state_prefix}_preview_indices"] = pset
+            st.rerun()
+
+    with bc[3]:
         if st.button("📥 Download All", use_container_width=True, key=f"{state_prefix}_dl_all"):
             _do_download_zip(all_scenes, features)
 
@@ -292,14 +330,14 @@ def _scene_basename(sat: str, sensor: str, date_str: str,
     Build a clean, non-None base name (no extension) for a scene file.
 
     Priority:
-      1. productId from the API response, if present and not 'None'
-      2. Filename extracted from the quickview URL path
+      1. Filename extracted from the quickview URL path (most descriptive)
+      2. productId from the API response, if present and not 'None'
       3. Sequential fallback:  <sat>_<sensor>_<date>_<idx:04d>
-    """
-    pid = str(prod_id or "").strip()
-    if pid and pid.lower() != "none":
-        return _fs_safe(f"{sat}_{sensor}_{date_str}_{pid}")
 
+    The quickview URL contains the most meaningful filename, e.g.:
+      .../zy302a_mux_054103_299099_20260225190937_01_sec_0004_2603023712.jpg
+    """
+    # Priority 1: extract filename from quickview URL
     if qv_url:
         url_path = qv_url.split("?")[0].rstrip("/")
         basename = url_path.rsplit("/", 1)[-1]
@@ -307,6 +345,12 @@ def _scene_basename(sat: str, sensor: str, date_str: str,
         if len(stem) > 4:
             return _fs_safe(stem)
 
+    # Priority 2: productId from the API response
+    pid = str(prod_id or "").strip()
+    if pid and pid.lower() != "none":
+        return _fs_safe(f"{sat}_{sensor}_{date_str}_{pid}")
+
+    # Priority 3: fallback using satellite + sensor + date + index
     return _fs_safe(f"{sat}_{sensor}_{date_str}_{idx:04d}")
 
 
@@ -336,6 +380,7 @@ def _do_download_zip(scenes: list, features: list):
                 img_path = temp_dir / img_name
 
                 status.write(f"[{idx + 1}/{len(scenes)}] {img_name}")
+                status.write(f"   URL: {qv_url[:120]}")
                 if client.download_and_georeference(qv_url, footprint, img_path):
                     ok += 1
                 else:

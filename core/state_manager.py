@@ -4,6 +4,11 @@ from datetime import date, timedelta, datetime, timezone
 from skyfield.api import load
 import hashlib
 import uuid
+import logging
+
+from core.exceptions import ConfigurationError
+
+logger = logging.getLogger(__name__)
 
 
 def init_session_state():
@@ -180,4 +185,112 @@ def init_session_state():
         st.session_state.min_coverage = 0.0
     if 'clip_margin_deg' not in st.session_state:
         st.session_state.clip_margin_deg = 10.0
+    
+    # ── Session persistence ──
+    if '_session_restored' not in st.session_state:
+        st.session_state._session_restored = False
+        _restore_session_from_query_params()
+    
+    # ── Map height for responsive sizing ──
+    if '_map_height' not in st.session_state:
+        st.session_state._map_height = 700
+
+
+def _restore_session_from_query_params():
+    """Restore session state from URL query parameters on page load."""
+    try:
+        query_params = st.query_params
+        
+        # Restore AOI from GeoJSON in query param
+        aoi_json = query_params.get("aoi_geojson")
+        if aoi_json:
+            try:
+                from shapely.geometry import shape
+                import json
+                aoi_geom = json.loads(aoi_json)
+                st.session_state.aoi = shape(aoi_geom)
+                st.session_state.map_center = [st.session_state.aoi.centroid.y, st.session_state.aoi.centroid.x]
+                logger.info("Restored AOI from query params")
+            except Exception as e:
+                logger.warning("Failed to restore AOI from query params: %s", e)
+        
+        # Restore date range
+        start = query_params.get("start_date")
+        end = query_params.get("end_date")
+        if start:
+            try:
+                st.session_state.start_date = date.fromisoformat(start)
+            except Exception:
+                pass
+        if end:
+            try:
+                st.session_state.end_date = date.fromisoformat(end)
+            except Exception:
+                pass
+        
+        # Restore filters
+        max_ona = query_params.get("max_ona")
+        if max_ona:
+            try:
+                st.session_state.max_ona = float(max_ona)
+            except Exception:
+                pass
+        
+        min_ona = query_params.get("min_ona")
+        if min_ona:
+            try:
+                st.session_state.min_ona = float(min_ona)
+            except Exception:
+                pass
+        
+        orbit = query_params.get("orbit_filter")
+        if orbit:
+            st.session_state.orbit_filter = orbit
+        
+        daylight = query_params.get("daylight_filter")
+        if daylight:
+            st.session_state.daylight_filter = daylight
+        
+        # Restore dark mode
+        dark = query_params.get("dark_mode")
+        if dark:
+            st.session_state.dark_mode = dark.lower() == "true"
+        
+        st.session_state._session_restored = True
+        logger.info("Session state restored from query params")
+    except Exception as e:
+        logger.warning("Error restoring session: %s", e)
+
+
+def save_session_to_query_params():
+    """Save current session state to URL query parameters.
+    
+    Only writes params that have actually changed to avoid triggering
+    unnecessary Streamlit reruns (which happen when query_params is modified).
+    """
+    try:
+        _params = dict(st.query_params)
+        _changed = False
+
+        def _set_if_changed(key: str, value: str):
+            nonlocal _changed
+            if _params.get(key) != value:
+                st.query_params[key] = value
+                _changed = True
+
+        if st.session_state.get('aoi') and not st.session_state.aoi.is_empty:
+            from shapely.geometry import mapping
+            import json
+            aoi_geojson = json.dumps(mapping(st.session_state.aoi))
+            _set_if_changed("aoi_geojson", aoi_geojson)
+        
+        _set_if_changed("start_date", st.session_state.get('start_date', date.today()).isoformat())
+        _set_if_changed("end_date", st.session_state.get('end_date', (date.today() + timedelta(days=3))).isoformat())
+        _set_if_changed("max_ona", str(st.session_state.get('max_ona', 15.0)))
+        _set_if_changed("min_ona", str(st.session_state.get('min_ona', 0.0)))
+        _set_if_changed("orbit_filter", st.session_state.get('orbit_filter', 'Descending'))
+        _set_if_changed("daylight_filter", st.session_state.get('daylight_filter', 'Daylight only (9am - 3pm local time)'))
+        _set_if_changed("dark_mode", str(st.session_state.get('dark_mode', True)))
+    except Exception as e:
+        logger.warning("Error saving session to query params: %s", e)
 

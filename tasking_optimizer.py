@@ -31,7 +31,7 @@ from geometry.footprint import create_swath_ribbon_spherical, shift_linestring, 
 # Constants
 FOOTPRINT_MARGIN_DEG = 0.5
 TRACK_MARGIN_DEG = 2.0
-OVERLAP_PERCENT = 50.0   # 10% of the smaller swath
+OVERLAP_PERCENT = 10.0   # 10% of the smaller swath
 
 # --------------------------------------------------------------------------
 # Helper: timestamped print

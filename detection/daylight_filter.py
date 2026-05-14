@@ -2,6 +2,7 @@
 # FILE: detection/daylight_filter.py
 # Daylight filter using solar time (longitude-based approximation)
 # No external timezone databases required
+# FIX: Replaced all print() with logging
 # ============================================================================
 import logging
 from datetime import datetime, timezone as dt_timezone
@@ -23,6 +24,7 @@ def get_local_solar_hour(pass_time_utc, aoi_centroid_lon):
     local_hour = (utc_hour + lon_correction) % 24
     return local_hour
 
+
 def get_local_time_political(pass_time, aoi):
     """
     Return local time string using political timezone approximation (round(lon/15)).
@@ -34,6 +36,7 @@ def get_local_time_political(pass_time, aoi):
     offset_hours = round(lon / 15)
     local_time = pass_time + timedelta(hours=offset_hours)
     return local_time.strftime("%Y-%m-%d %H:%M:%S")
+
 
 def is_pass_in_daylight(pass_start_time, aoi_centroid_lat, aoi_centroid_lon,
                          start_hour=9, end_hour=15):
@@ -48,13 +51,11 @@ def is_pass_in_daylight(pass_start_time, aoi_centroid_lat, aoi_centroid_lon,
     is_daylight = start_hour <= local_hour <= end_hour
 
     if not is_daylight:
-        logger.info(f"❌ FILTERED: UTC={pass_start_time.strftime('%H:%M')} "
-                    f"→ Solar hour={local_hour:.2f} (range {start_hour}-{end_hour})")
-        print(f"[DaylightFilter] ❌ FILTERED: UTC={pass_start_time.strftime('%H:%M')} -> Solar hour={local_hour:.1f}")
+        logger.info("❌ FILTERED: UTC=%s → Solar hour=%.2f (range %d-%d)",
+                    pass_start_time.strftime('%H:%M'), local_hour, start_hour, end_hour)
     else:
-        logger.info(f"✅ KEPT: UTC={pass_start_time.strftime('%H:%M')} "
-                    f"→ Solar hour={local_hour:.2f} (range {start_hour}-{end_hour})")
-        print(f"[DaylightFilter] ✅ KEPT: UTC={pass_start_time.strftime('%H:%M')} -> Solar hour={local_hour:.1f}")
+        logger.info("✅ KEPT: UTC=%s → Solar hour=%.2f (range %d-%d)",
+                    pass_start_time.strftime('%H:%M'), local_hour, start_hour, end_hour)
 
     return is_daylight
 
@@ -70,12 +71,12 @@ def filter_daylight_passes(passes, aoi, start_hour=9, end_hour=15):
     centroid = aoi.centroid
     centroid_lon = centroid.x
 
-    print(f"\n{'='*60}")
-    print(f"[DaylightFilter] AOI centroid longitude: {centroid_lon:.4f}°")
-    print(f"[DaylightFilter] Using solar time (local hour = UTC + lon/15)")
-    print(f"[DaylightFilter] Daylight hours: {start_hour}:00 to {end_hour}:00 solar time")
-    print(f"[DaylightFilter] Total passes to filter: {len(passes)}")
-    print(f"{'='*60}\n")
+    logger.info("=" * 60)
+    logger.info("AOI centroid longitude: %.4f°", centroid_lon)
+    logger.info("Using solar time (local hour = UTC + lon/15)")
+    logger.info("Daylight hours: %d:00 to %d:00 solar time", start_hour, end_hour)
+    logger.info("Total passes to filter: %d", len(passes))
+    logger.info("=" * 60)
 
     filtered_passes = []
     kept_count = 0
@@ -98,18 +99,30 @@ def filter_daylight_passes(passes, aoi, start_hour=9, end_hour=15):
         else:
             filtered_count += 1
 
-    print(f"\n{'='*60}")
-    print(f"[DaylightFilter] RESULT: kept {kept_count} of {len(passes)} passes (filtered {filtered_count})")
+    logger.info("=" * 60)
+    logger.info("RESULT: kept %d of %d passes (filtered %d)", kept_count, len(passes), filtered_count)
 
     if kept_count == 0 and len(passes) > 0:
-        print(f"\n⚠️⚠️⚠️ [DaylightFilter] ALL {len(passes)} passes were filtered out! ⚠️⚠️⚠️")
-        print(f"[DaylightFilter] Possible reasons:")
-        print(f"   1. AOI longitude is such that all passes occur outside {start_hour}:00-{end_hour}:00 solar time")
-        print(f"   2. The passes are at night (typical for sun-synchronous satellites in some seasons)")
-        print(f"[DaylightFilter] AOI longitude: {centroid_lon:.4f}°")
-        print(f"\n💡 SUGGESTION: Change 'Pass time filter' to 'All times' in the sidebar to see all passes.\n")
+        logger.warning("ALL %d passes were filtered out!", len(passes))
+        logger.warning("Possible reasons:")
+        logger.warning("  1. AOI longitude is such that all passes occur outside %d:00-%d:00 solar time", start_hour, end_hour)
+        logger.warning("  2. The passes are at night (typical for sun-synchronous satellites in some seasons)")
+        logger.warning("  AOI longitude: %.4f°", centroid_lon)
+        logger.warning("SUGGESTION: Change 'Pass time filter' to 'All times' in the sidebar to see all passes.")
 
-    print(f"{'='*60}\n")
+    logger.info("=" * 60)
+
+    # Store filter stats in session state for UI display
+    try:
+        import streamlit as st
+        st.session_state._daylight_filter_stats = {
+            "kept": kept_count,
+            "filtered": filtered_count,
+            "total": len(passes),
+            "active": True
+        }
+    except (ImportError, RuntimeError):
+        pass
 
     return filtered_passes
 

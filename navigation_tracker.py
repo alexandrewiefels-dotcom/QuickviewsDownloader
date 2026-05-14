@@ -97,7 +97,7 @@ def get_active_sessions(minutes_active: int = 5) -> dict:
     try:
         with open(log_file, 'r', encoding='utf-8') as f:
             events = json.load(f)
-    except:
+    except (json.JSONDecodeError, IOError):
         return {"count": 0, "sessions": []}
     
     sessions = {}
@@ -229,9 +229,27 @@ def cleanup_old_logs(max_age_hours: int = 48):
     if deleted:
         print(f"[LogCleanup] Deleted {deleted} old daily tracking files")
 
+# Rate limiter for IP geolocation: max 1 request per 10 seconds per IP
+_ip_geo_last_call = {}
+
 @lru_cache(maxsize=1000)
 def get_ip_geolocation(ip: str) -> dict:
-    """Get country and city from IP using ip-api.com."""
+    """
+    Get country and city from IP using ip-api.com (free, no API key needed).
+    
+    PRIVACY NOTICE: This sends the user's IP address to ip-api.com for geolocation.
+    The service is free for non-commercial use (up to 45 requests/minute).
+    No IP addresses are stored by this application — only the resulting country/city.
+    
+    Rate limited to 1 request per 10 seconds per unique IP.
+    """
+    # Rate limiting
+    now = time.time()
+    last_call = _ip_geo_last_call.get(ip, 0)
+    if now - last_call < 10:
+        return {"country": "Cached", "city": "Cached"}
+    _ip_geo_last_call[ip] = now
+    
     if ip == "unknown" or ip.startswith("127.") or ip.startswith("192.168."):
         return {"country": "Local", "city": "Local"}
     try:
@@ -365,7 +383,7 @@ def _ensure_datetime(value):
     if isinstance(value, str):
         try:
             return datetime.fromisoformat(value)
-        except:
+        except (ValueError, TypeError):
             return datetime.now()
     return value if isinstance(value, datetime) else datetime.now()
 

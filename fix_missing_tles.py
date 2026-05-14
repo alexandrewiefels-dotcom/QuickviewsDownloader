@@ -8,11 +8,42 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from force_download_tles import download_single_satellite, show_cache_status
+from data.tle_fetcher import TLEFetcher, get_tle_fetcher, get_supplier_stats
 from config.satellites import SATELLITES
 
 # List of NORADs that failed in the last run
 FAILED_NORADS = [44713, 49255, 46455]  # Add more as they fail
+
+def download_single_satellite(norad: int) -> bool:
+    """Download TLE for a single satellite using the TLEFetcher."""
+    fetcher = get_tle_fetcher()
+    tle = fetcher.fetch(norad, force_refresh=True)
+    if tle:
+        print(f"✅ NORAD {norad} downloaded successfully")
+        return True
+    else:
+        print(f"❌ NORAD {norad} still missing after all attempts")
+        return False
+
+def show_cache_status():
+    """Display current TLE cache status."""
+    fetcher = get_tle_fetcher()
+    status = fetcher.get_cache_status()
+    print("=" * 70)
+    print("  TLE CACHE STATUS")
+    print("=" * 70)
+    print(f"  Total satellites in cache: {status['total_satellites']}")
+    print(f"  Cache age: {status['cache_age_hours']} hours")
+    print(f"  Accuracy: {status['accuracy']}")
+    print(f"  Generated TLEs: {status['generated_tles']}")
+    print(f"  Pending missing downloads: {status['pending_missing_downloads']}")
+    print(f"  Space-Track available: {status['space_track_available']}")
+    print()
+    stats = get_supplier_stats()
+    if stats:
+        print("  Supplier Stats:")
+        for supplier, data in stats.items():
+            print(f"    {supplier}: {data.get('success', 0)}/{data.get('total', 0)} successful")
 
 def fix_failed_satellites():
     """Attempt to re-download failed satellites"""

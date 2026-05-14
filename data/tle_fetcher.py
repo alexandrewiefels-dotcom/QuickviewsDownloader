@@ -14,6 +14,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Tuple, Dict, List
 import warnings
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Constants
 EARTH_RADIUS_KM = 6371.0
@@ -26,10 +29,12 @@ SPACE_TRACK_LAST_QUERY_FILE = Path("data/space_track_last_query.json")
 MISSING_NORADS_FILE = Path("data/missing_norads.json")
 SUPPLIER_STATS_FILE = Path("data/supplier_stats.json")
 
-# Space-Track API URLs
-SPACE_TRACK_AUTH_URL = "https://www.space-track.org/ajaxauth/login"
-SPACE_TRACK_LOGOUT_URL = "https://www.space-track.org/ajaxauth/logout"
-SPACE_TRACK_BULK_BASE = "https://www.space-track.org/basicspacedata/query/class/gp/"
+# Space-Track is now handled by data/space_track_fetcher.py (bulk, once-per-hour, off-peak)
+from data.space_track_fetcher import (
+    SpaceTrackBulkFetcher,
+    get_space_track_fetcher as get_st_fetcher,
+    reset_space_track_fetcher as reset_st_fetcher,
+)
 
 # N2YO.com API (automatic fallback)
 N2YO_TLE_URL = "https://api.n2yo.com/rest/v1/satellite/tle/{norad}&apiKey={api_key}"
@@ -71,7 +76,8 @@ def _load_failed_norads() -> dict:
     try:
         with open(FAILED_NORADS_FILE, 'r') as f:
             return json.load(f)
-    except:
+    except (json.JSONDecodeError, IOError):
+        logger.warning(f"Could not read {FAILED_NORADS_FILE}, returning empty")
         return {}
 
 def clear_all_failed_norads():
@@ -135,7 +141,7 @@ def should_skip_norad(norad: int) -> bool:
             skip_time = datetime.fromisoformat(skip_until)
             if datetime.now() < skip_time:
                 return True
-        except:
+        except (ValueError, TypeError):
             pass
     return False
 
@@ -241,7 +247,8 @@ def _update_supplier_stats(supplier: str, success: bool, norad: int = None):
         try:
             with open(SUPPLIER_STATS_FILE, 'r') as f:
                 stats = json.load(f)
-        except:
+        except (json.JSONDecodeError, IOError):
+            logger.warning(f"Could not read {SUPPLIER_STATS_FILE}, resetting")
             stats = {}
     if supplier not in stats:
         stats[supplier] = {"total": 0, "success": 0, "failed": 0, "last_used": None, "last_norad": None}
@@ -272,8 +279,8 @@ def is_celestrak_reachable():
         r = requests.head("https://celestrak.org", timeout=5)
         if r.status_code < 500:
             return True
-    except:
-        pass
+    except requests.RequestException:
+        logger.debug("Celestrak HEAD request failed")
     with _celestrak_lock:
         _celestrak_unreachable_until = time.time() + 300
     return False
@@ -298,7 +305,8 @@ class TLEFetcher:
         self.space_track_user = space_track_user
         self.space_track_pass = space_track_pass
         self.n2yo_api_key = n2yo_api_key
-        self.space_track_session = None
+        # Space‑Track is now handled by SpaceTrackBulkFetcher (data/space_track_fetcher.py)
+        self.space_track_fetcher = None
         self.space_track_available = False
         self.celestrak_session = requests.Session()
         self.celestrak_session.headers.update({"User-Agent": "OrbitShow/1.0"})
@@ -313,8 +321,14 @@ class TLEFetcher:
         self._ensure_cache_file()
         self._load_pending_missing()
         
+        # Initialize the Space‑Track bulk fetcher (respects 60-min cooldown, off-peak timing)
         if self.space_track_user and self.space_track_pass:
-            self._login_space_track()
+            self.space_track_fetcher = SpaceTrackBulkFetcher(
+                username=self.space_track_user,
+                password=self.space_track_pass,
+            )
+            self.space_track_available = True
+            print(f"[TLE Fetcher] Space‑Track bulk fetcher initialized (once-per-hour, off-peak timing)")
         
         if self.n2yo_api_key:
             print(f"[TLE Fetcher] N2YO.com API configured (automatic fallback when Celestrak fails)")
@@ -344,44 +358,21 @@ class TLEFetcher:
         return self._ts
     
     def _login_space_track(self):
-        try:
-            self.space_track_session = requests.Session()
-            auth_data = {
-                "identity": self.space_track_user,
-                "password": self.space_track_pass
-            }
-            response = self.space_track_session.post(SPACE_TRACK_AUTH_URL, data=auth_data, timeout=CONNECTION_TIMEOUT)
-            if response.status_code == 200:
-                print("[Space-Track] Login successful (available as reference)")
-                self.space_track_available = True
-                return True
-            else:
-                self.space_track_session = None
-                self.space_track_available = False
-                return False
-        except Exception as e:
-            print(f"[Space-Track] Login error: {e}")
-            self.space_track_session = None
-            self.space_track_available = False
-            return False
+        """Legacy method — now handled by SpaceTrackBulkFetcher."""
+        if self.space_track_fetcher is not None:
+            self.space_track_available = True
+            return True
+        self.space_track_available = False
+        return False
 
     def _logout_space_track(self):
-        if self.space_track_session:
-            try:
-                self.space_track_session.get(SPACE_TRACK_LOGOUT_URL, timeout=CONNECTION_TIMEOUT)
-                print("[Space-Track] Logged out successfully.")
-            except Exception as e:
-                print(f"[Space-Track] Logout error (non‑fatal): {e}")
-            finally:
-                self.space_track_session.close()
-                self.space_track_session = None
-                self.space_track_available = False
+        """Legacy method — now handled by SpaceTrackBulkFetcher."""
+        pass  # SpaceTrackBulkFetcher manages its own session
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._logout_space_track()
         self.celestrak_session.close()
 
     def fetch_from_celestrak_individual(self, norad: int, max_retries=2) -> Optional[Tuple[str, str]]:
@@ -441,39 +432,33 @@ class TLEFetcher:
             return {}
 
     def fetch_bulk_from_space_track(self, norads: List[int]) -> Dict[int, Tuple[str, str]]:
+        """
+        Fetch TLEs from Space‑Track using the new bulk fetcher.
+        Delegates to SpaceTrackBulkFetcher which respects:
+        - 60-minute cooldown
+        - Off-peak timing (avoids :00 and :30)
+        - Single bulk URL with CREATION_DATE filter
+        - Local filtering
+        """
         if not norads:
             return {}
-        if self.space_track_session is None:
-            if not self._login_space_track():
-                print("[Space-Track] No valid session, cannot perform bulk download.")
-                return {}
-        norad_list = ",".join(str(n) for n in norads)
-        url = f"{SPACE_TRACK_BULK_BASE}NORAD_CAT_ID/{norad_list}/format/tle"
+        if self.space_track_fetcher is None:
+            print("[Space-Track] Bulk fetcher not initialized (no credentials).")
+            return {}
+        
+        print(f"[Space-Track] Fetching TLEs for {len(norads)} NORADs via bulk fetcher...")
         try:
-            print(f"[Space-Track] Downloading TLEs for {len(norads)} specific NORADs...")
-            response = self.space_track_session.get(url, timeout=60)
-            if response.status_code == 200:
-                lines = response.text.strip().split('\n')
-                print(f"[Space-Track] Downloaded {len(lines)} lines")
-                tles = {}
-                for i in range(0, len(lines), 3):
-                    if i+2 < len(lines):
-                        line1 = lines[i+1].strip()
-                        line2 = lines[i+2].strip()
-                        if len(line2) >= 7:
-                            norad_str = line2[2:7].strip()
-                            if norad_str.isdigit():
-                                norad = int(norad_str)
-                                tles[norad] = (line1, line2)
-                print(f"[Space-Track] Parsed {len(tles)} TLEs for requested NORADs")
+            result = self.space_track_fetcher.fetch(target_norads=norads)
+            if result:
+                print(f"[Space-Track] Bulk fetcher returned {len(result)} TLEs")
                 _update_supplier_stats("space_track_bulk", success=True)
-                return tles
+                return result
             else:
-                print(f"[Space-Track] Bulk download failed: HTTP {response.status_code}")
+                print("[Space-Track] Bulk fetcher returned no TLEs (cooldown may be active).")
                 _update_supplier_stats("space_track_bulk", success=False)
                 return {}
         except Exception as e:
-            print(f"[Space-Track] Bulk download error: {e}")
+            print(f"[Space-Track] Bulk fetcher error: {e}")
             _update_supplier_stats("space_track_bulk", success=False)
             return {}
 
@@ -626,7 +611,7 @@ class TLEFetcher:
                     if line1 and line2 and len(line1) >= 69 and len(line2) >= 69:
                         if not ('097.5000' in line2 and '000.0000' in line2):
                             self.tles[norad] = (line1, line2)
-                except:
+                except (ValueError, KeyError):
                     continue
             print(f"[TLE Cache] Reloaded {len(self.tles)} valid TLEs from backup")
         except Exception as e:
@@ -692,7 +677,8 @@ class TLEFetcher:
             mean_motion_str = tle[1][52:63].strip()
             mean_motion = float(mean_motion_str)
             return 1440.0 / mean_motion
-        except:
+        except (ValueError, IndexError, TypeError):
+            logger.warning(f"Could not parse mean motion from TLE, returning default 95 min")
             return 95.0
 
     def compute_track(self, norad, tle, start_time, end_time, step_minutes=1.0):

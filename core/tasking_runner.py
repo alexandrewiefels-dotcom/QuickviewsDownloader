@@ -1,12 +1,22 @@
 # ============================================================================
 # FILE: core/tasking_runner.py – Tasking simulation with weather and footprint shifting
 # UPDATED: Always uses one_coverage mode with 0 overlap (edge-to-edge)
+# FIX: Replaced all print() with logging
 # ============================================================================
 import streamlit as st
 from detection.daylight_filter import filter_daylight_passes
 import sys
 from pathlib import Path
 import math
+import logging
+
+from core.exceptions import (
+    TaskingError,
+    GeometryError,
+    WeatherError,
+)
+
+logger = logging.getLogger(__name__)
 
 # Add parent directory to path to import tasking_optimizer
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -16,28 +26,28 @@ def run_tasking(passes, aoi, max_ona, detector, sat_alt_km=550.0,
                 fetch_weather=True, mode="one_coverage", overlap_km=35.0):
     """
     Run tasking simulation using sequential paving optimizer.
-    Note: mode and overlap_km parameters are ignored; always one_coverage with 0 overlap.
-    """
-    # Force one_coverage mode and 0 overlap
-    #mode = "one_coverage"
-    overlap_km = 40.0
     
+    Note: The overlap is now controlled by the OVERLAP_PERCENT constant in
+    tasking_optimizer.py (default 10% of the smaller swath between adjacent passes).
+    The overlap_km parameter here is kept for backward compatibility but is overridden
+    by the dynamic overlap calculation in the optimizer.
+    """
     if not passes or aoi is None:
-        print("[TaskingRunner] No passes or AOI provided")
+        logger.warning("No passes or AOI provided")
         return []
     
-    print(f"[TaskingRunner] Starting with {len(passes)} passes, max_ona={max_ona}°")
-    print(f"[TaskingRunner] Mode: {mode} (forced), Overlap: {overlap_km} km (edge-to-edge)")
+    logger.info("Starting with %d passes, max_ona=%.1f°", len(passes), max_ona)
+    logger.info("Mode: %s (forced), Overlap: %.1f km (edge-to-edge)", mode, overlap_km)
     
     # Apply daylight filter if enabled
     daylight_filter = st.session_state.get('daylight_filter', "Daylight only (9am - 3pm local time)")
-    print(f"[TaskingRunner] Daylight filter setting: {daylight_filter}")
+    logger.info("Daylight filter setting: %s", daylight_filter)
     
     filtered_passes = passes.copy()
     if daylight_filter == "Daylight only (9am - 3pm local time)":
         original_count = len(filtered_passes)
         filtered_passes = filter_daylight_passes(filtered_passes, aoi, start_hour=9, end_hour=15)
-        print(f"[TaskingRunner] Daylight filter: {original_count} -> {len(filtered_passes)} passes")
+        logger.info("Daylight filter: %d -> %d passes", original_count, len(filtered_passes))
     
     if not filtered_passes:
         st.warning("No passes available after applying filters")
@@ -47,11 +57,11 @@ def run_tasking(passes, aoi, max_ona, detector, sat_alt_km=550.0,
     try:
         from tasking_optimizer import compute_coverage_tasking
         
-        print("[TaskingRunner] Running sequential paving optimizer...")
+        logger.info("Running sequential paving optimizer...")
         
         # Progress callback for optimizer
         def progress_callback(current, total, message):
-            print(f"[Optimizer] {message} ({current}/{total})")
+            logger.info("[Optimizer] %s (%d/%d)", message, current, total)
         
         # Run the optimizer with intuitive overlap (positive = overlap)
         assignments = compute_coverage_tasking(
@@ -62,11 +72,11 @@ def run_tasking(passes, aoi, max_ona, detector, sat_alt_km=550.0,
             progress_callback=progress_callback
         )
         
-        print(f"[TaskingRunner] Optimizer returned {len(assignments)} assignments")
+        logger.info("Optimizer returned %d assignments", len(assignments))
         
         # Fetch weather for each assignment if requested
         if fetch_weather:
-            print("[TaskingRunner] Fetching weather data...")
+            logger.info("Fetching weather data...")
             from data.weather import get_cloud_cover_at_intersection
             
             for a in assignments:
@@ -74,9 +84,9 @@ def run_tasking(passes, aoi, max_ona, detector, sat_alt_km=550.0,
                     try:
                         cloud = get_cloud_cover_at_intersection(a['footprint'], aoi, a['pass_time'])
                         a['cloud_cover'] = cloud
-                        print(f"  {a['satellite']}: cloud cover = {cloud}%")
+                        logger.info("  %s: cloud cover = %.1f%%", a['satellite'], cloud)
                     except Exception as e:
-                        print(f"  {a['satellite']}: weather error - {e}")
+                        logger.error("  %s: weather error - %s", a['satellite'], e)
                         a['cloud_cover'] = None
         
         # Calculate and add coverage summary
@@ -92,18 +102,18 @@ def run_tasking(passes, aoi, max_ona, detector, sat_alt_km=550.0,
                     for a in assignments:
                         a['total_coverage_pct'] = total_coverage_pct
                     
-                    print(f"[TaskingRunner] Total combined coverage: {total_coverage_pct:.1f}%")
+                    logger.info("Total combined coverage: %.1f%%", total_coverage_pct)
             except Exception as e:
-                print(f"[TaskingRunner] Coverage calculation error: {e}")
+                logger.error("Coverage calculation error: %s", e)
         
         return assignments
         
     except ImportError as e:
-        print(f"[TaskingRunner] Error importing optimizer: {e}")
+        logger.error("Error importing optimizer: %s", e)
         st.error("Tasking optimizer not available. Please check installation.")
         return []
     except Exception as e:
-        print(f"[TaskingRunner] Optimizer error: {e}")
+        logger.error("Optimizer error: %s", e)
         import traceback
         traceback.print_exc()
         return []
@@ -167,7 +177,7 @@ def get_cloud_cover(pass_obj, aoi):
         cloud = get_cloud_cover_at_intersection(footprint, aoi, pass_obj.pass_time)
         return cloud
     except Exception as e:
-        print(f"[Weather] Error: {e}")
+        logger.error("[Weather] Error: %s", e)
         return None
 
 
@@ -202,7 +212,7 @@ def calculate_coverage(tasked_passes, aoi):
         coverage_pct = (intersection.area / aoi.area) * 100.0
         return coverage_pct
     except Exception as e:
-        print(f"[Coverage] Error: {e}")
+        logger.error("[Coverage] Error: %s", e)
         return 0.0
 
 

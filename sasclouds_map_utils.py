@@ -85,32 +85,55 @@ _QV_HEADERS = {
 }
 
 
-@lru_cache(maxsize=60)
+@lru_cache(maxsize=120)
 def _fetch_image_b64(url: str) -> str:
+    """
+    Fetch a quickview image and return it as a base64 data URI.
+    Tries the given URL first; if it fails, attempts a fallback URL
+    by replacing the Huawei OBS host with the original sasclouds.com host.
+    """
     t0 = time.monotonic()
-    try:
-        resp = _requests.get(url, timeout=25, headers=_QV_HEADERS)
-        elapsed_ms = int((time.monotonic() - t0) * 1000)
-        if resp.status_code == 200:
-            size_bytes = len(resp.content)
-            _ct_hdr = resp.headers.get("Content-Type", "").split(";")[0].strip()
-            _url_ext = url.lower().split("?")[0].rsplit(".", 1)[-1] if "." in url else ""
-            if _ct_hdr in ("image/jpeg", "image/png", "image/webp", "image/gif"):
-                mime = _ct_hdr
-            elif _url_ext in ("jpg", "jpeg"):
-                mime = "image/jpeg"
-            else:
-                mime = "image/png"
-            b64 = base64.b64encode(resp.content).decode()
-            logger.info(f"Quickview OK | {size_bytes // 1024}KB | {elapsed_ms}ms | {url[:80]}")
-            _log_quickview_fetch(url, "ok", 200, size_bytes, elapsed_ms, headers_rx=dict(resp.headers))
-            return f"data:{mime};base64,{b64}"
-        logger.warning(f"Quickview HTTP {resp.status_code} | {url[:80]}")
-        _log_quickview_fetch(url, f"http_{resp.status_code}", resp.status_code, 0, elapsed_ms)
-    except Exception as exc:
-        elapsed_ms = int((time.monotonic() - t0) * 1000)
-        logger.warning(f"Quickview EXCEPTION | {exc} | {url[:80]}")
-        _log_quickview_fetch(url, "exception", 0, 0, elapsed_ms, error=str(exc))
+    urls_to_try = [url]
+
+    # Build fallback URL: if the URL uses the Huawei OBS bucket, also try
+    # the original sasclouds.com quickview host.
+    if "obs.cn-north-10.myhuaweicloud.com" in url:
+        fallback = url.replace(
+            "https://quickview.obs.cn-north-10.myhuaweicloud.com",
+            "https://quickview.sasclouds.com",
+        )
+        urls_to_try.append(fallback)
+    elif "quickview.sasclouds.com" in url:
+        fallback = url.replace(
+            "https://quickview.sasclouds.com",
+            "https://quickview.obs.cn-north-10.myhuaweicloud.com",
+        )
+        urls_to_try.append(fallback)
+
+    for try_url in urls_to_try:
+        try:
+            resp = _requests.get(try_url, timeout=25, headers=_QV_HEADERS)
+            elapsed_ms = int((time.monotonic() - t0) * 1000)
+            if resp.status_code == 200:
+                size_bytes = len(resp.content)
+                _ct_hdr = resp.headers.get("Content-Type", "").split(";")[0].strip()
+                _url_ext = try_url.lower().split("?")[0].rsplit(".", 1)[-1] if "." in try_url else ""
+                if _ct_hdr in ("image/jpeg", "image/png", "image/webp", "image/gif"):
+                    mime = _ct_hdr
+                elif _url_ext in ("jpg", "jpeg"):
+                    mime = "image/jpeg"
+                else:
+                    mime = "image/png"
+                b64 = base64.b64encode(resp.content).decode()
+                logger.info(f"Quickview OK | {size_bytes // 1024}KB | {elapsed_ms}ms | {try_url[:80]}")
+                _log_quickview_fetch(try_url, "ok", 200, size_bytes, elapsed_ms, headers_rx=dict(resp.headers))
+                return f"data:{mime};base64,{b64}"
+            logger.warning(f"Quickview HTTP {resp.status_code} | {try_url[:80]}")
+            _log_quickview_fetch(try_url, f"http_{resp.status_code}", resp.status_code, 0, elapsed_ms)
+        except Exception as exc:
+            elapsed_ms = int((time.monotonic() - t0) * 1000)
+            logger.warning(f"Quickview EXCEPTION | {exc} | {try_url[:80]}")
+            _log_quickview_fetch(try_url, "exception", 0, 0, elapsed_ms, error=str(exc))
     return ""
 
 
@@ -366,7 +389,10 @@ def render_sasclouds_map(
             sat = props.get("satellite", "?")
             date = props.get("date", "?")
             qv_url = props.get("quickview", "")
+            scene_name = props.get("scene_name", "") or props.get("product_id", "") or ""
             label = f"[{i}] {sat} {date}"
+            if scene_name:
+                label = f"{scene_name}"
             if not qv_url:
                 continue
             corners = _order_corners(feat["geometry"])
@@ -380,13 +406,31 @@ def render_sasclouds_map(
                 continue
             corners_js = _json.dumps(corners)
             _label_js = label.replace("'", "\\'")
+            _qv_idx = i  # index in preview_scenes list
             js = f"""
 <script>
 (function(){{
   try {{
     if (typeof L === 'undefined' || typeof L.ImageWarpLayer === 'undefined' || typeof {map_var} === 'undefined')
       throw new Error('deps not ready');
-    new L.ImageWarpLayer("{img_data}", {corners_js}, {{opacity: 0.85}}).addTo({map_var});
+    var qvLayer = new L.ImageWarpLayer("{img_data}", {corners_js}, {{opacity: 0.85}});
+    // Click on the quickview image toggles visibility (show/hide)
+    qvLayer.on('add', function() {{
+      var canvas = this._canvas;
+      if (canvas) {{
+        canvas.style.cursor = 'pointer';
+        canvas.addEventListener('click', function(e) {{
+          // Toggle visibility: hide if visible, show if hidden
+          if (qvLayer._canvas && qvLayer._canvas.style.display !== 'none') {{
+            qvLayer._canvas.style.display = 'none';
+          }} else {{
+            if (qvLayer._canvas) qvLayer._canvas.style.display = '';
+            qvLayer._draw();
+          }}
+        }});
+      }}
+    }});
+    qvLayer.addTo({map_var});
   }} catch(e) {{ console.error('[QV] FAILED | {_label_js} |', e.message); }}
 }})();
 </script>"""
@@ -396,7 +440,7 @@ def render_sasclouds_map(
     # Footprints layer
     if features_for_map:
         all_geojson_features = []
-        for feat in features_for_map:
+        for feat_idx, feat in enumerate(features_for_map):
             props = feat.get("properties", {})
             sat = props.get("satellite", "")
             try:
@@ -404,6 +448,7 @@ def render_sasclouds_map(
                 parts = split_polygon_at_antimeridian(poly)
             except Exception:
                 continue
+            scene_name = props.get("scene_name", "") or props.get("product_id", "") or ""
             for part in parts:
                 all_geojson_features.append({
                     "type": "Feature",
@@ -413,7 +458,9 @@ def render_sasclouds_map(
                         "sensor": props.get("sensor", ""),
                         "date": props.get("date", ""),
                         "cloud": f"{props.get('cloud', 0):.1f} %",
+                        "scene_name": scene_name,
                         "_color": _sat_color(sat),
+                        "_idx": feat_idx,  # index for click-to-toggle quickview
                     },
                 })
 
@@ -423,12 +470,13 @@ def render_sasclouds_map(
                 f"{len(all_geojson_features)}|{_json.dumps(all_geojson_features[0], sort_keys=True)}".encode()
             ).hexdigest()[:16]
             _fp_tt = folium.GeoJsonTooltip(
-                fields=["satellite", "sensor", "date", "cloud"],
-                aliases=["Satellite", "Sensor", "Date", "Cloud"],
+                fields=["scene_name", "satellite", "sensor", "date", "cloud"],
+                aliases=["Scene", "Satellite", "Sensor", "Date", "Cloud"],
                 sticky=True, labels=True,
                 style="background-color:white;border:1px solid #ccc;border-radius:4px;font-size:12px;padding:6px 8px;",
             )
             _fp_tt._id = hashlib.md5(b"sasclouds_archive_fp_tooltip").hexdigest()
+
             _fp_layer = folium.GeoJson(
                 fc,
                 name=f"Footprints ({len(features_for_map)} scenes)",
@@ -442,10 +490,62 @@ def render_sasclouds_map(
                     "fillColor": f["properties"]["_color"],
                     "weight": 3, "fillOpacity": 0.35,
                 },
-                tooltip=_fp_tt, popup=None,
+                tooltip=_fp_tt,
+                popup=folium.GeoJsonPopup(
+                    fields=["scene_name", "satellite", "sensor", "date", "cloud", "_idx"],
+                    aliases=["Scene", "Satellite", "Sensor", "Date", "Cloud", ""],
+                    labels=True,
+                    style="background-color:white;border:1px solid #ccc;border-radius:4px;font-size:12px;padding:6px 8px;min-width:200px;",
+                ),
             )
             _fp_layer._id = _fp_hash
             _fp_layer.add_to(m)
+
+            # Add click handler on footprints to toggle quickview via query param
+            _map_var = m.get_name()
+            _click_js = f"""
+<script>
+(function(){{
+  var map = {_map_var};
+  if (!map) return;
+  map.on('click', function(e) {{
+    // Check if a GeoJSON feature was clicked
+    var layers = [];
+    map.eachLayer(function(l) {{
+      if (l.feature && l.feature.properties && l.feature.properties._idx !== undefined) {{
+        layers.push(l);
+      }}
+    }});
+    // Find the clicked feature by checking distance to click point
+    var clickedIdx = null;
+    var minDist = Infinity;
+    layers.forEach(function(l) {{
+      if (l.getLatLngs) {{
+        try {{
+          var latlngs = l.getLatLngs();
+          var center = l.getCenter ? l.getCenter() : null;
+          if (center) {{
+            var dist = map.distance(center, e.latlng);
+            if (dist < minDist) {{
+              minDist = dist;
+              clickedIdx = l.feature.properties._idx;
+            }}
+          }}
+        }} catch(ex) {{}}
+      }}
+    }});
+    if (clickedIdx !== null && minDist < 500) {{
+      // Toggle quickview by navigating to a URL with qv_toggle param
+      var url = new URL(window.location);
+      url.searchParams.set('qv_toggle', clickedIdx);
+      window.history.replaceState({{}}, '', url);
+      // Trigger Streamlit rerun by dispatching a custom event
+      window.dispatchEvent(new CustomEvent('qv-toggle', {{detail: {{idx: clickedIdx}}}}));
+    }}
+  }});
+}})();
+</script>"""
+            m.get_root().html.add_child(Element(_click_js))
 
     if polygon_geojson or features_for_map or preview_scenes:
         _lc = folium.LayerControl(collapsed=False)

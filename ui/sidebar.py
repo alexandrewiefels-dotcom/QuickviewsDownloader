@@ -91,6 +91,17 @@ def render_sidebar(satellites_db, aoi_handler):
     else:
         st.sidebar.markdown('<div class="sidebar-logo"><span>🛰️ OrbitShow</span><br><small>Satellite passes prediction</small></div>', unsafe_allow_html=True)
 
+    # ── Dark mode (permanently dark) ──
+    st.sidebar.markdown("""
+    <style>
+    .stApp { background-color: #0e1117; color: #fafafa; }
+    section[data-testid="stSidebar"] { background-color: #1e1e2e; }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # ── Shared AOI Section (available in ALL tools) ──
+    _render_shared_aoi_section(aoi_handler)
+    
     # Tab selection in sidebar
     tab = st.sidebar.radio(
         "Select tool",
@@ -109,7 +120,140 @@ def render_sidebar(satellites_db, aoi_handler):
 
 
 # ============================================================================
-# Helper functions for deferred AOI and country selection
+# Shared AOI Section — available in ALL tools (Pass Prediction, Live Tracking, SASClouds)
+# ============================================================================
+
+def _render_shared_aoi_section(aoi_handler):
+    """
+    Render AOI import, country selection, and status display.
+    This section is shown above the tab selector so it's available in all tools.
+    The AOI is stored in st.session_state.aoi and shared across all tools.
+    """
+    st.sidebar.markdown("### 🌍 Area of Interest")
+    
+    # Show current AOI status
+    aoi = st.session_state.get("aoi")
+    if aoi is not None and not aoi.is_empty:
+        country = st.session_state.get("country_selected")
+        if country:
+            st.sidebar.success(f"✅ AOI set: **{country}**")
+        else:
+            area_km2 = aoi.area * 111.32 * 111.32  # rough deg² to km²
+            st.sidebar.success(f"✅ AOI loaded ({area_km2:.0f} km²)")
+    else:
+        st.sidebar.info("ℹ️ No AOI set. Upload a file, select a country, or draw on the map.")
+    
+    # AOI upload (outside any form, so it works in all tabs)
+    with st.sidebar.expander("📁 Import AOI file", expanded=False):
+        st.markdown("""
+        <div class="custom-upload-limit">
+            📁 <strong>Supported:</strong> KML, GeoJSON, ZIP (Shapefile)<br>
+            ⚠️ <strong>Max size:</strong> 1 MB
+        </div>
+        """, unsafe_allow_html=True)
+        
+        upload_key = f"shared_aoi_upload_{st.session_state.get('reset_upload_key', 0)}"
+        uploaded_file = st.file_uploader(
+            "Choose AOI file",
+            type=["kml", "geojson", "zip"],
+            key=upload_key,
+            label_visibility="collapsed",
+            help="Upload a KML, GeoJSON, or ZIP (Shapefile) to set the Area of Interest"
+        )
+        
+        if uploaded_file:
+            # handle_aoi_upload already detects duplicates via file hash
+            # Do NOT call st.rerun() here to avoid infinite loop
+            success = handle_aoi_upload(uploaded_file, aoi_handler)
+            if success:
+                st.success("✅ AOI loaded successfully!")
+                st.session_state.passes = []
+                st.session_state.displayed_passes = []
+                st.session_state.tasking_results = None
+            else:
+                st.error("❌ Failed to load AOI. Check the file format.")
+    
+    # Country selector (outside any form)
+    with st.sidebar.expander("🌐 Select country", expanded=False):
+        _render_country_selector_sidebar_shared()
+    
+    # Clear AOI button
+    if aoi is not None and not aoi.is_empty:
+        if st.sidebar.button("🗑️ Clear AOI", key="clear_aoi_btn", use_container_width=True):
+            st.session_state.aoi = None
+            st.session_state.country_selected = None
+            st.session_state.passes = []
+            st.session_state.displayed_passes = []
+            st.session_state.tasking_results = None
+            st.session_state.map_key = st.session_state.get('map_key', 0) + 1
+            st.rerun()
+    
+    st.sidebar.markdown("<hr>", unsafe_allow_html=True)
+
+
+def _render_country_selector_sidebar_shared():
+    """Country selector that immediately applies the selected country as AOI."""
+    import geopandas as gpd
+    from pathlib import Path
+    from ui.components.map_controls import compute_zoom
+    
+    @st.cache_data
+    def load_country_geojson():
+        base_dir = Path(__file__).parent.parent
+        possible_names = ["world_countries.geojson", "world_countries.GeoJSON", "ne_110m_admin_0_countries.geojson"]
+        for name in possible_names:
+            path = base_dir / "data" / name
+            if path.exists():
+                try:
+                    gdf = gpd.read_file(path)
+                    name_col = None
+                    for col in ['CNTRY_NAME', 'NAME', 'name', 'ADMIN', 'SOVEREIGNT']:
+                        if col in gdf.columns:
+                            name_col = col
+                            break
+                    if name_col:
+                        gdf = gdf[[name_col, 'geometry']].rename(columns={name_col: 'country'})
+                        gdf = gdf.to_crs('EPSG:4326')
+                        return gdf, sorted(gdf['country'].unique())
+                except Exception:
+                    continue
+        return None, None
+    
+    gdf, countries = load_country_geojson()
+    if gdf is None:
+        st.info("Country data not available")
+        return
+    
+    selected_country = st.selectbox(
+        "Select a country",
+        countries,
+        index=None,
+        placeholder="Choose a country...",
+        key="shared_country_select",
+        label_visibility="collapsed"
+    )
+    
+    if selected_country:
+        # Only apply if the country actually changed (prevents infinite rerun loop)
+        if st.session_state.get("country_selected") != selected_country:
+            country_poly = gdf[gdf['country'] == selected_country].geometry.iloc[0]
+            st.session_state.aoi = country_poly
+            st.session_state.map_center = [country_poly.centroid.y, country_poly.centroid.x]
+            st.session_state.map_zoom = compute_zoom(country_poly.bounds)
+            st.session_state.map_key = st.session_state.get('map_key', 0) + 1
+            st.session_state.country_selected = selected_country
+            # Only clear pass prediction state — do NOT touch SASClouds state
+            st.session_state.passes = []
+            st.session_state.displayed_passes = []
+            st.session_state.tasking_results = None
+            st.success(f"✅ AOI set to **{selected_country}**")
+            # Use a deferred rerun flag instead of calling st.rerun() directly,
+            # so the current tab state is preserved across the rerun.
+            st.session_state["_deferred_rerun"] = True
+
+
+# ============================================================================
+# Helper functions for deferred AOI and country selection (used inside Pass Prediction form)
 # ============================================================================
 
 def _render_country_selector_sidebar_form():
@@ -240,8 +384,42 @@ def _render_satellite_selector_sidebar(satellites_db):
     selected = {}  # key -> bool
     st.markdown("### Satellite Selection")
     
+    # Track all keys for select-all/deselect-all per provider
+    _all_keys = []
+    
     for provider, series_dict in providers.items():
         with st.expander(f"{provider}", expanded=False):
+            # ── Select All / Deselect All for this provider ──
+            provider_keys = []
+            for series, satellites in series_dict.items():
+                uniform = _are_cameras_identical(satellites)
+                if uniform:
+                    sample_cameras = satellites[0][2]["cameras"]
+                    for cam_name in sample_cameras:
+                        key = f"mode_{provider}_{series}_{cam_name}".replace(" ", "_")
+                        provider_keys.append(key)
+                else:
+                    for (_, sat_name, sat_info) in satellites:
+                        for cam_name in sat_info["cameras"]:
+                            key = f"cam_{provider}_{series}_{sat_name}_{cam_name}".replace(" ", "_")
+                            provider_keys.append(key)
+            
+            _all_keys.extend(provider_keys)
+            
+            # Render Select All / Deselect All buttons
+            # NOTE: Must use form_submit_button because this is inside a st.form()
+            col_sa, col_da = st.columns([1, 1])
+            with col_sa:
+                if st.form_submit_button(f"✅ Select all", key=f"sel_all_{provider}", use_container_width=True):
+                    for k in provider_keys:
+                        st.session_state[k] = True
+                    st.rerun()
+            with col_da:
+                if st.form_submit_button(f"❌ Deselect all", key=f"desel_all_{provider}", use_container_width=True):
+                    for k in provider_keys:
+                        st.session_state[k] = False
+                    st.rerun()
+            
             for series, satellites in series_dict.items():
                 # Determine if series is uniform
                 uniform = _are_cameras_identical(satellites)
@@ -351,34 +529,53 @@ def _render_pass_prediction_tab(satellites_db, aoi_handler):
     if 'camera_states' not in st.session_state:
         st.session_state.camera_states = {}
     
+    # ── Keyboard shortcut: Enter to submit search ──
+    st.sidebar.markdown("""
+    <script>
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+            // Find the search button and click it
+            var buttons = document.querySelectorAll('button[kind="primary"]');
+            for (var i = 0; i < buttons.length; i++) {
+                if (buttons[i].innerText.includes('Search passes')) {
+                    buttons[i].click();
+                    break;
+                }
+            }
+        }
+    });
+    </script>
+    """, unsafe_allow_html=True)
+    
     with st.sidebar.form(key="search_filters_form"):
-        # --- AOI Selection ---
-        st.markdown("### AOI Selection")
-        st.markdown(f"""
-        <div class="custom-upload-limit">
-            📁 <strong>Supported formats:</strong> KML, GeoJSON, ZIP (containing Shapefile)<br>
-            ⚠️ <strong>Maximum file size:</strong> 1 MB
-        </div>
-        """, unsafe_allow_html=True)
-        
-        upload_key = f"aoi_upload_form_{st.session_state.get('reset_upload_key', 0)}"
-        uploaded_file = st.file_uploader(
-            "Choose AOI file",
-            type=["kml", "geojson", "zip"],
-            key=upload_key,
-            help="File will be processed when you click 'Search passes'"
-        )
-        
-        selected_country = _render_country_selector_sidebar_form()
+        # AOI is now set via the shared section above (upload, country, or map drawing)
+        # Only show a reminder if no AOI is set
+        aoi = st.session_state.get("aoi")
+        if aoi is None or aoi.is_empty:
+            st.warning("⚠️ No AOI set. Use the section above to upload a file, select a country, or draw on the map.")
+        else:
+            country = st.session_state.get("country_selected")
+            if country:
+                st.info(f"📍 AOI: **{country}**")
+            else:
+                st.info(f"📍 AOI loaded ✓")
         
         st.markdown("<hr>", unsafe_allow_html=True)
         
         # --- Date range ---
         col1, col2 = st.columns(2)
         with col1:
-            start_date = st.date_input("Start date", value=st.session_state.get('start_date', date.today()))
+            start_date = st.date_input(
+                "Start date",
+                value=st.session_state.get('start_date', date.today()),
+                help="First day of the search window. Passes before this date will be excluded."
+            )
         with col2:
-            end_date = st.date_input("End date", value=st.session_state.get('end_date', date.today() + timedelta(days=3)))
+            end_date = st.date_input(
+                "End date",
+                value=st.session_state.get('end_date', date.today() + timedelta(days=3)),
+                help="Last day of the search window. Passes after this date will be excluded."
+            )
         
         if start_date > end_date:
             st.error("Start date must be before or equal to end date.")
@@ -388,14 +585,16 @@ def _render_pass_prediction_tab(satellites_db, aoi_handler):
             "Orbit direction", 
             ["Both", "Ascending", "Descending"], 
             index=2 if st.session_state.get('orbit_filter', "Descending") == "Descending" 
-                  else (0 if st.session_state.get('orbit_filter') == "Both" else 1)
+                  else (0 if st.session_state.get('orbit_filter') == "Both" else 1),
+            help="Filter passes by orbit direction. Ascending = south-to-north, Descending = north-to-south."
         )
         
         max_ona = st.slider(
             "Maximum off-nadir angle (°)", 
             0.0, 45.0, 
             value=st.session_state.get('max_ona', 15.0),
-            step=1.0
+            step=1.0,
+            help="Maximum allowed off-nadir angle. Higher values allow wider viewing angles but reduce image quality."
         )
         
         # NEW: Minimum ONA slider
@@ -414,7 +613,8 @@ def _render_pass_prediction_tab(satellites_db, aoi_handler):
             "Pass time filter",
             ["All times", "Daylight only (9am - 3pm local time)"],
             index=1 if st.session_state.get('daylight_filter', "Daylight only (9am - 3pm local time)") == "Daylight only (9am - 3pm local time)" else 0,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            help="Filter passes by local solar time. 'Daylight only' keeps passes between 9am and 3pm solar time."
         )
         
         ## ========== NEW: Minimum AOI coverage filter ==========
@@ -448,18 +648,9 @@ def _render_pass_prediction_tab(satellites_db, aoi_handler):
         if submitted:
             error_occurred = False
             
-            # 1. Process AOI upload if any
-            if uploaded_file:
-                success = handle_aoi_upload(uploaded_file, aoi_handler)
-                if not success:
-                    st.sidebar.error("❌ Failed to load AOI from file. Please check the file format and try again.")
-                    error_occurred = True
-            elif selected_country:
-                _apply_country_aoi(selected_country)
-            
-            # Check if AOI is set after upload/country
-            if not error_occurred and st.session_state.aoi is None:
-                st.sidebar.error("❌ Please load an Area of Interest (AOI) using a file, country selection, or draw on the map.")
+            # Check if AOI is set (from shared section above)
+            if st.session_state.aoi is None:
+                st.sidebar.error("❌ Please load an Area of Interest (AOI) using the section above (upload a file, select a country, or draw on the map).")
                 error_occurred = True
             
             # 2. Convert selected_items into selected_configs
@@ -567,11 +758,11 @@ def _render_sasclouds_tab():
     st.sidebar.markdown("### 🗄️ SASClouds Archive")
 
     aoi = st.session_state.get("aoi")
-    if not aoi or aoi.is_empty:
-        st.sidebar.warning("⚠️ No AOI yet. Draw one on the map or load via the Pass Prediction tab first.")
-        return
+    if aoi is not None and not aoi.is_empty:
+        st.sidebar.caption("✅ AOI inherited from OrbitShow map")
+    else:
+        st.sidebar.info("ℹ️ No AOI set. You can still configure the search below — an AOI is required to search.")
 
-    st.sidebar.caption("✅ AOI inherited from OrbitShow map")
 
     today = date.today()
     start = st.sidebar.date_input("Start date", value=today - timedelta(days=30), key="sc_start")
@@ -634,6 +825,8 @@ def _render_sasclouds_tab():
             st.sidebar.warning("Select at least one satellite.")
         elif start > end:
             st.sidebar.error("Start date must be before end date.")
+        elif aoi is None or aoi.is_empty:
+            st.sidebar.error("❌ No AOI set. Draw a polygon on the map or select a country first.")
         else:
             st.session_state["sc_pending_search"] = {
                 "polygon_geojson":    _mapping(aoi),

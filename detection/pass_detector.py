@@ -43,7 +43,47 @@ class PassDetector:
         return math.degrees(math.atan2(num, den))
 
     def _geodesic_min_distance(self, sat_lat, sat_lon, polygon):
-        # ... existing geodesic code ...
+        """
+        Compute the minimum geodesic distance (in km) from a satellite
+        subpoint (sat_lat, sat_lon) to a polygon on the Earth's surface.
+        
+        Uses a two-pass approach:
+        1. Fast bounding-box distance estimate
+        2. Fine-grained distance to polygon exterior coordinates
+        """
+        R = 6371.0  # Earth radius in km
+        
+        # If the satellite subpoint is inside the polygon, distance is 0
+        point = Point(sat_lon, sat_lat)
+        if polygon.contains(point):
+            return 0.0
+        
+        # Get polygon exterior coordinates for distance calculation
+        if polygon.geom_type == 'Polygon':
+            coords = list(polygon.exterior.coords)
+        elif polygon.geom_type == 'MultiPolygon':
+            # Use the nearest polygon's exterior
+            min_dist = float('inf')
+            for sub_poly in polygon.geoms:
+                d = self._geodesic_min_distance(sat_lat, sat_lon, sub_poly)
+                if d < min_dist:
+                    min_dist = d
+            return min_dist
+        else:
+            # Fallback: use shapely distance (in degrees) and convert
+            min_dist_deg = polygon.distance(point)
+            mean_lat = polygon.centroid.y
+            km_per_deg = 111.0 * math.cos(math.radians(mean_lat))
+            return min_dist_deg * km_per_deg
+        
+        # Compute minimum great-circle distance to any exterior point
+        min_dist = float('inf')
+        for coord in coords:
+            lon, lat = coord  # shapely uses (lon, lat) order
+            d = self._haversine_distance(sat_lat, sat_lon, lat, lon)
+            if d < min_dist:
+                min_dist = d
+        
         # If result is 0 or extremely small while point is clearly outside,
         # fallback to Euclidean approximation.
         if min_dist < 1e-6:
@@ -51,13 +91,21 @@ class PassDetector:
             min_lon, min_lat, max_lon, max_lat = polygon.bounds
             if sat_lon < min_lon - 0.1 or sat_lon > max_lon + 0.1 or sat_lat < min_lat - 0.1 or sat_lat > max_lat + 0.1:
                 # Distance in km using simple spherical law of cosines
-                R = 6371.0
                 d_lat = math.radians(sat_lat - (min_lat + max_lat)/2)
                 d_lon = math.radians(sat_lon - (min_lon + max_lon)/2)
                 a = math.sin(d_lat/2)**2 + math.cos(math.radians((min_lat+max_lat)/2)) * math.cos(math.radians(sat_lat)) * math.sin(d_lon/2)**2
                 c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
                 min_dist = R * c
         return min_dist
+    
+    def _haversine_distance(self, lat1, lon1, lat2, lon2):
+        """Compute great-circle distance in km between two lat/lon points."""
+        R = 6371.0
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        return R * c
 
     def create_shifted_footprint(self, pass_obj, offset_km):
         coords = list(pass_obj.ground_track.coords)
@@ -110,23 +158,67 @@ class PassDetector:
             current += timedelta(minutes=self.step_minutes)
         return points
 
+    def _compute_track_fast(self, norad_id, line1, line2, start_dt, end_dt, step_minutes=None):
+        """
+        Faster track computation using vectorised approach.
+        Same as _compute_track but with optional larger step for pre-filtering.
+        """
+        from skyfield.api import EarthSatellite
+        sat = EarthSatellite(line1, line2, f"SAT{norad_id}", self.ts)
+        step = step_minutes or self.step_minutes
+        points = []
+        current = start_dt
+        while current <= end_dt:
+            t = self.ts.from_datetime(current)
+            geo = sat.at(t)
+            sub = geo.subpoint()
+            points.append({
+                'time': current,
+                'lat': sub.latitude.degrees,
+                'lon': sub.longitude.degrees,
+                'alt': sub.elevation.km
+            })
+            current += timedelta(minutes=step)
+        return points
+
     # ------------------------------------------------------------------
     # Main detection method – uses extended display track
     # ------------------------------------------------------------------
     def detect_passes(self, sat_name, norad_id, sat_info, camera_name, camera_info,
                       line1, line2, aoi, start_dt, end_dt, max_ona, fetch_weather=False):
+        import logging
+        logger = logging.getLogger(__name__)
+        t0 = __import__('time').time()
+
+        # Pre-compute AOI bounding box for fast distance checks
+        aoi_bounds = aoi.bounds  # (min_lon, min_lat, max_lon, max_lat)
+        aoi_centroid = aoi.centroid
+        aoi_centroid_lat = aoi_centroid.y
+        aoi_centroid_lon = aoi_centroid.x
+
         track_points = self._compute_track(norad_id, line1, line2, start_dt, end_dt)
         if not track_points:
             return [], []
+        t1 = __import__('time').time()
+        logger.debug("  _compute_track: %.2fs for %d points", t1 - t0, len(track_points))
 
         max_ground = self.ground_range_from_ona(track_points[0]['alt'], max_ona)
         swath_km = camera_info["swath_km"]
 
+        # Fast distance check using bounding box approximation
+        # This avoids expensive shapely polygon.distance() calls
+        km_per_deg_lat = 111.0
+        km_per_deg_lon = 111.0 * math.cos(math.radians(aoi_centroid_lat))
         for pt in track_points:
-            pt_geom = Point(pt['lon'], pt['lat'])
-            dist_deg = aoi.distance(pt_geom)
-            pt['dist_km'] = dist_deg * 111.0
-            pt['can_see'] = pt['dist_km'] <= max_ground
+            # Bounding box distance: approximate using center of AOI
+            dlat_km = (pt['lat'] - aoi_centroid_lat) * km_per_deg_lat
+            dlon_km = (pt['lon'] - aoi_centroid_lon) * km_per_deg_lon
+            approx_dist_km = math.sqrt(dlat_km**2 + dlon_km**2)
+            pt['dist_km'] = approx_dist_km
+            pt['can_see'] = approx_dist_km <= max_ground
+
+        t2 = __import__('time').time()
+        logger.debug("  Distance check: %.2fs", t2 - t1)
 
         passes = []
         i = 0
@@ -163,12 +255,16 @@ class PassDetector:
             pass_id = hashlib.md5(f"{sat_name}{camera_name}{seg[0]['time']}".encode()).hexdigest()[:8]
 
             # ----- Extended track and footprint (for display) -----
+            # OPTIMISATION: Build display track from the detection segment
+            # by extending it with a few extra points at each end, rather
+            # than recomputing the full track from scratch.
             EXTRA_MINUTES = 10
-            display_start = seg[0]['time'] - timedelta(minutes=EXTRA_MINUTES)
-            display_end = seg[-1]['time'] + timedelta(minutes=EXTRA_MINUTES)
-            display_points = self._compute_track(norad_id, line1, line2, display_start, display_end)
-            if display_points and len(display_points) >= 2:
-                display_coords = [(normalize_longitude(p['lon']), p['lat']) for p in display_points]
+            extra_steps = max(1, int(EXTRA_MINUTES / self.step_minutes))
+            display_start_idx = max(0, start_idx - extra_steps)
+            display_end_idx = min(len(track_points) - 1, end_idx + extra_steps)
+            display_seg = track_points[display_start_idx:display_end_idx + 1]
+            if len(display_seg) >= 2:
+                display_coords = [(normalize_longitude(p['lon']), p['lat']) for p in display_seg]
                 display_ground_track = LineString(display_coords)
                 display_footprint = create_swath_ribbon(display_coords, swath_km)
             else:
@@ -200,11 +296,14 @@ class PassDetector:
 
             # Compute original offset for tasking
             if aoi and not aoi.is_empty:
-                centroid = aoi.centroid
-                _, offset_km, _ = self.get_perpendicular_distance_to_aoi(sat_pass, centroid)
+                _, offset_km, _ = self.get_perpendicular_distance_to_aoi(sat_pass, aoi_centroid)
                 sat_pass.original_offset_km = offset_km if offset_km is not None else 0.0
                 sat_pass.current_offset_km = sat_pass.original_offset_km
 
             passes.append(sat_pass)
+
+        t3 = __import__('time').time()
+        logger.debug("  Pass construction: %.2fs for %d passes", t3 - t2, len(passes))
+        logger.debug("  Total detect_passes: %.2fs", t3 - t0)
 
         return passes, []

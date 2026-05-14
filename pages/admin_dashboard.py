@@ -1405,3 +1405,295 @@ def render_sasclouds_stats_tab():
                                   "total_scenes", "elapsed_s", "upload_id"]
                      if c in df_api.columns]
         st.dataframe(df_api[show_cols].head(100), use_container_width=True)
+
+
+# ============================================================================
+# NEW: Tool Usage Breakdown Tab
+# ============================================================================
+def render_tool_usage_tab():
+    """Show which tools (Pass Detection, Tasking, SASClouds, Live Tracking) are used most."""
+    st.subheader("🔧 Tool Usage Breakdown")
+    st.markdown("See which tools users interact with most frequently across all sessions.")
+
+    # Load tracking data from navigation_logs.json
+    log_file = Path("navigation_logs.json")
+    if not log_file.exists():
+        st.info("No tracking data available yet.")
+        return
+
+    try:
+        with open(log_file, 'r') as f:
+            logs = json.load(f)
+    except Exception as e:
+        st.error(f"Error reading log file: {e}")
+        return
+
+    if not logs:
+        st.info("No tracking data available.")
+        return
+
+    df = pd.DataFrame(logs)
+    if 'timestamp' in df.columns:
+        df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+        df = df.dropna(subset=['timestamp'])
+
+    # Time window filter
+    time_window = st.radio(
+        "Time window",
+        options=["All", "Last Week", "Last Month", "Last 6 Months", "Last Year"],
+        index=0, horizontal=True, key="tool_usage_time"
+    )
+    now = datetime.now()
+    if time_window == "Last Week":
+        cutoff = now - timedelta(days=7)
+        df = df[df['timestamp'] >= cutoff]
+    elif time_window == "Last Month":
+        cutoff = now - timedelta(days=30)
+        df = df[df['timestamp'] >= cutoff]
+    elif time_window == "Last 6 Months":
+        cutoff = now - timedelta(days=180)
+        df = df[df['timestamp'] >= cutoff]
+    elif time_window == "Last Year":
+        cutoff = now - timedelta(days=365)
+        df = df[df['timestamp'] >= cutoff]
+
+    if df.empty:
+        st.info("No data for the selected time window.")
+        return
+
+    # Define tool categories based on page names and actions
+    tool_keywords = {
+        "🛰️ Pass Detection": ["pass_detection", "pass detection", "passes", "satellite pass"],
+        "🎯 Tasking": ["tasking", "tasking_optimizer", "optimizer"],
+        "🗄️ SASClouds Archive": ["sasclouds", "sasclouds_archive", "3_sasclouds"],
+        "📍 Live Tracking": ["live_tracking", "live tracking", "tracking"],
+        "🛰️ Satellite DB": ["satellite_database", "satellite database", "2_satellite"],
+        "📊 Admin": ["admin", "admin_dashboard"],
+        "📜 Logs": ["real_time_logs", "real time logs", "4_real_time"],
+    }
+
+    # Count page views per tool
+    tool_counts = {}
+    for tool_name, keywords in tool_keywords.items():
+        count = 0
+        if 'page' in df.columns:
+            mask = df['page'].str.lower().str.contains('|'.join(keywords), na=False)
+            count += mask.sum()
+        if 'action' in df.columns:
+            mask = df['action'].str.lower().str.contains('|'.join(keywords), na=False)
+            count += mask.sum()
+        tool_counts[tool_name] = count
+
+    # Also count SASClouds searches from the dedicated log
+    sc_searches = _load_sc_searches()
+    tool_counts["🗄️ SASClouds Archive"] += len(sc_searches)
+
+    # Display KPIs
+    cols = st.columns(len(tool_counts))
+    for i, (tool_name, count) in enumerate(sorted(tool_counts.items(), key=lambda x: x[1], reverse=True)):
+        with cols[i % len(cols)]:
+            st.metric(tool_name, count)
+
+    st.markdown("---")
+
+    # Bar chart
+    df_tools = pd.DataFrame(list(tool_counts.items()), columns=["Tool", "Interactions"])
+    df_tools = df_tools.sort_values("Interactions", ascending=True)
+    fig = px.bar(df_tools, x="Interactions", y="Tool", orientation="h",
+                 title="Tool Usage Comparison",
+                 color="Tool", text="Interactions")
+    fig.update_layout(yaxis={"categoryorder": "total ascending"}, showlegend=False)
+    fig.update_traces(textposition="outside")
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Per-tool timeline
+    st.markdown("#### Tool usage over time")
+    if 'page' in df.columns and 'timestamp' in df.columns:
+        df_page = df.dropna(subset=['page']).copy()
+        # Assign each page view to a tool category
+        def classify_page(page_name):
+            if not isinstance(page_name, str):
+                return "Other"
+            pn = page_name.lower()
+            for tool_name, keywords in tool_keywords.items():
+                if any(kw in pn for kw in keywords):
+                    return tool_name
+            return "Other"
+
+        df_page['tool'] = df_page['page'].apply(classify_page)
+        df_page['date'] = df_page['timestamp'].dt.date
+        daily_tool = df_page.groupby(['date', 'tool']).size().reset_index(name='count')
+        if not daily_tool.empty:
+            fig2 = px.area(daily_tool, x='date', y='count', color='tool',
+                           title="Daily tool usage",
+                           labels={"count": "Interactions", "date": "Date", "tool": "Tool"})
+            st.plotly_chart(fig2, use_container_width=True)
+
+    # Per-user tool breakdown
+    st.markdown("#### Per-user tool breakdown")
+    if 'session_id' in df.columns and 'page' in df.columns:
+        df_user = df.dropna(subset=['session_id', 'page']).copy()
+        df_user['tool'] = df_user['page'].apply(classify_page)
+        user_tool = df_user.groupby(['session_id', 'tool']).size().reset_index(name='count')
+        pivot = user_tool.pivot_table(index='session_id', columns='tool', values='count',
+                                      fill_value=0, aggfunc='sum')
+        # Add total column
+        pivot['Total'] = pivot.sum(axis=1)
+        pivot = pivot.sort_values('Total', ascending=False).head(20)
+        st.dataframe(pivot, use_container_width=True)
+
+
+# ============================================================================
+# NEW: Per-User Activity Journey Tab
+# ============================================================================
+def render_per_user_activity_tab():
+    """Show each user's complete journey across all tools."""
+    st.subheader("👤 Per-User Activity Journey")
+    st.markdown("Select a user to see their complete journey across all tools.")
+
+    log_file = Path("navigation_logs.json")
+    if not log_file.exists():
+        st.info("No tracking data available yet.")
+        return
+
+    try:
+        with open(log_file, 'r') as f:
+            logs = json.load(f)
+    except Exception as e:
+        st.error(f"Error reading log file: {e}")
+        return
+
+    if not logs:
+        st.info("No tracking data available.")
+        return
+
+    df = pd.DataFrame(logs)
+    if 'timestamp' in df.columns:
+        df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+        df = df.dropna(subset=['timestamp'])
+        df = df.sort_values('timestamp')
+
+    # Time window filter
+    time_window = st.radio(
+        "Time window",
+        options=["All", "Last Week", "Last Month", "Last 6 Months", "Last Year"],
+        index=0, horizontal=True, key="per_user_time"
+    )
+    now = datetime.now()
+    if time_window == "Last Week":
+        cutoff = now - timedelta(days=7)
+        df = df[df['timestamp'] >= cutoff]
+    elif time_window == "Last Month":
+        cutoff = now - timedelta(days=30)
+        df = df[df['timestamp'] >= cutoff]
+    elif time_window == "Last 6 Months":
+        cutoff = now - timedelta(days=180)
+        df = df[df['timestamp'] >= cutoff]
+    elif time_window == "Last Year":
+        cutoff = now - timedelta(days=365)
+        df = df[df['timestamp'] >= cutoff]
+
+    if df.empty:
+        st.info("No data for the selected time window.")
+        return
+
+    # Get unique sessions
+    if 'session_id' not in df.columns:
+        st.info("No session data available.")
+        return
+
+    sessions = df['session_id'].unique()
+    session_stats = []
+    for sid in sessions:
+        sdf = df[df['session_id'] == sid]
+        session_stats.append({
+            "session_id": sid,
+            "first_seen": sdf['timestamp'].min(),
+            "last_seen": sdf['timestamp'].max(),
+            "total_events": len(sdf),
+            "unique_pages": sdf['page'].nunique() if 'page' in sdf.columns else 0,
+            "ip": sdf['ip'].iloc[0] if 'ip' in sdf.columns else "unknown",
+            "country": sdf['country'].iloc[0] if 'country' in sdf.columns else "unknown",
+        })
+
+    df_sessions = pd.DataFrame(session_stats)
+    df_sessions = df_sessions.sort_values('last_seen', ascending=False)
+
+    # Summary KPIs
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Unique Users", len(df_sessions))
+    col2.metric("Total Events", len(df))
+    col3.metric("Avg Events/User", f"{len(df)/len(df_sessions):.1f}" if len(df_sessions) > 0 else "0")
+
+    st.markdown("---")
+
+    # User selector
+    user_options = [f"{row['session_id'][:12]}... — {row['total_events']} events — {row['country']}"
+                    for _, row in df_sessions.head(50).iterrows()]
+    selected_user_str = st.selectbox("Select a user (top 50 by activity)", options=user_options, key="per_user_select")
+
+    if selected_user_str:
+        selected_sid = selected_user_str.split(" — ")[0].replace("...", "")
+        # Find the full session_id
+        full_sid = None
+        for sid in sessions:
+            if sid.startswith(selected_sid.rstrip(".")):
+                full_sid = sid
+                break
+        if full_sid is None:
+            full_sid = selected_sid
+
+        user_df = df[df['session_id'] == full_sid].copy()
+        user_df = user_df.sort_values('timestamp')
+
+        st.markdown(f"### 📋 User: `{full_sid}`")
+        st.markdown(f"**IP:** {user_df['ip'].iloc[0] if 'ip' in user_df.columns else 'unknown'}  |  "
+                    f"**Country:** {user_df['country'].iloc[0] if 'country' in user_df.columns else 'unknown'}  |  "
+                    f"**Total events:** {len(user_df)}  |  "
+                    f"**First seen:** {user_df['timestamp'].min()}  |  "
+                    f"**Last seen:** {user_df['timestamp'].max()}")
+
+        # Timeline of user's journey
+        st.markdown("#### Journey Timeline")
+        display_cols = ['timestamp', 'event_type', 'page', 'action', 'details']
+        available = [c for c in display_cols if c in user_df.columns]
+        st.dataframe(user_df[available].tail(100), use_container_width=True)
+
+        # Page flow visualization
+        if 'page' in user_df.columns:
+            st.markdown("#### Page Flow")
+            page_sequence = user_df['page'].dropna().tolist()
+            if page_sequence:
+                # Show unique pages visited in order
+                seen = set()
+                unique_sequence = []
+                for p in page_sequence:
+                    if p not in seen:
+                        seen.add(p)
+                        unique_sequence.append(p)
+                flow_text = " → ".join([f"`{p}`" for p in unique_sequence])
+                st.markdown(flow_text)
+
+        # Actions breakdown
+        if 'action' in user_df.columns:
+            st.markdown("#### Actions Breakdown")
+            action_counts = user_df['action'].value_counts().reset_index()
+            action_counts.columns = ['Action', 'Count']
+            fig = px.bar(action_counts.head(15), x='Count', y='Action', orientation='h',
+                         title="User actions", color='Count')
+            fig.update_layout(yaxis={"categoryorder": "total ascending"})
+            st.plotly_chart(fig, use_container_width=True)
+
+        # Session duration
+        if len(user_df) > 1:
+            duration = (user_df['timestamp'].max() - user_df['timestamp'].min()).total_seconds() / 60
+            st.metric("Session Duration (minutes)", f"{duration:.1f}")
+
+        # Export user data
+        csv = user_df.to_csv(index=False)
+        st.download_button(
+            label="📥 Export user data (CSV)",
+            data=csv,
+            file_name=f"user_{full_sid[:8]}_{datetime.now().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+        )

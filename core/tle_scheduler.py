@@ -1,14 +1,19 @@
 # ============================================================================
 # FILE: core/tle_scheduler.py – Daily TLE update scheduler
 # Uses Celestrak (no API key, no rate limits)
+# FIX: Replaced all print() with logging
 # ============================================================================
 import streamlit as st
 import threading
 from pathlib import Path
 from datetime import datetime, timedelta
 import json
+import logging
 
 from update_tles import update_all_satellites, get_cache_status
+from core.exceptions import TLEError, TLEFetchError
+
+logger = logging.getLogger(__name__)
 
 
 class TLEScheduler:
@@ -29,7 +34,7 @@ class TLEScheduler:
                     data = json.load(f)
                     if 'last_update_time' in data and data['last_update_time']:
                         self.last_update_time = datetime.fromisoformat(data['last_update_time'])
-            except:
+            except (json.JSONDecodeError, IOError, ValueError):
                 pass
     
     def _save_state(self):
@@ -40,7 +45,7 @@ class TLEScheduler:
                 json.dump({
                     'last_update_time': self.last_update_time.isoformat() if self.last_update_time else None
                 }, f)
-        except:
+        except (IOError, OSError):
             pass
     
     def is_update_needed(self):
@@ -58,7 +63,7 @@ class TLEScheduler:
         
         self.update_in_progress = True
         try:
-            print(f"[TLE Scheduler] Starting update at {datetime.now()}")
+            logger.info("Starting update at %s", datetime.now())
             success_count, failed = update_all_satellites(force=False)
             self.last_update_time = datetime.now()
             self._save_state()

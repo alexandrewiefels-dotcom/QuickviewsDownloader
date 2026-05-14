@@ -8,16 +8,20 @@ import json
 import time
 import math
 import threading
+import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from skyfield.api import load
 from shapely.geometry import Polygon
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 
+logger = logging.getLogger(__name__)
+
 # UI components
 from ui.components.popup import render_how_it_works_popup
 from ui.components.footer import render_footer, render_acknowledgments
 from ui.components.map_controls import render_zoom_to_aoi_button, compute_zoom
+from ui.components.spinner import LoadingSpinner, ProgressOverlay, with_loading_spinner
 from ui.sidebar import render_sidebar
 from ui.pages.faq import render_faq_page
 from ui.pages.contact import render_contact_page
@@ -54,102 +58,19 @@ import os
 os.environ['STREAMLIT_SERVER_MAX_UPLOAD_SIZE'] = '5'
 
 # ============================================================================
-# Simple overlay helper functions
+# Overlay helper functions — now delegates to ui/components/spinner.py
 # ============================================================================
 def show_progress_overlay():
-    overlay = st.empty()
-    overlay_css = """
-    <style>
-    .progress-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.7);
-        backdrop-filter: blur(4px);
-        z-index: 9999;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        pointer-events: none;
-        font-family: system-ui, -apple-system, sans-serif;
-    }
-    .progress-card {
-        background: #1e1e2e;
-        border-radius: 16px;
-        padding: 24px 32px;
-        min-width: 300px;
-        text-align: center;
-        border: 1px solid #2ecc71;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    }
-    .progress-message {
-        color: white;
-        margin-bottom: 16px;
-        font-size: 16px;
-    }
-    .progress-bar-container {
-        width: 100%;
-        height: 8px;
-        background: #333;
-        border-radius: 4px;
-        overflow: hidden;
-        margin: 16px 0;
-    }
-    .progress-bar {
-        height: 100%;
-        background: #2ecc71;
-        width: 0%;
-        transition: width 0.2s ease;
-        border-radius: 4px;
-    }
-    .progress-widget {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        border: 2px solid #2ecc71;
-        border-top-color: transparent;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        margin-right: 8px;
-        vertical-align: middle;
-    }
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-    .progress-time {
-        font-size: 12px;
-        color: #aaa;
-        margin-top: 12px;
-    }
-    </style>
-    """
-    st.markdown(overlay_css, unsafe_allow_html=True)
-    
-    start_time = datetime.now()
-    
-    def update(progress: int, message: str):
-        elapsed = (datetime.now() - start_time).total_seconds()
-        html = f"""
-        <div class="progress-overlay">
-            <div class="progress-card">
-                <div class="progress-message">
-                    <span class="progress-widget"></span> {message}
-                </div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar" style="width: {progress}%;"></div>
-                </div>
-                <div class="progress-time">⏱️ {elapsed:.0f} sec</div>
-            </div>
-        </div>
-        """
-        overlay.markdown(html, unsafe_allow_html=True)
-    
-    return overlay, update
+    """Create a ProgressOverlay and return (container, update_fn)."""
+    overlay = ProgressOverlay()
+    overlay.show("Initializing...", 0)
+    return overlay, overlay.update
 
 def clear_progress_overlay(container):
-    if container is not None:
+    """Hide the progress overlay."""
+    if container is not None and hasattr(container, 'hide'):
+        container.hide()
+    elif container is not None:
         container.empty()
 
 # ============================================================================
@@ -176,15 +97,15 @@ def ensure_tle_cache_populated():
 
     # If less than half of the satellites have valid TLEs, start background download
     if valid_tles < total_satellites * 0.5:
-        print(f"[TLE] Cache has {valid_tles}/{total_satellites} valid TLEs – starting background full download (Space‑Track primary)")
+        logger.info("Cache has %d/%d valid TLEs – starting background full download (Space‑Track primary)", valid_tles, total_satellites)
         def download_in_background():
             try:
-                print("[TLE] Starting background force download (Space‑Track bulk for all NORADs)...")
+                logger.info("Starting background force download (Space‑Track bulk for all NORADs)...")
                 from force_download_tles import force_download_all_tls
                 force_download_all_tls()   # No cooldown, uses Space‑Track first
-                print("[TLE] Background force download complete")
+                logger.info("Background force download complete")
             except Exception as e:
-                print(f"[TLE] Background force download error: {e}")
+                logger.error("Background force download error: %s", e)
         thread = threading.Thread(target=download_in_background, daemon=True)
         thread.start()
         return True
@@ -283,7 +204,7 @@ def hide_overlay(placeholder):
 def check_and_download_missing_tles():
     missing = get_pending_missing_norads()
     if missing:
-        print(f"[Main] {len(missing)} NORADs used generated TLEs. Downloading in background...")
+        logger.info("%d NORADs used generated TLEs. Downloading in background...", len(missing))
         thread = threading.Thread(target=background_download_missing, daemon=True)
         thread.start()
 
@@ -297,19 +218,19 @@ def check_tle_freshness_and_update():
             valid_tles += 1
 
     if age_hours >= 48 or valid_tles < total_satellites:
-        print(f"[TLE Check] Triggering update: age={age_hours:.1f}h, valid={valid_tles}/{total_satellites}")
+        logger.info("Triggering update: age=%.1fh, valid=%d/%d", age_hours, valid_tles, total_satellites)
         def download_in_background():
             try:
                 from force_download_tles import force_download_all_tls
                 force_download_all_tls()
-                print("[TLE Check] Background download complete")
+                logger.info("Background download complete")
             except Exception as e:
-                print(f"[TLE Check] Background download error: {e}")
+                logger.error("Background download error: %s", e)
         thread = threading.Thread(target=download_in_background, daemon=True)
         thread.start()
         return True
     else:
-        print(f"[TLE Check] Cache OK: age={age_hours:.1f}h, valid={valid_tles}/{total_satellites}")
+        logger.info("Cache OK: age=%.1fh, valid=%d/%d", age_hours, valid_tles, total_satellites)
         return False
 
 def show_spinner(message):
@@ -380,7 +301,7 @@ def handle_drag_drop(detector, aoi):
 # Main App
 # ============================================================================
 try:
-    print("Starting main.py")
+    logger.info("Starting main.py")
     st.set_page_config(
         layout="wide", 
         page_title="OrbitShow", 
@@ -417,21 +338,19 @@ try:
     </style>
     """, unsafe_allow_html=True)
 
-    print("Imports successful")
+    logger.info("Imports successful")
 
     try:
         ts = load.timescale()
         st.session_state.ts = ts
     except Exception as e:
-        print(f"Error loading timescale: {e}")
+        logger.error("Error loading timescale: %s", e)
         ts = load.timescale()
         st.session_state.ts = ts
 
     def main():
         init_session_state()
         
-        st.toast("🔄 Updating... Please wait", icon="⏳")
-
         ensure_tle_cache_populated()
         background_refresh_if_needed()
         
@@ -466,22 +385,42 @@ try:
         if selected_configs is None:
             selected_configs = []
 
+        # Handle deferred rerun (e.g. from country selector in shared AOI section)
+        # This must happen AFTER the sidebar is rendered so the tab state is preserved.
+        if st.session_state.pop("_deferred_rerun", False):
+            st.rerun()
+
+        # Determine which tab is active
+        _active_tab = st.session_state.get("sidebar_tab_select", "📅 Pass Prediction")
+        # When SASClouds tab is active, clear Pass Prediction state to avoid mixing
+        if _active_tab == "🗄️ SASClouds":
+            st.session_state.pop("selected_configs", None)
+            st.session_state.pop("passes", None)
+            st.session_state.pop("displayed_passes", None)
+            st.session_state.pop("tasking_results", None)
+            st.session_state.pop("tasking_requested", None)
+
         # ── SASClouds: run search when sidebar triggers it ─────────────────────
         _sc_pending = st.session_state.pop("sc_pending_search", None)
         if _sc_pending:
-            _sc_log = st.empty()
-            sc_run_search(
-                polygon_geojson    = _sc_pending["polygon_geojson"],
-                aoi_filename       = "OrbitShow AOI",
-                start_date         = _sc_pending["start_date"],
-                end_date           = _sc_pending["end_date"],
-                max_cloud          = _sc_pending["max_cloud"],
-                selected_satellites= _sc_pending["selected_satellites"],
-                session_id         = st.session_state.get("session_id", "main"),
-                log_container      = _sc_log,
-                state_prefix       = "sc",
-            )
-            _sc_log.empty()
+            # Validate AOI is set before running search
+            _sc_aoi = st.session_state.get("aoi")
+            if _sc_aoi is None or _sc_aoi.is_empty:
+                st.error("❌ Please set an Area of Interest (AOI) first — upload a file, select a country, or draw on the map.")
+            else:
+                _sc_log = st.empty()
+                sc_run_search(
+                    polygon_geojson    = _sc_pending["polygon_geojson"],
+                    aoi_filename       = "OrbitShow AOI",
+                    start_date         = _sc_pending["start_date"],
+                    end_date           = _sc_pending["end_date"],
+                    max_cloud          = _sc_pending["max_cloud"],
+                    selected_satellites= _sc_pending["selected_satellites"],
+                    session_id         = st.session_state.get("session_id", "main"),
+                    log_container      = _sc_log,
+                    state_prefix       = "sc",
+                )
+                _sc_log.empty()
             st.rerun()
 
         if st.session_state.get('refresh_triggered', False):
@@ -499,7 +438,7 @@ try:
             
             tasking_mode = "one_coverage"
             overlap_km = 0.0
-            print(f"[Main] Tasking mode: {tasking_mode}, Overlap: {overlap_km} km")
+            logger.info("Tasking mode: %s, Overlap: %.1f km", tasking_mode, overlap_km)
             
             tasking_results = None
             
@@ -519,7 +458,7 @@ try:
             clear_progress_overlay(overlay_container)
             
             if tasking_results:
-                print(f"[Main] Tasking complete: {len(tasking_results)} results")
+                logger.info("Tasking complete: %d results", len(tasking_results))
                 tasked_map = {}
                 for r in tasking_results:
                     tasked_map[r.get('id')] = r
@@ -535,7 +474,7 @@ try:
                             p.y_center = r.get('y_center', 0)
                             p.is_central = r.get('is_central', False)
                             p.coverage_pct = r.get('coverage_pct', 0)
-                            print(f"[Main] Updated pass {p.satellite_name} with tasked footprint")
+                            logger.info("Updated pass %s with tasked footprint", p.satellite_name)
                 
                 for p in st.session_state.displayed_passes:
                     if p.id in tasked_map:
@@ -591,12 +530,12 @@ try:
                     passes_to_display.append(p)
                 elif p.footprint is not None:
                     passes_to_display.append(p)
-            print(f"[Main] Displaying {len(passes_to_display)} tasked passes on map")
+            logger.info("Displaying %d tasked passes on map", len(passes_to_display))
             show_tracks = False
         else:
             passes_to_display = st.session_state.get('displayed_passes', [])
             show_tracks = True
-            print(f"[Main] Displaying {len(passes_to_display)} regular passes on map")
+            logger.info("Displaying %d regular passes on map", len(passes_to_display))
         
         highlighted_pass_id = st.session_state.get('highlighted_pass_id')
         
@@ -628,20 +567,29 @@ try:
         _sc_features_map = st.session_state.get("sc_features_map")
         _sc_dl           = st.session_state.get("sc_features_download") or []
         _sc_preview_idx  = st.session_state.get("sc_preview_indices") or set()
-        # Quickview images are only passed to the renderer when the user has
-        # explicitly chosen "Quickview" display mode in the SASClouds sidebar.
+        # Quickview images are shown on the map when the user has clicked the
+        # eye button (👁️) in the results table, regardless of display mode.
+        # The "Quickview" display mode in the sidebar auto-shows all quickviews
+        # for the selected scenes, while "Footprints" mode only shows them when
+        # the eye button is clicked.
         _sc_display_mode = st.session_state.get("sc_display_mode", "Footprints")
-        if _sc_display_mode == "Quickview":
+        if _sc_preview_idx:
+            # Show quickviews for scenes where the eye button was clicked
             _sc_preview = [_sc_dl[i] for i in sorted(_sc_preview_idx) if 0 <= i < len(_sc_dl)]
+        elif _sc_display_mode == "Quickview":
+            # In Quickview mode, show all scenes as quickviews
+            _sc_preview = _sc_dl
         else:
             _sc_preview = []
 
+        # Responsive map height based on viewport (2.13)
+        _map_height = st.session_state.get('_map_height', 700)
         map_data = map_renderer.render(
             center=center, zoom=zoom, aoi=aoi,
             passes=passes_to_display,
             opportunities=st.session_state.get('opportunities', []),
             map_key=st.session_state.map_key,
-            height=700,
+            height=_map_height,
             live_satellites=live_satellites_list,
             show_tracks=show_tracks,
             highlighted_pass_id=highlighted_pass_id,
@@ -651,16 +599,17 @@ try:
             sasclouds_preview_scenes=_sc_preview,
         )
         
-        # Handle AOI drawing
+        # Handle AOI drawing — debounced via hash comparison (2.8)
         if map_data and map_data.get("last_active_drawing"):
             drawing = map_data["last_active_drawing"]
             if drawing and drawing.get("geometry") and drawing["geometry"]["type"] == "Polygon":
                 coords = drawing["geometry"]["coordinates"][0]
                 drawing_str = json.dumps(coords, sort_keys=True)
                 drawing_hash = hashlib.md5(drawing_str.encode()).hexdigest()
+                # Debounce: only process if hash differs from last processed drawing
                 if st.session_state.last_drawing_hash != drawing_hash:
                     st.session_state.last_drawing_hash = drawing_hash
-                    new_aoi, aoi_changed = handle_map_drawing(map_data, st.session_state.aoi, st.session_state.passes)
+                    new_aoi, aoi_changed = handle_map_drawing(map_data, st.session_state.get("aoi"), st.session_state.get("passes", []))
                     if aoi_changed and new_aoi is not None:
                         track_user_action("aoi_drawn", {"area": new_aoi.area})
                         st.session_state.aoi = new_aoi
@@ -678,14 +627,14 @@ try:
         
         # ========== PASS DETECTION ==========
         if st.session_state.get('run_detection', False) and not st.session_state.get('processing', False):
-            print("[DEBUG] Starting pass detection...")
+            logger.info("Starting pass detection...")
             check_tle_freshness_and_update()
             st.session_state.processing = True
             st.session_state.run_detection = False
             st.rerun()
         
         if st.session_state.get('processing', False):
-            print("[DEBUG] Processing detection...")
+            logger.info("Processing detection...")
             if aoi is None:
                 st.error("❌ Please load an Area of Interest (AOI) via the sidebar or by drawing on the map.")
                 st.session_state.processing = False
@@ -736,7 +685,7 @@ try:
                         else:
                             coverage_filtered.append(p)
                     all_passes = coverage_filtered
-                    print(f"[Main] Kept {len(all_passes)} passes with coverage >= {min_cov}%")
+                    logger.info("Kept %d passes with coverage >= %.1f%%", len(all_passes), min_cov)
                 
                 # ========== NEW: Apply ONA range filter (min and max) ==========
                 min_ona_filter = st.session_state.get('min_ona', 0.0)
@@ -747,7 +696,7 @@ try:
                         if min_ona_filter <= p.min_ona <= max_ona_filter:
                             ona_filtered.append(p)
                     all_passes = ona_filtered
-                    print(f"[Main] Kept {len(all_passes)} passes with ONA between {min_ona_filter}° and {max_ona_filter}°")
+                    logger.info("Kept %d passes with ONA between %.1f° and %.1f°", len(all_passes), min_ona_filter, max_ona_filter)
                 
                 check_and_download_missing_tles()
                 
@@ -790,12 +739,12 @@ try:
                         tasking_results=None
                     )
                 
-                print(f"[DEBUG] Displaying {len(filtered_passes)} passes, rerunning...")
+                logger.info("Displaying %d passes, rerunning...", len(filtered_passes))
                 st.rerun()
         
         # ========== REAPPLY FILTERS WHEN CHANGED ==========
         if st.session_state.get('filters_changed', False) and st.session_state.get('passes'):
-            print("[DEBUG] Reapplying filters to existing passes...")
+            logger.info("Reapplying filters to existing passes...")
             all_passes = st.session_state.passes
             orbit_filter = st.session_state.orbit_filter
             daylight_filter = st.session_state.daylight_filter
@@ -842,6 +791,10 @@ try:
             ):
                 sc_render_results_table(state_prefix="sc")
 
+        # ── Save session state to query params for persistence ──
+        from core.state_manager import save_session_to_query_params
+        save_session_to_query_params()
+        
         render_footer()
         render_acknowledgments()
     
@@ -849,6 +802,6 @@ try:
         main()
 
 except Exception as e:
-    print("Fatal error in main.py :")
+    logger.error("Fatal error in main.py: %s", e)
     traceback.print_exc()
     st.error(f"Error: {e}")
